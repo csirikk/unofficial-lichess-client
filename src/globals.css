@@ -1,8 +1,7 @@
-@import 'tailwindcss' layer(utilities);
-@import 'tailwindcss/utilities' layer(utilities);
-
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
+@import "preline/variants.css";
 @custom-variant dark (&:where(.dark, .dark *));
+@source "../node_modules/preline/dist/*.js";
 
 @theme {
 	/* Light Mode - Background Colors */
@@ -79,7 +78,6 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-
 	*,
 	::after,
 	::before,
