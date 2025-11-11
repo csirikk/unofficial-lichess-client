@@ -12,7 +12,7 @@ import {
 	storeAccessToken,
 	validateState,
 } from "./pkce";
-import { createAuthHeaders } from "../../libs/api";
+import { createAuthHeaders, CLIENT_ID, REDIRECT_URI, SCOPES } from "../../libs/api";
 
 interface AuthContextType {
 	user: UserExtended | null;
@@ -41,9 +41,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	const [user, setUser] = useState<UserExtended | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
-	const CLIENT_ID = "itu";
-	const REDIRECT_URI = "http://localhost:3000/auth/callback";
-
 	// Fetch user profile on mount if authenticated
 	useEffect(() => {
 		const loadProfile = async () => {
@@ -67,8 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	}, []);
 
 	const login = async () => {
-		const scope = "board:play challenge:write";
-		const authUrl = await buildAuthorizationUrl(CLIENT_ID, REDIRECT_URI, scope);
+		const authUrl = await buildAuthorizationUrl(CLIENT_ID, REDIRECT_URI, SCOPES);
 		window.location.href = authUrl;
 	};
 

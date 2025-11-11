@@ -1,5 +1,9 @@
 import { getAccessToken } from "../features/auth/pkce";
 
+export const CLIENT_ID = "itu";
+export const REDIRECT_URI = "http://localhost:3000/auth/callback";
+export const SCOPES = "board:play challenge:write";
+
 export function createAuthHeaders(): RequestInit {
 	const token = getAccessToken();
 	if (!token) {
