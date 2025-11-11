@@ -1,4 +1,4 @@
-import { useAuth } from "../features/auth/AuthProvider";
+import { useAuth } from "../features/auth";
 
 export default function Navbar() {
 	const { user, login, logout } = useAuth();

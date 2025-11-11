@@ -1,4 +1,4 @@
-import { useAuth } from "../features/auth/AuthProvider";
+import { useAuth } from "../features/auth";
 import Layout from "./Layout";
 
 export default function HomePage() {
