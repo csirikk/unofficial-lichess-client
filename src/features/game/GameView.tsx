@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Chess } from "chess.js";
+import { Chess, type Square } from "chess.js";
 import { useAuth } from "../auth/AuthProvider";
 import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
 import { startBotGame } from "./gameActions";
@@ -75,6 +75,7 @@ export default function GameView() {
 	}): boolean => {
 		const { sourceSquare, targetSquare } = args;
 		if (!targetSquare) return false;
+		if (pendingUci) return false;
 
 		if (!isPlayerInGame(gameFull, user)) return false;
 
@@ -82,15 +83,23 @@ export default function GameView() {
 		if (chess.turn() !== playerColor) return false;
 
 		try {
+			const piece = chess.get(sourceSquare as Square);
+
+			// todo: handle promotions properly
+			const isPromo =
+				piece?.type === "p" &&
+				((piece.color === "w" && targetSquare[1] === "8") ||
+					(piece.color === "b" && targetSquare[1] === "1"));
+
 			const test = new Chess(chess.fen());
 			const move = test.move({
 				from: sourceSquare,
 				to: targetSquare,
-				promotion: undefined,
+				promotion: isPromo ? "q" : undefined,
 			});
 			if (!move) return false;
 
-			const uci = moveToUci({ from: sourceSquare, to: targetSquare, promotion: undefined });
+			const uci = moveToUci({ from: sourceSquare, to: targetSquare, promotion: move.promotion });
 			setPendingUci(uci);
 
 			(async () => {
