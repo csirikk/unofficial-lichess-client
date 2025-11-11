@@ -12,6 +12,7 @@ import {
 	storeAccessToken,
 	validateState,
 } from "./pkce";
+import { createAuthHeaders } from "../../libs/api";
 
 interface AuthContextType {
 	user: UserExtended | null;
@@ -52,11 +53,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				console.log("[auth] loadProfile: found token?", Boolean(token));
 				if (token) {
 					// GET /api/account
-					const response = await accountMe({
-						headers: {
-							Authorization: `Bearer ${token}`,
-						},
-					});
+					const response = await accountMe(createAuthHeaders());
 					setUser(response.data);
 				}
 			} catch (error) {
@@ -108,11 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			clearPKCEData();
 
 			// GET /api/account
-			const response = await accountMe({
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
+			const response = await accountMe(createAuthHeaders());
 			setUser(response.data);
 		} catch (error) {
 			console.error("OAuth callback error:", error);
@@ -128,11 +121,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			const token = getAccessToken();
 			if (token) {
 				// DELETE /api/token
-				await apiTokenDelete({
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				});
+				try {
+					await apiTokenDelete(createAuthHeaders());
+				} catch (err) {
+					console.warn("apiTokenDelete failed:", err);
+				}
 			}
 		} catch (error) {
 			console.error("Failed to revoke token:", error);
