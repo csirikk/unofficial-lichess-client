@@ -22,7 +22,7 @@ export default function Navbar() {
 					<button
 						type="button"
 						onClick={login}
-						className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+						className="text-sm rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
 					>
 						Sign in
 					</button>
