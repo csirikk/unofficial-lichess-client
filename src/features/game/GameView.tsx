@@ -3,7 +3,7 @@ import { Chessboard } from "react-chessboard";
 import { Chess, type Square } from "chess.js";
 import { useAuth } from "../auth/AuthProvider";
 import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
-import { startBotGame } from "./gameActions";
+import { startBotGame, resignGame, abortGame } from "./gameActions";
 import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 
@@ -68,6 +68,24 @@ export default function GameView() {
 		}
 	};
 
+	const handleResign = async () => {
+		if (!gameId || !isConnected) return;
+		try {
+			await resignGame(gameId);
+		} catch (e) {
+			console.error("Resign failed:", e);
+		}
+	};
+
+	const handleAbort = async () => {
+		if (!gameId || !isConnected) return;
+		try {
+			await abortGame(gameId);
+		} catch (e) {
+			console.error("Abort failed:", e);
+		}
+	};
+
 	const onPieceDrop = (args: {
 		piece: { pieceType: string; isSparePiece: boolean; position: string };
 		sourceSquare: string;
@@ -125,6 +143,8 @@ export default function GameView() {
 		}
 	};
 
+	const gameEnded = gameState?.status && gameState.status !== "started";
+
 	// creation ui
 	if (!gameId) {
 		return (
@@ -181,18 +201,36 @@ export default function GameView() {
 						)}
 					</div>
 				</div>
-				<button
-					type="button"
-					onClick={() => {
-						setGameId(null);
-						setChess(new Chess());
-						setPendingUci(null);
-						latestConfirmedMovesRef.current = "";
-					}}
-					className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-				>
-					New Game
-				</button>
+				<div className="flex gap-2">
+					<button
+						type="button"
+						onClick={handleResign}
+						disabled={!isConnected || gameEnded}
+						className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+					>
+						Resign
+					</button>
+					<button
+						type="button"
+						onClick={handleAbort}
+						disabled={!isConnected || gameEnded}
+						className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
+					>
+						Abort
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							setGameId(null);
+							setChess(new Chess());
+							setPendingUci(null);
+							latestConfirmedMovesRef.current = "";
+						}}
+						className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+					>
+						New Game
+					</button>
+				</div>
 			</div>
 
 			{streamError && (

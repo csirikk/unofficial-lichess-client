@@ -1,4 +1,5 @@
 import { challengeAi } from "../../generated/client/challenges";
+import { boardGameResign, boardGameAbort } from "../../generated/client/board";
 import { createAuthHeaders } from "../../libs/api";
 
 export async function startBotGame(
@@ -14,5 +15,24 @@ export async function startBotGame(
 	if (response.status === 201 && "id" in response.data && response.data.id) {
 		return { gameId: String(response.data.id) };
 	}
+	alert("Failed to create game");
 	throw new Error("Failed to create game");
+}
+
+export async function resignGame(gameId: string) {
+	const response = await boardGameResign(gameId, createAuthHeaders());
+	if (response.status !== 200) {
+		alert("Resign failed");
+		throw new Error("Resign failed");
+	}
+	return response.data;
+}
+
+export async function abortGame(gameId: string) {
+	const response = await boardGameAbort(gameId, createAuthHeaders());
+	if (response.status !== 200) {
+		alert("Abort failed");
+		throw new Error("Abort failed");
+	}
+	return response.data;
 }
