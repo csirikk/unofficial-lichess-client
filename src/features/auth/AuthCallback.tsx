@@ -48,8 +48,8 @@ export default function AuthCallback() {
 				// Mark code as used
 				sessionStorage.setItem(marker, "1");
 				window.location.replace("/");
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Authentication failed");
+			} catch (error) {
+				setError(error instanceof Error ? error.message : "Authentication failed");
 			}
 		};
 

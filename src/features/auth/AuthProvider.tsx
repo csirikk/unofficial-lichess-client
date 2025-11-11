@@ -119,8 +119,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				// DELETE /api/token
 				try {
 					await apiTokenDelete(createAuthHeaders());
-				} catch (err) {
-					console.warn("apiTokenDelete failed:", err);
+				} catch (error) {
+					console.warn("apiTokenDelete failed:", error);
 				}
 			}
 		} catch (error) {
