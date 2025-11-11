@@ -8,23 +8,34 @@ import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 import { GameStatusName } from "../../generated/types/gameStatusName";
 
+const getGameIdFromURL = (): string | null => {
+	try {
+		return new URLSearchParams(window.location.search).get("game");
+	} catch {
+		return null;
+	}
+};
+
+const setGameIdInURL = (id: string | null) => {
+	try {
+		const url = new URL(window.location.href);
+		if (id) url.searchParams.set("game", id);
+		else url.searchParams.delete("game");
+		window.history.replaceState(null, "", url);
+	} catch {}
+};
+
 export default function GameView() {
 	const { user } = useAuth();
 
-	const [gameId, setGameId] = useState<string | null>(null);
+	const [gameId, setGameId] = useState<string | null>(() => getGameIdFromURL());
 	const [chess, setChess] = useState(new Chess());
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
 	// stream state
-	const {
-		gameFull,
-		gameState,
-		isConnected,
-		error: streamError,
-		makeMove,
-	} = gameStream(gameId);
+	const { gameFull, gameState, isConnected, error: streamError, makeMove } = gameStream(gameId);
 
 	// uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
@@ -61,6 +72,16 @@ export default function GameView() {
 		setChess(next);
 	}, [gameFull, gameState, pendingUci]);
 
+	// show gameID change in url
+	useEffect(() => {
+		setGameIdInURL(gameId);
+	}, [gameId]);
+
+	// remove gameID from url
+	useEffect(() => {
+		if (gameEnded) setGameIdInURL(null);
+	}, [gameEnded]);
+
 	const myColor = getPlayerColor(gameFull, user);
 
 	const handleStartGame = async () => {
@@ -83,6 +104,7 @@ export default function GameView() {
 		if (!gameId || !isConnected) return;
 		try {
 			await resignGame(gameId);
+			setGameIdInURL(null);
 		} catch (e) {
 			console.error("Resign failed:", e);
 		}
@@ -92,6 +114,7 @@ export default function GameView() {
 		if (!gameId || !isConnected) return;
 		try {
 			await abortGame(gameId);
+			setGameIdInURL(null);
 		} catch (e) {
 			console.error("Abort failed:", e);
 		}
