@@ -6,6 +6,7 @@ import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs
 import { startBotGame, resignGame, abortGame } from "./gameActions";
 import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
+import { GameStatusName } from "../../generated/types/gameStatusName";
 
 export default function GameView() {
 	const { user } = useAuth();
@@ -17,11 +18,19 @@ export default function GameView() {
 	const [error, setError] = useState<string | null>(null);
 
 	// stream state
-	const { gameFull, gameState, isConnected, error: streamError, makeMove } = gameStream(gameId);
+	const {
+		gameFull,
+		gameState,
+		isConnected,
+		error: streamError,
+		makeMove,
+	} = gameStream(gameId);
 
 	// uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
 	const latestConfirmedMovesRef = useRef<string>("");
+
+	const gameEnded = !!(gameState?.status && gameState.status !== GameStatusName.started);
 
 	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
@@ -60,6 +69,8 @@ export default function GameView() {
 		try {
 			// TODO: more options
 			const { gameId } = await startBotGame(selectedLevel, { limit: 300, increment: 3 });
+			setPendingUci(null);
+			setChess(new Chess());
 			setGameId(gameId);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Failed to create game");
@@ -93,7 +104,9 @@ export default function GameView() {
 	}): boolean => {
 		const { sourceSquare, targetSquare } = args;
 		if (!targetSquare) return false;
+		if (!isConnected) return false;
 		if (pendingUci) return false;
+		if (gameEnded) return false;
 
 		if (!isPlayerInGame(gameFull, user)) return false;
 
@@ -142,8 +155,6 @@ export default function GameView() {
 			return false;
 		}
 	};
-
-	const gameEnded = gameState?.status && gameState.status !== "started";
 
 	// creation ui
 	if (!gameId) {

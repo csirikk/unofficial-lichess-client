@@ -11,6 +11,7 @@ export function gameStream(gameId: string | null) {
 	const [gameFull, setGameFull] = useState<GameFullEvent | null>(null);
 	const [gameState, setGameState] = useState<GameStateEvent | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [streamNotFound, setStreamNotFound] = useState(false);
 	const [isConnected, setIsConnected] = useState(false);
 
 	const streamControlRef = useRef<StreamControl | null>(null);
@@ -19,17 +20,31 @@ export function gameStream(gameId: string | null) {
 	useEffect(() => {
 		if (!gameId) return;
 
+		setGameFull(null);
+		setGameState(null);
+
 		let mounted = true;
 		const abort = new AbortController();
 		setIsConnected(false);
 		setError(null);
+		setStreamNotFound(false);
 
 		(async () => {
 			try {
-				const response = await boardGameStream(gameId, createStreamHeaders());
+				// GET /api/board/game/stream/${gameId}
+				const response = await boardGameStream(gameId, {
+					...createStreamHeaders(),
+					signal: abort.signal,
+				});
 
 				if (!mounted) return;
-				if (response.status !== 200) throw new Error(`Failed to stream game: ${response.status}`);
+				if (response.status !== 200) {
+					if (response.status === 404) {
+						setStreamNotFound(true);
+					}
+					alert(`Failed to stream game: ${response.status}`);
+					throw new Error(`Failed to stream game: ${response.status}`);
+				}
 
 				setIsConnected(true);
 
@@ -93,6 +108,7 @@ export function gameStream(gameId: string | null) {
 		gameState,
 		error,
 		isConnected,
+		streamNotFound,
 		makeMove,
 	};
 }
