@@ -184,7 +184,7 @@ export default function GameView() {
 	return (
 		<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
 			<div className="grid grid-cols-9 gap-6">
-				<div className="col-span-5 size-fit">
+				<div className={`col-span-5 size-fit ${!gameId ? "grayscale-50" : ""}`}>
 					<Chessboard
 						options={{
 							position: chess.fen(),
