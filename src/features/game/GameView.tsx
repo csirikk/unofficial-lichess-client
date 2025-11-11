@@ -179,167 +179,167 @@ export default function GameView() {
 		}
 	};
 
-	// creation ui
-	if (!gameId) {
-		return (
-			<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-				<h2 className="text-2xl font-semibold">Play against bot</h2>
-
-				<div className="mt-4 space-y-4">
-					<div>
-						<label htmlFor="level" className="block text-sm text-gray-600 dark:text-gray-400">
-							Bot strength (1-8)
-						</label>
-						<input
-							id="level"
-							type="range"
-							min="1"
-							max="8"
-							value={selectedLevel}
-							onChange={(e) => setSelectedLevel(Number(e.target.value))}
-							className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer"
-						/>
-						<div className="mt-1 text-sm">Level {selectedLevel}</div>
-					</div>
-
-					{error && (
-						<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {error}</div>
-					)}
-
-					<button
-						type="button"
-						onClick={handleStartGame}
-						disabled={isCreatingGame}
-						className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-					>
-						{isCreatingGame ? " Creating game..." : "Start Game"}
-					</button>
-				</div>
-			</div>
-		);
-	}
-
-	// game active
 	const movesList = chess.history();
 
 	return (
 		<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h2 className="text-xl font-bold">Playing vs Bot</h2>
-					<div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-						{isConnected ? (
-							<span className="text-green-600">Connected</span>
-						) : (
-							<span>Connecting...</span>
-						)}
-					</div>
-				</div>
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={handleResign}
-						disabled={!isConnected || gameEnded}
-						className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-					>
-						Resign
-					</button>
-					<button
-						type="button"
-						onClick={handleAbort}
-						disabled={!isConnected || gameEnded}
-						className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
-					>
-						Abort
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setGameId(null);
-							setChess(new Chess());
-							setPendingUci(null);
-							latestConfirmedMovesRef.current = "";
+			<div className="grid grid-cols-9 gap-6">
+				<div className="col-span-5 size-fit">
+					<Chessboard
+						options={{
+							position: chess.fen(),
+							boardOrientation: myColor,
+							onPieceDrop,
 						}}
-						className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-					>
-						New Game
-					</button>
+					/>
 				</div>
-			</div>
-
-			{streamError && (
-				<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {streamError}</div>
-			)}
-
-			<div className="mt-6 grid gap-6 md:grid-cols-2">
-				<Chessboard
-					options={{
-						position: chess.fen(),
-						boardOrientation: myColor,
-						onPieceDrop,
-					}}
-				/>
-
-				<div className="space-y-4">
-					<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-						<h3 className="mb-2 text-lg font-semibold">Game Info</h3>
-						<dl className="mt-2 space-y-2 text-sm">
-							<div className="flex justify-between">
-								<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
-								<dd className="font-medium text-xs">{gameId}</dd>
+				{!gameId ? (
+					<div className="col-span-4 ">
+						<h2 className="text-2xl font-semibold">Play against bot</h2>
+						<div className="mt-4 space-y-4">
+							<div>
+								<label htmlFor="level" className="block text-sm text-gray-600 dark:text-gray-400">
+									Bot strength (1-8)
+								</label>
+								<input
+									id="level"
+									type="range"
+									min="1"
+									max="8"
+									value={selectedLevel}
+									onChange={(e) => setSelectedLevel(Number(e.target.value))}
+									className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer"
+								/>
+								<div className="mt-1 text-sm">Level {selectedLevel}</div>
 							</div>
-							{gameState && (
-								<>
-									<div className="flex justify-between">
-										<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
-										<dd className="font-medium">{gameState.status}</dd>
+
+							{error && (
+								<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {error}</div>
+							)}
+
+							<button
+								type="button"
+								onClick={handleStartGame}
+								disabled={isCreatingGame}
+								className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+							>
+								{isCreatingGame ? " Creating game..." : "Start Game"}
+							</button>
+						</div>
+					</div>
+				) : (
+					<div className="space-y-4 col-span-4">
+						<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+							<div className="flex items-center justify-between">
+								<div>
+									<h2 className="text-xl font-bold">Playing vs Bot</h2>
+									<div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+										{isConnected ? (
+											<span className="text-green-600">Connected</span>
+										) : (
+											<span>Connecting...</span>
+										)}
 									</div>
-									{gameState.winner && (
-										<div className="flex justify-between">
-											<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
-											<dd className="font-medium">{gameState.winner}</dd>
-										</div>
+								</div>
+							</div>
+
+							{streamError && (
+								<div className="rounded bg-red-50 p-4 text-sm text-red-600">
+									Error: {streamError}
+								</div>
+							)}
+
+							<div className="mb-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+								<h3 className="mb-2 text-lg font-semibold">Game Info</h3>
+								<dl className="mt-2 space-y-2 text-sm">
+									<div className="flex justify-between">
+										<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
+										<dd className="font-medium text-xs">{gameId}</dd>
+									</div>
+									{gameState && (
+										<>
+											<div className="flex justify-between">
+												<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
+												<dd className="font-medium">{gameState.status}</dd>
+											</div>
+											{gameState.winner && (
+												<div className="flex justify-between">
+													<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
+													<dd className="font-medium">{gameState.winner}</dd>
+												</div>
+											)}
+										</>
 									)}
-								</>
-							)}
-						</dl>
-					</div>
-
-					<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-						<h3 className="mb-2 text-lg font-semibold">Position</h3>
-						<div className="mt-2 text-sm">
-							<div className="text-gray-600 dark:text-gray-400">
-								Turn: {chess.turn() === "w" ? "White" : "Black"}
+								</dl>
 							</div>
-							<div className="mt-2 text-gray-600 dark:text-gray-400">
-								{chess.isCheck() && "Check! "}
-								{chess.isCheckmate() && "Checkmate! "}
-								{chess.isStalemate() && "Stalemate! "}
-								{chess.isDraw() && "Draw! "}
+
+							<div className="mb-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+								<h3 className="mb-2 text-lg font-semibold">Position</h3>
+								<div className="mt-2 text-sm">
+									<div className="text-gray-600 dark:text-gray-400">
+										Turn: {chess.turn() === "w" ? "White" : "Black"}
+									</div>
+									<div className="mt-2 text-gray-600 dark:text-gray-400">
+										{chess.isCheck() && "Check! "}
+										{chess.isCheckmate() && "Checkmate! "}
+										{chess.isStalemate() && "Stalemate! "}
+										{chess.isDraw() && "Draw! "}
+									</div>
+								</div>
+							</div>
+
+							<div className="mb-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+								<h3 className="mb-2 text-lg font-semibold">Move History</h3>
+								<div className="mt-2 max-h-48 overflow-y-auto text-sm font-mono">
+									{movesList.length === 0 ? (
+										<span className="text-gray-600 dark:text-gray-400">No moves yet</span>
+									) : (
+										movesList.map((move, i) => (
+											<span
+												// stable-ish key without using the raw index:
+												key={movesList.slice(0, i + 1).join(" ")}
+												className="mr-2"
+											>
+												{i % 2 === 0 && `${Math.floor(i / 2) + 1}. `}
+												{move}
+											</span>
+										))
+									)}
+								</div>
+							</div>
+							<div className="flex gap-2">
+								<button
+									type="button"
+									onClick={handleResign}
+									disabled={!isConnected || gameEnded}
+									className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+								>
+									Resign
+								</button>
+								<button
+									type="button"
+									onClick={handleAbort}
+									disabled={!isConnected || gameEnded}
+									className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
+								>
+									Abort
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setGameId(null);
+										setChess(new Chess());
+										setPendingUci(null);
+										latestConfirmedMovesRef.current = "";
+									}}
+									className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+								>
+									New Game
+								</button>
 							</div>
 						</div>
 					</div>
-
-					<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-						<h3 className="mb-2 text-lg font-semibold">Move History</h3>
-						<div className="mt-2 max-h-48 overflow-y-auto text-sm font-mono">
-							{movesList.length === 0 ? (
-								<span className="text-gray-600 dark:text-gray-400">No moves yet</span>
-							) : (
-								movesList.map((move, i) => (
-									<span
-										// stable-ish key without using the raw index:
-										key={movesList.slice(0, i + 1).join(" ")}
-										className="mr-2"
-									>
-										{i % 2 === 0 && `${Math.floor(i / 2) + 1}. `}
-										{move}
-									</span>
-								))
-							)}
-						</div>
-					</div>
-				</div>
+				)}
 			</div>
 		</div>
 	);
