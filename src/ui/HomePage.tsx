@@ -1,4 +1,5 @@
 import { useAuth } from "../features/auth";
+import GameView from "../features/game/GameView";
 import Layout from "./Layout";
 
 export default function HomePage() {
@@ -26,6 +27,8 @@ export default function HomePage() {
 					</div>
 				</div>
 			) : null}
+
+			{!isLoading && user ? <GameView /> : null}
 		</Layout>
 	);
 }
