@@ -4,79 +4,62 @@
 @source "../node_modules/preline/dist/*.js";
 
 @theme {
-	/* Light Mode - Background Colors */
-	--color-l-bg-1: #ffffff;
-	/* Primary background */
-	--color-l-bg-2: #f6f8fa;
-	/* Secondary background */
-	--color-l-bg-3: #ebedf0;
-	/* Tertiary background */
-	--color-l-bg-hover: #f3f4f6;
-	/* Hover state background */
+	--color-primary-900: 52 50 77; /* #34324D */
+	--color-primary-800: 62 58 120; /* #3E3A78 */
+	--color-primary-500: 133 124 255; /* #857CFF */
+	--color-primary-400: 172 166 255; /* #ACA6FF */
+	--color-primary-300: 206 203 247; /* #CECBF7 */
+	--color-primary-200: 168 165 204; /* #A8A5CC */
 
-	/* Light Mode - Text Colors */
-	--color-l-text-1: #24292f;
-	/* Primary text */
-	--color-l-text-2: #57606a;
-	/* Secondary text */
-	--color-l-text-3: #6e7781;
-	/* Tertiary/muted text */
-	--color-l-text-inv: #ffffff;
-	/* Inverted text (on dark backgrounds) */
+	--color-neutral-50: 13 14 20; /* #0D0E14 */
+	--color-neutral-100: 22 23 30; /* #16171E */
+	--color-neutral-200: 30 31 41; /* #1E1F29 */
+	--color-neutral-300: 42 44 56; /* #2A2C38 */
+	--color-neutral-400: 59 62 76; /* #3B3E4C */
+	--color-neutral-500: 142 145 164; /* #8E91A4 */
+	--color-neutral-600: 122 125 144; /* #7A7D90 */
+	--color-neutral-800: 213 216 234; /* #D5D8EA */
+	--color-neutral-900: 242 244 255; /* #F2F4FF */
 
-	/* Dark Mode - Background Colors */
-	--color-d-bg-1: #0d1117;
-	/* Primary background */
-	--color-d-bg-2: #161b22;
-	/* Secondary background */
-	--color-d-bg-3: #21262d;
-	/* Tertiary background */
-	--color-d-bg-hover: #30363d;
-	/* Hover state background */
+	--color-secondary-700: 56 68 138; /* #38448A */
+	--color-secondary-500: 91 111 255; /* #5B6FFF */
+	--color-secondary-300: 168 177 255; /* #A8B1FF */
 
-	/* Dark Mode - Text Colors */
-	--color-d-text-1: #f0f6fc;
-	/* Primary text */
-	--color-d-text-2: #c9d1d9;
-	/* Secondary text */
-	--color-d-text-3: #8b949e;
-	/* Tertiary/muted text */
-	--color-d-text-inv: #0d1117;
-	/* Inverted text (on light backgrounds) */
+	--color-success: 34 197 94; /* #22C55E */
+	--color-error: 239 68 68; /* #EF4444 */
+	--color-info: 133 124 255; /* #857CFF (Primary/500) */
+	--color-warning: 245 158 11; /* #F59E0B */
 
-	/* Accent Colors - Mode Independent */
-	--color-accent-1: #58a6ff;
-	/* Primary accent */
-	--color-accent-2: #1f6feb;
-	/* Secondary accent */
-	--color-accent-success: #3fb950;
-	/* Success state */
-	--color-accent-warning: #d29922;
-	/* Warning state */
-	--color-accent-danger: #f85149;
-	/* Danger/error state */
+	--color-surface-base: 13 14 20; /* Neutral/50   - app base bg */
+	--color-surface-card: 22 23 30; /* Neutral/100  - cards, panels */
+	--color-surface-modal: 30 31 41; /* Neutral/200  - modals, popovers */
+	--color-surface-nav: 42 44 56; /* Neutral/300  - nav bars */
+	--color-surface-border: 59 62 76; /* Neutral/400  - borders */
+	--color-surface-overlay: 0 0 0; /* #000000      - use /60 for 0.6 alpha */
 
-	/* Border Colors */
-	--color-border-l: #d0d7de;
-	/* Light mode border */
-	--color-border-d: #30363d;
-	/* Dark mode border */
+	--color-fg-primary: 213 216 234; /* #D5D8EA  - main text (Neutral/800) */
+	--color-fg-secondary: 122 125 144; /* #7A7D90 - secondary text (Neutral/600) */
+	--color-fg-disabled: 142 145 164; /* #8E91A4 - disabled / subtle (Neutral/500) */
+	--color-fg-active: 172 166 255; /* #ACA6FF - active / accent (Primary/400) */
+	--color-fg-on-primary: 242 244 255; /* #F2F4FF - text on primary surfaces */
 
-	/* Shadow Colors (for box-shadow) */
-	--color-shadow-l: rgba(31, 35, 40, 0.1);
-	/* Light mode shadow */
-	--color-shadow-d: rgba(0, 0, 0, 0.3);
-	/* Dark mode shadow */
+	--color-chess-light-square: 206 203 247; /* #CECBF7 (Primary/300) */
+	--color-chess-dark-square: 62 58 120; /* #3E3A78 (Primary/800) */
+	--color-chess-in-check: 239 68 68; /* #EF4444 (Semantic/Error) */
+	--color-chess-light-selected: 172 166 255; /* #ACA6FF (Primary/400) */
+	--color-chess-dark-selected: 85 82 129; /* #555281 */
+
+	--color-chess-move-last: 179 120 179; /* #B378B3 @ 37% */
+	--color-chess-move-legal-dot: 242 244 255; /* #F2F4FF @ 20% */
+	--color-chess-move-premove: 209 64 117; /* #D14075 @ 80% */
+	--color-chess-move-draw: 179 120 179; /* #B378B3 @ 80% */
+
+	--color-chess-clock-bg-active: 133 124 255; /* #857CFF @ 20% (Primary/500) */
+	--color-chess-clock-bg-inactive: 30 31 41; /* #1E1F29 (Neutral/200) */
+	--color-chess-clock-text: 242 244 255; /* #F2F4FF (Neutral/900) */
+	--color-chess-clock-low-time: 239 68 68; /* #EF4444 @ 10% */
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
 	*,
 	::after,
