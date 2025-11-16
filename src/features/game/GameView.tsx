@@ -30,6 +30,7 @@ export default function GameView() {
 
 	const [gameId, setGameId] = useState<string | null>(() => getGameIdFromURL());
 	const [chess, setChess] = useState(new Chess());
+	const chessRef = useRef(chess);
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
@@ -71,6 +72,10 @@ export default function GameView() {
 		}
 		setChess(next);
 	}, [gameFull, gameState, pendingUci]);
+
+	useEffect(() => {
+		chessRef.current = chess;
+	}, [chess]);
 
 	// show gameID change in url
 	useEffect(() => {
@@ -133,11 +138,12 @@ export default function GameView() {
 
 		if (!isPlayerInGame(gameFull, user)) return false;
 
+		const board = chessRef.current;
 		const playerColor = myColor === GameColor.white ? "w" : "b";
-		if (chess.turn() !== playerColor) return false;
+		if (board.turn() !== playerColor) return false;
 
 		try {
-			const piece = chess.get(sourceSquare as Square);
+			const piece = board.get(sourceSquare as Square);
 
 			// todo: handle promotions properly
 			const isPromo =
@@ -145,7 +151,7 @@ export default function GameView() {
 				((piece.color === "w" && targetSquare[1] === "8") ||
 					(piece.color === "b" && targetSquare[1] === "1"));
 
-			const test = new Chess(chess.fen());
+			const test = new Chess(board.fen());
 			const move = test.move({
 				from: sourceSquare,
 				to: targetSquare,
