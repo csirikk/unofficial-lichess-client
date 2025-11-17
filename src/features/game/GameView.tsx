@@ -63,6 +63,14 @@ export default function GameView() {
 		to: Square | null;
 	}>({ from: null, to: null });
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
+	const [clockNow, setClockNow] = useState(() => Date.now());
+	const clockBaselineRef = useRef({ wtime: 0, btime: 0, updatedAt: Date.now() });
+	const latestState = useMemo(
+		() => gameState ?? gameFull?.state ?? null,
+		[gameFull?.state, gameState],
+	);
+	const latestWtime = latestState?.wtime ?? null;
+	const latestBtime = latestState?.btime ?? null;
 
 	const moveListRef = useRef<HTMLOListElement>(null);
 	const prevMoveCountRef = useRef(0);
@@ -373,6 +381,61 @@ export default function GameView() {
 	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare]);
 
 	const movesList = chess.history();
+
+	useEffect(() => {
+		if (!gameId) {
+			clockBaselineRef.current = { wtime: 0, btime: 0, updatedAt: Date.now() };
+			setClockNow(Date.now());
+			return;
+		}
+
+		if (latestWtime == null || latestBtime == null) return;
+
+		clockBaselineRef.current = {
+			wtime: latestWtime,
+			btime: latestBtime,
+			updatedAt: Date.now(),
+		};
+		setClockNow(Date.now());
+	}, [gameId, latestWtime, latestBtime]);
+
+	const isGameRunning = Boolean(gameId && latestState?.status === GameStatusName.started);
+	const shouldTick = isGameRunning;
+
+	useEffect(() => {
+		if (!shouldTick) return;
+		const interval = window.setInterval(() => setClockNow(Date.now()), 200);
+		return () => window.clearInterval(interval);
+	}, [shouldTick]);
+
+	const activeColor = useMemo(() => {
+		if (!latestState || latestState.status !== GameStatusName.started) return null;
+		const tokens = latestState.moves?.trim().split(/\s+/).filter(Boolean) ?? [];
+		return tokens.length % 2 === 0 ? "w" : "b";
+	}, [latestState]);
+
+	const liveClocks = useMemo(() => {
+		if (!gameId || latestWtime == null || latestBtime == null) {
+			return {
+				white: null as number | null,
+				black: null as number | null,
+				active: null as "w" | "b" | null,
+			};
+		}
+
+		const elapsed = Math.max(0, clockNow - clockBaselineRef.current.updatedAt);
+		const white = Math.max(0, clockBaselineRef.current.wtime - (activeColor === "w" ? elapsed : 0));
+		const black = Math.max(0, clockBaselineRef.current.btime - (activeColor === "b" ? elapsed : 0));
+		return { white, black, active: activeColor };
+	}, [activeColor, clockNow, gameId, latestBtime, latestWtime]);
+
+	const formatClockValue = (ms: number | null) => {
+		if (ms == null) return "--:--";
+		const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+	};
 	const moveRows = useMemo(
 		() =>
 			movesList.reduce(
@@ -390,6 +453,78 @@ export default function GameView() {
 			),
 		[movesList],
 	);
+
+	const playerPanels = useMemo(() => {
+		return {
+			white: {
+				name: gameFull?.white?.name ?? "Bot",
+				rating:
+					gameFull?.white?.rating != null
+						? `(${gameFull.white.rating})`
+						: gameFull?.white?.aiLevel != null
+							? `(${gameFull.white.aiLevel})`
+							: "",
+			},
+			black: {
+				name: gameFull?.black?.name ?? "Bot",
+				rating:
+					gameFull?.black?.rating != null
+						? `(${gameFull.black.rating})`
+						: gameFull?.black?.aiLevel != null
+							? `(${gameFull.black.aiLevel})`
+							: "",
+			},
+		};
+	}, [gameFull?.black, gameFull?.white]);
+
+	const timerOrder = useMemo(() => {
+		return (myColor === GameColor.white ? ["black", "white"] : ["white", "black"]) as Array<
+			"white" | "black"
+		>;
+	}, [myColor]);
+
+	const renderPlayerTimer = (color: "white" | "black", position: "top" | "bottom") => {
+		const player = playerPanels[color];
+		const isWhite = color === "white";
+		const ms = isWhite ? liveClocks.white : liveClocks.black;
+		const isActive = liveClocks.active === (isWhite ? "w" : "b");
+		const isLow = typeof ms === "number" && ms <= 10000; // 10 seconds
+		const isCritical = typeof ms === "number" && ms <= 5000; // 5 seconds
+
+		const timerClasses = `font-mono text-7xl ${
+			isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"
+		} ${isCritical ? "animate-pulse" : ""}`;
+
+		const containerClasses = `rounded-2xl border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] p-4 text-center transition-opacity ${
+			isActive ? "" : "opacity-40"
+		}`;
+
+		const timerStatus = (() => {
+			if (!gameId) return "Waiting";
+			if (!isConnected) return "Reconnecting…";
+			if (!isGameRunning && !gameEnded) return "Starting soon";
+		})();
+
+		const nameRating = (
+			<div className="flex items-baseline text-[rgb(var(--color-fg-secondary))]">
+				<span className="text-xl font-bold truncate">{player.name}</span>
+				<span className="ml-2 text-sm">{player.rating || ""}</span>
+			</div>
+		);
+
+		return (
+			<div>
+				{position === "top" && nameRating}
+				<div key={color} className={containerClasses}>
+					<div className={timerClasses}>{formatClockValue(ms)}</div>
+				</div>
+				{position === "bottom" && nameRating}
+				<div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-[rgb(var(--color-fg-secondary))]">
+					{timerStatus}
+				</div>
+			</div>
+		);
+	};
 
 	return (
 		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2.2fr)]">
@@ -459,135 +594,138 @@ export default function GameView() {
 				</div>
 			</div>
 
-				{/* Right col: Controls and info */}
-				<div className="col-span-1">
-					{!gameId ? (
-						<div>
-							<h2 className="text-xl font-bold">Play against bot</h2>
-							<div className="mt-4 space-y-4">
-								<div>
-									<label htmlFor="level" className="block text-sm text-gray-600 dark:text-gray-400">
-										Bot strength (1-8)
-									</label>
-									<input
-										id="level"
-										type="range"
-										min="1"
-										max="8"
-										value={selectedLevel}
-										onChange={(e) => setSelectedLevel(Number(e.target.value))}
-										className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer"
-									/>
-									<div className="mt-1 text-sm">Level {selectedLevel}</div>
-								</div>
-
-								{error && (
-									<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {error}</div>
-								)}
-
-								<button
-									type="button"
-									onClick={handleStartGame}
-									disabled={isCreatingGame}
-									className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-								>
-									{isCreatingGame ? " Creating game..." : "Start Game"}
-								</button>
-							</div>
-						</div>
-					) : (
-						<div>
-							<div className="grid grid-cols-2 flex items-center mb-4">
-								<h2 className="text-xl font-bold">Playing vs Bot</h2>
-								<div className="text-sm text-gray-600 dark:text-gray-400 justify-end flex mr-4">
-									{isConnected ? (
-										<span className="text-green-600">Connected</span>
-									) : (
-										<span>Connecting...</span>
-									)}
-								</div>
+			{/* Right col: Controls and info */}
+			<div className="col-span-1">
+				{!gameId ? (
+					<div>
+						<h2 className="text-xl font-bold">Play against bot</h2>
+						<div className="mt-4 space-y-4">
+							<div>
+								<label htmlFor="level" className="block text-sm text-gray-600 dark:text-gray-400">
+									Bot strength (1-8)
+								</label>
+								<input
+									id="level"
+									type="range"
+									min="1"
+									max="8"
+									value={selectedLevel}
+									onChange={(e) => setSelectedLevel(Number(e.target.value))}
+									className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer"
+								/>
+								<div className="mt-1 text-sm">Level {selectedLevel}</div>
 							</div>
 
-							{streamError && (
-								<div className="rounded bg-red-50 p-3 text-sm text-red-600">
-									Error: {streamError}
-								</div>
+							{error && (
+								<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {error}</div>
 							)}
 
-							<div className="flex gap-2">
-								<button
-									type="button"
-									onClick={handleResign}
-									disabled={!isConnected || gameEnded}
-									className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-								>
-									Resign
-								</button>
-								<button
-									type="button"
-									onClick={handleAbort}
-									disabled={!isConnected || gameEnded}
-									className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
-								>
-									Abort
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setGameId(null);
-										setChess(new Chess());
-										setPendingUci(null);
-										latestConfirmedMovesRef.current = "";
-									}}
-									className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-								>
-									New Game
-								</button>
-							</div>
-
-							<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-4 mb-4">
-								<h3 className="text-lg font-semibold">Game Info</h3>
-								<dl className="mt-2 space-y-2 text-sm">
-									<div className="flex justify-between">
-										<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
-										<dd className="font-medium text-xs">{gameId}</dd>
-									</div>
-									{gameState && (
-										<>
-											<div className="flex justify-between">
-												<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
-												<dd className="font-medium">{gameState.status}</dd>
-											</div>
-											{gameState.winner && (
-												<div className="flex justify-between">
-													<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
-													<dd className="font-medium">{gameState.winner}</dd>
-												</div>
-											)}
-										</>
-									)}
-								</dl>
-
-								<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
-
-								<h3 className="text-lg font-semibold">Position</h3>
-								<div className="mt-2 text-sm">
-									<div className="text-gray-600 dark:text-gray-400">
-										Turn: {chess.turn() === "w" ? "White" : "Black"}
-									</div>
-									<div className="mt-2 text-gray-600 dark:text-gray-400">
-										{chess.isCheck() && "Check! "}
-										{chess.isCheckmate() && "Checkmate! "}
-										{chess.isStalemate() && "Stalemate! "}
-										{chess.isDraw() && "Draw! "}
-									</div>
-								</div>
-
-								<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
+							<button
+								type="button"
+								onClick={handleStartGame}
+								disabled={isCreatingGame}
+								className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+							>
+								{isCreatingGame ? " Creating game..." : "Start Game"}
+							</button>
+						</div>
+					</div>
+				) : (
+					<div>
+						<div className="mb-4 space-y-3">
+							{timerOrder.map((color, index) =>
+								renderPlayerTimer(color, index === 0 ? "top" : "bottom"),
+							)}
+						</div>
+						<div className="grid grid-cols-2 flex items-center mb-4">
+							<h2 className="text-xl font-bold">Playing vs Bot</h2>
+							<div className="text-sm text-gray-600 dark:text-gray-400 justify-end flex mr-4">
+								{isConnected ? (
+									<span className="text-green-600">Connected</span>
+								) : (
+									<span>Connecting...</span>
+								)}
 							</div>
 						</div>
-					)}
-				</div>
+
+						{streamError && (
+							<div className="rounded bg-red-50 p-3 text-sm text-red-600">Error: {streamError}</div>
+						)}
+
+						<div className="flex gap-2">
+							<button
+								type="button"
+								onClick={handleResign}
+								disabled={!isConnected || gameEnded}
+								className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+							>
+								Resign
+							</button>
+							<button
+								type="button"
+								onClick={handleAbort}
+								disabled={!isConnected || gameEnded}
+								className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
+							>
+								Abort
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setGameId(null);
+									setChess(new Chess());
+									setPendingUci(null);
+									latestConfirmedMovesRef.current = "";
+								}}
+								className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+							>
+								New Game
+							</button>
+						</div>
+
+						<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-4 mb-4">
+							<h3 className="text-lg font-semibold">Game Info</h3>
+							<dl className="mt-2 space-y-2 text-sm">
+								<div className="flex justify-between">
+									<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
+									<dd className="font-medium text-xs">{gameId}</dd>
+								</div>
+								{gameState && (
+									<>
+										<div className="flex justify-between">
+											<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
+											<dd className="font-medium">{gameState.status}</dd>
+										</div>
+										{gameState.winner && (
+											<div className="flex justify-between">
+												<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
+												<dd className="font-medium">{gameState.winner}</dd>
+											</div>
+										)}
+									</>
+								)}
+							</dl>
+
+							<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
+
+							<h3 className="text-lg font-semibold">Position</h3>
+							<div className="mt-2 text-sm">
+								<div className="text-gray-600 dark:text-gray-400">
+									Turn: {chess.turn() === "w" ? "White" : "Black"}
+								</div>
+								<div className="mt-2 text-gray-600 dark:text-gray-400">
+									{chess.isCheck() && "Check! "}
+									{chess.isCheckmate() && "Checkmate! "}
+									{chess.isStalemate() && "Stalemate! "}
+									{chess.isDraw() && "Draw! "}
+								</div>
+							</div>
+
+							<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
+						</div>
+					</div>
+				)}
 			</div>
+		</div>
 	);
 }
