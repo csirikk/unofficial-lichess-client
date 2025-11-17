@@ -9,6 +9,7 @@ import { startBotGame, resignGame, abortGame, offerDraw } from "./gameActions";
 import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 import { GameStatusName } from "../../generated/types/gameStatusName";
+import { useGameClock } from "./gameClock";
 
 const getGameIdFromURL = (): string | null => {
 	try {
@@ -59,6 +60,11 @@ export default function GameView() {
 
 	// uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
+	const { whiteMs, blackMs, activeColor, isRunning } = useGameClock({
+		gameFull,
+		gameState,
+		pendingMove: pendingUci,
+	});
 	const latestConfirmedMovesRef = useRef<string>("");
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [lastMoveSquares, setLastMoveSquares] = useState<{
@@ -66,14 +72,6 @@ export default function GameView() {
 		to: Square | null;
 	}>({ from: null, to: null });
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
-	const [clockNow, setClockNow] = useState(() => Date.now());
-	const clockBaselineRef = useRef({ wtime: 0, btime: 0, updatedAt: Date.now() });
-	const latestState = useMemo(
-		() => gameState ?? gameFull?.state ?? null,
-		[gameFull?.state, gameState],
-	);
-	const latestWtime = latestState?.wtime ?? null;
-	const latestBtime = latestState?.btime ?? null;
 
 	const moveListRef = useRef<HTMLOListElement>(null);
 	const prevMoveCountRef = useRef(0);
@@ -401,53 +399,6 @@ export default function GameView() {
 
 	const movesList = chess.history();
 
-	useEffect(() => {
-		if (!gameId) {
-			clockBaselineRef.current = { wtime: 0, btime: 0, updatedAt: Date.now() };
-			setClockNow(Date.now());
-			return;
-		}
-
-		if (latestWtime == null || latestBtime == null) return;
-
-		clockBaselineRef.current = {
-			wtime: latestWtime,
-			btime: latestBtime,
-			updatedAt: Date.now(),
-		};
-		setClockNow(Date.now());
-	}, [gameId, latestWtime, latestBtime]);
-
-	const isGameRunning = Boolean(gameId && latestState?.status === GameStatusName.started);
-	const shouldTick = isGameRunning;
-
-	useEffect(() => {
-		if (!shouldTick) return;
-		const interval = window.setInterval(() => setClockNow(Date.now()), 200);
-		return () => window.clearInterval(interval);
-	}, [shouldTick]);
-
-	const activeColor = useMemo(() => {
-		if (!latestState || latestState.status !== GameStatusName.started) return null;
-		const tokens = latestState.moves?.trim().split(/\s+/).filter(Boolean) ?? [];
-		return tokens.length % 2 === 0 ? "w" : "b";
-	}, [latestState]);
-
-	const liveClocks = useMemo(() => {
-		if (!gameId || latestWtime == null || latestBtime == null) {
-			return {
-				white: null as number | null,
-				black: null as number | null,
-				active: null as "w" | "b" | null,
-			};
-		}
-
-		const elapsed = Math.max(0, clockNow - clockBaselineRef.current.updatedAt);
-		const white = Math.max(0, clockBaselineRef.current.wtime - (activeColor === "w" ? elapsed : 0));
-		const black = Math.max(0, clockBaselineRef.current.btime - (activeColor === "b" ? elapsed : 0));
-		return { white, black, active: activeColor };
-	}, [activeColor, clockNow, gameId, latestBtime, latestWtime]);
-
 	const formatClockValue = (ms: number | null) => {
 		if (ms == null) return "--:--";
 		const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -505,8 +456,8 @@ export default function GameView() {
 	const renderPlayerTimer = (color: "white" | "black", position: "top" | "bottom") => {
 		const player = playerPanels[color];
 		const isWhite = color === "white";
-		const ms = isWhite ? liveClocks.white : liveClocks.black;
-		const isActive = liveClocks.active === (isWhite ? "w" : "b");
+		const ms = isWhite ? whiteMs : blackMs;
+		const isActive = activeColor === (isWhite ? "w" : "b");
 		const isLow = typeof ms === "number" && ms <= 10000; // 10 seconds
 		const isCritical = typeof ms === "number" && ms <= 5000; // 5 seconds
 
@@ -521,7 +472,7 @@ export default function GameView() {
 		const timerStatus = (() => {
 			if (!gameId) return "Waiting";
 			if (!isConnected) return "Reconnecting…";
-			if (!isGameRunning && !gameEnded) return "Starting soon";
+			if (!isRunning && !gameEnded) return "Starting soon";
 		})();
 
 		const nameRating = (
