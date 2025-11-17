@@ -1,5 +1,5 @@
 import { challengeAi } from "../../generated/client/challenges";
-import { boardGameResign, boardGameAbort } from "../../generated/client/board";
+import { boardGameResign, boardGameAbort, boardGameDraw } from "../../generated/client/board";
 import { createAuthHeaders } from "../../libs/api";
 
 export async function startBotGame(
@@ -33,6 +33,15 @@ export async function abortGame(gameId: string) {
 	if (response.status !== 200) {
 		alert("Abort failed");
 		throw new Error("Abort failed");
+	}
+	return response.data;
+}
+
+export async function offerDraw(gameId: string) {
+	const response = await boardGameDraw(gameId, "yes", createAuthHeaders());
+	if (response.status !== 200) {
+		alert("Draw offer failed");
+		throw new Error("Draw offer failed");
 	}
 	return response.data;
 }

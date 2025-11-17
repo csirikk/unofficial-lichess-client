@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Chessboard, type ChessboardOptions } from "react-chessboard";
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
+import { Flag, Handshake, CircleX } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
-import { startBotGame, resignGame, abortGame } from "./gameActions";
+import { startBotGame, resignGame, abortGame, offerDraw } from "./gameActions";
 import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 import { GameStatusName } from "../../generated/types/gameStatusName";
@@ -23,7 +24,9 @@ const setGameIdInURL = (id: string | null) => {
 		if (id) url.searchParams.set("game", id);
 		else url.searchParams.delete("game");
 		window.history.replaceState(null, "", url);
-	} catch {}
+	} catch (error) {
+		console.warn("Failed to update game ID in URL", error);
+	}
 };
 
 const findKingSquare = (board: Chess, color: "w" | "b"): Square | null => {
@@ -194,6 +197,22 @@ export default function GameView() {
 		} catch (e) {
 			console.error("Abort failed:", e);
 		}
+	};
+
+	const handleOfferDraw = async () => {
+		if (!gameId || !isConnected || gameEnded) return;
+		try {
+			await offerDraw(gameId);
+		} catch (e) {
+			console.error("Draw offer failed:", e);
+		}
+	};
+
+	const resetToLobby = () => {
+		setGameId(null);
+		setChess(new Chess());
+		setPendingUci(null);
+		latestConfirmedMovesRef.current = "";
 	};
 
 	const ownsSquare = (square: Square) => {
@@ -525,6 +544,26 @@ export default function GameView() {
 			</div>
 		);
 	};
+	const gameActions = [
+		{
+			label: "Resign",
+			icon: Flag,
+			onClick: handleResign,
+			disabled: !isConnected || gameEnded,
+		},
+		{
+			label: "Offer draw",
+			icon: Handshake,
+			onClick: handleOfferDraw,
+			disabled: !isConnected || gameEnded,
+		},
+		{
+			label: "Abort",
+			icon: CircleX,
+			onClick: handleAbort,
+			disabled: !isConnected || gameEnded,
+		},
+	];
 
 	return (
 		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2.2fr)]">
@@ -601,7 +640,10 @@ export default function GameView() {
 						<h2 className="text-xl font-bold">Play against bot</h2>
 						<div className="mt-4 space-y-4">
 							<div>
-								<label htmlFor="level" className="block text-sm text-gray-600 dark:text-gray-400">
+								<label
+									htmlFor="level"
+									className="block text-sm text-[rgb(var(--color-fg-secondary))]"
+								>
 									Bot strength (1-8)
 								</label>
 								<input
@@ -611,20 +653,25 @@ export default function GameView() {
 									max="8"
 									value={selectedLevel}
 									onChange={(e) => setSelectedLevel(Number(e.target.value))}
-									className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer"
+									className="w-full h-2 rounded-lg bg-[rgb(var(--color-surface-card))] appearance-none cursor-pointer"
 								/>
 								<div className="mt-1 text-sm">Level {selectedLevel}</div>
 							</div>
 
 							{error && (
-								<div className="rounded bg-red-50 p-4 text-sm text-red-600">Error: {error}</div>
+								<div
+									className="rounded bg-[rgb(var(--color-error)/0.1)] p-4 text-sm text-[rgb(var(--color-error))]"
+									role="alert"
+								>
+									Error: {error}
+								</div>
 							)}
 
 							<button
 								type="button"
 								onClick={handleStartGame}
 								disabled={isCreatingGame}
-								className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+								className="rounded bg-[rgb(var(--color-secondary-500))] px-6 py-2 text-white hover:bg-[rgb(var(--color-secondary-700))]"
 							>
 								{isCreatingGame ? " Creating game..." : "Start Game"}
 							</button>
@@ -632,56 +679,77 @@ export default function GameView() {
 					</div>
 				) : (
 					<div>
-						<div className="mb-4 space-y-3">
-							{timerOrder.map((color, index) =>
-								renderPlayerTimer(color, index === 0 ? "top" : "bottom"),
-							)}
+						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+							<div className="flex-1 space-y-3">
+								{timerOrder.map((color, index) =>
+									renderPlayerTimer(color, index === 0 ? "top" : "bottom"),
+								)}
+							</div>
+							{/* Game Actions */}
+							<div className="flex flex-col gap-1 self-center">
+								{gameActions.map(({ label, icon: Icon, onClick, disabled }) => (
+									<button
+										key={label}
+										type="button"
+										onClick={onClick}
+										disabled={disabled}
+										aria-label={label}
+										title={label}
+										className={`
+											inline-flex items-center justify-center p-2 
+											rounded-full transition 
+											disabled:opacity-40 disabled:cursor-not-allowed 
+											text-gray-500 hover:bg-[rgb(var(--color-surface-border)/0.1)] hover:text-[rgb(var(--color-fg-primary))]
+											${disabled ? "hover:bg-transparent hover:text-gray-500" : ""}`}
+									>
+										<Icon className="h-6 w-6" aria-hidden />
+									</button>
+								))}
+							</div>
 						</div>
+
+						{gameEnded && (
+							<div className="mb-6 flex flex-col gap-2 sm:flex-row">
+								<button
+									type="button"
+									onClick={resetToLobby}
+									className="rounded-lg bg-[rgb(var(--color-surface-nav))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-primary))] transition hover:bg-[rgb(var(--color-surface-border))] disabled:opacity-50"
+								>
+									New Game
+								</button>
+								<button
+									type="button"
+									onClick={handleStartGame}
+									disabled={isCreatingGame}
+									className="rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-700))] disabled:opacity-50"
+								>
+									{isCreatingGame ? "Starting…" : "Rematch"}
+								</button>
+							</div>
+						)}
 						<div className="grid grid-cols-2 flex items-center mb-4">
 							<h2 className="text-xl font-bold">Playing vs Bot</h2>
-							<div className="text-sm text-gray-600 dark:text-gray-400 justify-end flex mr-4">
+							<div className="text-sm text-[rgb(var(--color-fg-secondary))] justify-end flex mr-4">
 								{isConnected ? (
-									<span className="text-green-600">Connected</span>
+									<span className="text-[rgb(var(--color-success))]" title="Connected">
+										Connected
+									</span>
 								) : (
-									<span>Connecting...</span>
+									<span className="text-[rgb(var(--color-warning))]" title="Connecting">
+										Connecting...
+									</span>
 								)}
 							</div>
 						</div>
 
 						{streamError && (
-							<div className="rounded bg-red-50 p-3 text-sm text-red-600">Error: {streamError}</div>
+							<div
+								className="rounded bg-[rgb(var(--color-error)/0.1)] p-3 text-sm text-[rgb(var(--color-error))]"
+								role="alert"
+							>
+								Error: {streamError}
+							</div>
 						)}
-
-						<div className="flex gap-2">
-							<button
-								type="button"
-								onClick={handleResign}
-								disabled={!isConnected || gameEnded}
-								className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-							>
-								Resign
-							</button>
-							<button
-								type="button"
-								onClick={handleAbort}
-								disabled={!isConnected || gameEnded}
-								className="rounded bg-yellow-600 px-4 py-2 text-sm text-white hover:bg-yellow-700 disabled:opacity-50"
-							>
-								Abort
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setGameId(null);
-									setChess(new Chess());
-									setPendingUci(null);
-									latestConfirmedMovesRef.current = "";
-								}}
-								className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-							>
-								New Game
-							</button>
-						</div>
 
 						<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-4 mb-4">
 							<h3 className="text-lg font-semibold">Game Info</h3>
@@ -720,8 +788,6 @@ export default function GameView() {
 									{chess.isDraw() && "Draw! "}
 								</div>
 							</div>
-
-							<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
 						</div>
 					</div>
 				)}
