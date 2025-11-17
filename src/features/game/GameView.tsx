@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Chessboard } from "react-chessboard";
-import { Chess, type Square } from "chess.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { Chessboard, type ChessboardOptions } from "react-chessboard";
+import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { useAuth } from "../auth/AuthProvider";
 import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
 import { startBotGame, resignGame, abortGame } from "./gameActions";
@@ -25,6 +26,21 @@ const setGameIdInURL = (id: string | null) => {
 	} catch {}
 };
 
+const findKingSquare = (board: Chess, color: "w" | "b"): Square | null => {
+	const matrix = board.board();
+	for (let rank = 0; rank < matrix.length; rank += 1) {
+		for (let file = 0; file < matrix[rank].length; file += 1) {
+			const piece = matrix[rank][file];
+			if (piece && piece.type === "k" && piece.color === color) {
+				const fileChar = String.fromCharCode("a".charCodeAt(0) + file);
+				const rankChar = (8 - rank).toString();
+				return `${fileChar}${rankChar}` as Square;
+			}
+		}
+	}
+	return null;
+};
+
 export default function GameView() {
 	const { user } = useAuth();
 
@@ -41,8 +57,16 @@ export default function GameView() {
 	// uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
 	const latestConfirmedMovesRef = useRef<string>("");
+	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+	const [lastMoveSquares, setLastMoveSquares] = useState<{
+		from: Square | null;
+		to: Square | null;
+	}>({ from: null, to: null });
+	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
 
 	const gameEnded = !!(gameState?.status && gameState.status !== GameStatusName.started);
+	const myColor = getPlayerColor(gameFull, user);
+	const playerColor = myColor === GameColor.white ? "w" : "b";
 
 	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
@@ -70,12 +94,34 @@ export default function GameView() {
 				}
 			}
 		}
+
+		const tokens = source.split(" ").filter(Boolean);
+		if (tokens.length > 0) {
+			const { from, to } = uciToMove(tokens[tokens.length - 1]);
+			setLastMoveSquares({ from: from as Square, to: to as Square });
+		} else {
+			setLastMoveSquares({ from: null, to: null });
+		}
+
 		setChess(next);
 	}, [gameFull, gameState, pendingUci]);
 
 	useEffect(() => {
 		chessRef.current = chess;
-	}, [chess]);
+
+		if (selectedSquare) {
+			const piece = chess.get(selectedSquare);
+			if (!piece || piece.color !== playerColor) {
+				setSelectedSquare(null);
+			}
+		}
+
+		if (chess.isCheck()) {
+			setCheckSquare(findKingSquare(chess, chess.turn()) ?? null);
+		} else {
+			setCheckSquare(null);
+		}
+	}, [chess, playerColor, selectedSquare]);
 
 	// show gameID change in url
 	useEffect(() => {
@@ -86,8 +132,6 @@ export default function GameView() {
 	useEffect(() => {
 		if (gameEnded) setGameIdInURL(null);
 	}, [gameEnded]);
-
-	const myColor = getPlayerColor(gameFull, user);
 
 	const handleStartGame = async () => {
 		setIsCreatingGame(true);
@@ -125,6 +169,61 @@ export default function GameView() {
 		}
 	};
 
+	const ownsSquare = (square: Square) => {
+		const piece = chessRef.current.get(square);
+		return Boolean(piece && piece.color === playerColor);
+	};
+
+	const handleSelectSquare = (square: Square | null) => {
+		if (!square) {
+			setSelectedSquare(null);
+			return;
+		}
+		if (selectedSquare === square) {
+			setSelectedSquare(null);
+			return;
+		}
+		if (ownsSquare(square)) {
+			setSelectedSquare(square);
+		} else {
+			setSelectedSquare(null);
+		}
+	};
+
+	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) => {
+		if (!square) return;
+		const next = square as Square;
+		if (ownsSquare(next)) {
+			handleSelectSquare(next);
+			return;
+		}
+		setSelectedSquare(null);
+	};
+
+	const handlePieceClick: ChessboardOptions["onPieceClick"] = ({ square }) => {
+		if (!square) return;
+		const next = square as Square;
+		if (ownsSquare(next)) {
+			handleSelectSquare(next);
+			return;
+		}
+		setSelectedSquare(null);
+	};
+
+	const handlePieceDrag: ChessboardOptions["onPieceDrag"] = ({ square }) => {
+		if (!square) return;
+		const next = square as Square;
+		if (!ownsSquare(next)) return;
+		if (selectedSquare !== next) {
+			setSelectedSquare(next);
+		}
+	};
+
+	const canDragPiece: ChessboardOptions["canDragPiece"] = ({ square }) => {
+		if (!square) return false;
+		return ownsSquare(square as Square);
+	};
+
 	const onPieceDrop = (args: {
 		piece: { pieceType: string; isSparePiece: boolean; position: string };
 		sourceSquare: string;
@@ -139,7 +238,6 @@ export default function GameView() {
 		if (!isPlayerInGame(gameFull, user)) return false;
 
 		const board = chessRef.current;
-		const playerColor = myColor === GameColor.white ? "w" : "b";
 		if (board.turn() !== playerColor) return false;
 
 		try {
@@ -161,6 +259,7 @@ export default function GameView() {
 
 			const uci = moveToUci({ from: sourceSquare, to: targetSquare, promotion: move.promotion });
 			setPendingUci(uci);
+			setSelectedSquare(null);
 
 			(async () => {
 				try {
@@ -185,21 +284,97 @@ export default function GameView() {
 		}
 	};
 
+	const legalMoves = useMemo<ChessMove[]>(() => {
+		if (!selectedSquare) return [];
+		try {
+			return chess.moves({ square: selectedSquare, verbose: true }) as ChessMove[];
+		} catch {
+			return [];
+		}
+	}, [chess, selectedSquare]);
+	const squareStyles = useMemo<Record<string, CSSProperties>>(() => {
+		const styles: Record<string, CSSProperties> = {};
+
+		const appendShadow = (square: Square | null, shadow: string) => {
+			if (!square) return;
+			const previous = styles[square] ?? {};
+			const nextShadow = previous.boxShadow ? `${previous.boxShadow}, ${shadow}` : shadow;
+			styles[square] = { ...previous, boxShadow: nextShadow };
+		};
+
+		const tintSquare = (square: Square | null, color: string) => {
+			if (!square) return;
+			appendShadow(square, `inset 0 0 0 9999px ${color}`);
+		};
+
+		// Last move
+		tintSquare(lastMoveSquares.from, "rgb(var(--color-chess-move-last) / 0.37)");
+		tintSquare(lastMoveSquares.to, "rgb(var(--color-chess-move-last) / 0.37)");
+
+		// Selected square
+		if (selectedSquare) {
+			tintSquare(selectedSquare, "rgb(var(--color-primary-400) / 0.22)");
+			appendShadow(selectedSquare, "inset 0 0 0 2px rgb(var(--color-primary-500) / 0.9)");
+		}
+
+		// Legal moves for currently selected piece
+		for (const move of legalMoves) {
+			const target = move.to as Square;
+
+			if (move.isCapture()) {
+				// Capture possible
+				styles[target] = {
+					...styles[target],
+					backgroundImage:
+						"radial-gradient(circle, rgb(var(--color-chess-move-draw) / 0.8) 0, rgb(var(--color-chess-move-draw) / 0.8) 65%, transparent 70%)",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center",
+					backgroundSize: "100% 100%",
+				};
+			} else {
+				// Quiet move
+				styles[target] = {
+					...styles[target],
+					backgroundImage:
+						"radial-gradient(circle, rgb(var(--color-chess-move-legal-dot) / 0.2) 0, rgb(var(--color-chess-move-legal-dot) / 0.2) 32%, transparent 36%)",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center",
+					backgroundSize: "38% 38%",
+				};
+			}
+		}
+
+		// King in check: red square overlay (stays as full-square tint)
+		if (checkSquare) {
+			tintSquare(checkSquare, "rgb(var(--color-chess-in-check) / 0.18)");
+			appendShadow(checkSquare, "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)");
+		}
+
+		return styles;
+	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare]);
+
 	const movesList = chess.history();
 
 	return (
-		<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+		<div className="rounded-2xl border border-[rgb(var(--color-surface-border)/0.7)] bg-[rgb(var(--color-surface-card))] p-6 text-[rgb(var(--color-fg-primary))] shadow-[0_25px_65px_rgba(0,0,0,0.35)]">
 			<div className="grid gap-6 md:grid-cols-2">
 				{/* Left col: Board */}
-				<div className={`md:col-span-1 ${!gameId ? "grayscale-50" : ""}`}>
-					<div className="w-full max-w-full aspect-square">
-						<Chessboard
-							options={{
-								position: chess.fen(),
-								boardOrientation: myColor,
-								onPieceDrop,
-							}}
-						/>
+				<div className={`md:col-span-1 transition-opacity ${!gameId ? "opacity-75" : ""}`}>
+					<div className="aspect-square w-full max-w-full rounded-3xl border border-[rgb(var(--color-surface-border)/0.6)] bg-[rgb(var(--color-surface-base))] p-3">
+						<div className="size-full">
+							<Chessboard
+								options={{
+									position: chess.fen(),
+									boardOrientation: myColor,
+									onPieceDrop,
+									onSquareClick: handleSquareClick,
+									onPieceClick: handlePieceClick,
+									onPieceDrag: handlePieceDrag,
+									canDragPiece,
+									squareStyles,
+								}}
+							/>
+						</div>
 					</div>
 				</div>
 
