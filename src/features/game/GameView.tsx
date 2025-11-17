@@ -481,7 +481,7 @@ export default function GameView() {
 					gameFull?.white?.rating != null
 						? `(${gameFull.white.rating})`
 						: gameFull?.white?.aiLevel != null
-							? `(${gameFull.white.aiLevel})`
+							? `(difficulty ${gameFull.white.aiLevel})`
 							: "",
 			},
 			black: {
@@ -490,7 +490,7 @@ export default function GameView() {
 					gameFull?.black?.rating != null
 						? `(${gameFull.black.rating})`
 						: gameFull?.black?.aiLevel != null
-							? `(${gameFull.black.aiLevel})`
+							? `(difficulty ${gameFull.black.aiLevel})`
 							: "",
 			},
 		};
@@ -514,7 +514,7 @@ export default function GameView() {
 			isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"
 		} ${isCritical ? "animate-pulse" : ""}`;
 
-		const containerClasses = `rounded-2xl border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] p-4 text-center transition-opacity ${
+		const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] p-4 text-center transition-opacity ${
 			isActive ? "" : "opacity-40"
 		}`;
 
@@ -525,9 +525,17 @@ export default function GameView() {
 		})();
 
 		const nameRating = (
-			<div className="flex items-baseline text-[rgb(var(--color-fg-secondary))]">
-				<span className="text-xl font-bold truncate">{player.name}</span>
-				<span className="ml-2 text-sm">{player.rating || ""}</span>
+			<div className="flex text-[rgb(var(--color-fg-primary))]">
+				<div
+					className={
+						position === "top"
+							? "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-t-lg"
+							: "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-b-lg"
+					}
+				>
+					<div className="text-xl font-bold truncate">{player.name}</div>
+					<div className="ml-1 text-sm">{player.rating || ""}</div>
+				</div>
 			</div>
 		);
 
@@ -783,7 +791,7 @@ export default function GameView() {
 								</div>
 								<div className="mt-2 text-gray-600 dark:text-gray-400">
 									{chess.isCheck() && "Check! "}
-									{chess.isCheckmate() && "Checkmate! "}
+									`` {chess.isCheckmate() && "Checkmate! "}
 									{chess.isStalemate() && "Stalemate! "}
 									{chess.isDraw() && "Draw! "}
 								</div>
