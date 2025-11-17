@@ -473,7 +473,7 @@ export default function GameView() {
 
 		const timerStatus = (() => {
 			if (!gameId) return "Waiting";
-			if (!isConnected) return "Reconnecting…";
+			if (gameEnded ? null : !isConnected) return "Reconnecting…";
 			if (!isRunning && !gameEnded) return "Starting soon";
 		})();
 
@@ -692,7 +692,7 @@ export default function GameView() {
 						<div className="grid grid-cols-2 flex items-center mb-4">
 							<h2 className="text-xl font-bold">Playing vs Bot</h2>
 							<div className="text-sm text-[rgb(var(--color-fg-secondary))] justify-end flex mr-4">
-								{isConnected ? (
+								{gameEnded ? null : isConnected ? (
 									<span className="text-[rgb(var(--color-success))]" title="Connected">
 										Connected
 									</span>

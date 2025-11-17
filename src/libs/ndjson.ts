@@ -33,8 +33,10 @@ export function readNdjsonStream<T = unknown>(
 		}
 	};
 
-	const loop: () => Promise<void> = () =>
-		stream.read().then(({ done, value }) => {
+	const loop: () => Promise<void> = async () => {
+		try {
+			const { done, value } = await stream.read();
+
 			if (done) {
 				// Process any remaining data in buffer
 				if (buf.length > 0) process(buf);
@@ -56,7 +58,18 @@ export function readNdjsonStream<T = unknown>(
 			}
 
 			return loop();
-		});
+		} catch (error) {
+			// Ignore abort errors, they are expected on stream close
+			if (
+				(error instanceof DOMException && error.name === "AbortError") ||
+				(error instanceof Error && error.name === "AbortError")
+			) {
+				return;
+			}
+
+			throw error;
+		}
+	};
 
 	return {
 		closePromise: loop(),

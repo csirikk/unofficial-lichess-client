@@ -77,8 +77,11 @@ export function gameStream(gameId: string | null) {
 				await control.closePromise;
 			} catch (error) {
 				if (mounted) {
-					setIsConnected(false);
 					setError(error instanceof Error ? error.message : "Stream error");
+				}
+			} finally {
+				if (mounted) {
+					setIsConnected(false);
 				}
 			}
 		})();
