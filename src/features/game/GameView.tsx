@@ -55,10 +55,10 @@ export default function GameView() {
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
-	// stream state
+	// Stream state
 	const { gameFull, gameState, isConnected, error: streamError, makeMove } = gameStream(gameId);
 
-	// uci overlay
+	// Uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
 	const { whiteMs, blackMs, activeColor, isRunning } = useGameClock({
 		gameFull,
@@ -135,17 +135,17 @@ export default function GameView() {
 		}
 	}, [chess, playerColor, selectedSquare]);
 
-	// show gameID change in url
+	// Show gameID change in url
 	useEffect(() => {
 		setGameIdInURL(gameId);
 	}, [gameId]);
 
-	// remove gameID from url
+	// Remove gameID from url
 	useEffect(() => {
 		if (gameEnded) setGameIdInURL(null);
 	}, [gameEnded]);
 
-	// auto-scroll moves list to bottom when moves change
+	// Auto-scroll moves list to bottom when moves change
 	useEffect(() => {
 		const currentMoveCount = chess.history().length;
 		if (currentMoveCount > prevMoveCountRef.current) {
@@ -336,6 +336,7 @@ export default function GameView() {
 			return [];
 		}
 	}, [chess, selectedSquare]);
+
 	const squareStyles = useMemo<Record<string, CSSProperties>>(() => {
 		const styles: Record<string, CSSProperties> = {};
 
@@ -388,7 +389,7 @@ export default function GameView() {
 			}
 		}
 
-		// King in check: red square overlay (stays as full-square tint)
+		// King in check
 		if (checkSquare) {
 			tintSquare(checkSquare, "rgb(var(--color-chess-in-check) / 0.18)");
 			appendShadow(checkSquare, "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)");
@@ -406,6 +407,7 @@ export default function GameView() {
 		const seconds = totalSeconds % 60;
 		return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 	};
+
 	const moveRows = useMemo(
 		() =>
 			movesList.reduce(
@@ -503,6 +505,7 @@ export default function GameView() {
 			</div>
 		);
 	};
+
 	const gameActions = [
 		{
 			label: "Resign",
@@ -742,7 +745,7 @@ export default function GameView() {
 								</div>
 								<div className="mt-2 text-gray-600 dark:text-gray-400">
 									{chess.isCheck() && "Check! "}
-									`` {chess.isCheckmate() && "Checkmate! "}
+									{chess.isCheckmate() && "Checkmate! "}
 									{chess.isStalemate() && "Stalemate! "}
 									{chess.isDraw() && "Draw! "}
 								</div>
