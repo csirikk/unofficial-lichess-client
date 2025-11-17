@@ -64,6 +64,9 @@ export default function GameView() {
 	}>({ from: null, to: null });
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
 
+	const moveListRef = useRef<HTMLOListElement>(null);
+	const prevMoveCountRef = useRef(0);
+
 	const gameEnded = !!(gameState?.status && gameState.status !== GameStatusName.started);
 	const myColor = getPlayerColor(gameFull, user);
 	const playerColor = myColor === GameColor.white ? "w" : "b";
@@ -132,6 +135,22 @@ export default function GameView() {
 	useEffect(() => {
 		if (gameEnded) setGameIdInURL(null);
 	}, [gameEnded]);
+
+	// auto-scroll moves list to bottom when moves change
+	useEffect(() => {
+		const currentMoveCount = chess.history().length;
+		if (currentMoveCount > prevMoveCountRef.current) {
+			prevMoveCountRef.current = currentMoveCount;
+			if (moveListRef.current) {
+				// Use setTimeout to ensure DOM is updated before scrolling
+				setTimeout(() => {
+					if (moveListRef.current) {
+						moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
+					}
+				}, 0);
+			}
+		}
+	}, [chess]);
 
 	const handleStartGame = async () => {
 		setIsCreatingGame(true);
@@ -354,29 +373,91 @@ export default function GameView() {
 	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare]);
 
 	const movesList = chess.history();
+	const moveRows = useMemo(
+		() =>
+			movesList.reduce(
+				(rows, move, index) => {
+					if (index % 2 === 0) {
+						rows.push({
+							moveNumber: Math.floor(index / 2) + 1,
+							white: move,
+							black: movesList[index + 1] ?? "",
+						});
+					}
+					return rows;
+				},
+				[] as { moveNumber: number; white: string; black: string }[],
+			),
+		[movesList],
+	);
 
 	return (
-		<div className="rounded-2xl border border-[rgb(var(--color-surface-border)/0.7)] bg-[rgb(var(--color-surface-card))] p-6 text-[rgb(var(--color-fg-primary))] shadow-[0_25px_65px_rgba(0,0,0,0.35)]">
-			<div className="grid gap-6 md:grid-cols-2">
-				{/* Left col: Board */}
-				<div className={`md:col-span-1 transition-opacity ${!gameId ? "opacity-75" : ""}`}>
-					<div className="aspect-square w-full max-w-full rounded-3xl border border-[rgb(var(--color-surface-border)/0.6)] bg-[rgb(var(--color-surface-base))] p-3">
-						<div className="size-full">
-							<Chessboard
-								options={{
-									position: chess.fen(),
-									boardOrientation: myColor,
-									onPieceDrop,
-									onSquareClick: handleSquareClick,
-									onPieceClick: handlePieceClick,
-									onPieceDrag: handlePieceDrag,
-									canDragPiece,
-									squareStyles,
-								}}
-							/>
+		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2.2fr)]">
+			{/* Left col: moves column + board */}
+			<div className={`md:col-span-1 transition-opacity ${!gameId ? "opacity-80" : ""}`}>
+				<div className="flex h-full items-stretch gap-4">
+					{/* Moves column */}
+					<aside
+						className={`w-48 shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-xs text-[rgb(var(--color-fg-secondary))] md:flex max-h-[70vh] ${
+							!gameId ? "hidden" : ""
+						}`}
+					>
+						<div className="mb-2 text-[14px] font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))]">
+							Moves
+						</div>
+						<div className="flex items-center justify-between pb-1 text-[12px] uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]">
+							<span className="w-6">#</span>
+							<span className="flex-1 text-center">White</span>
+							<span className="flex-1 text-center">Black</span>
+						</div>
+						<ol
+							className="mt-1 flex-1 space-y-px overflow-y-auto pr-1 text-[14px] scroll-smooth"
+							ref={moveListRef}
+						>
+							{moveRows.map((row, index) => (
+								<li
+									key={row.moveNumber}
+									className={`flex items-center justify-between gap-2 px-1 py-0.5 ${
+										index === moveRows.length - 1
+											? "bg-[rgb(var(--color-surface-card))]"
+											: "hover:bg-[rgb(var(--color-surface-card)/0.7)]"
+									}`}
+								>
+									<span className="w-6 text-[rgb(var(--color-fg-secondary))]">
+										{row.moveNumber}.
+									</span>
+									<span className="flex-1 truncate text-[rgb(var(--color-fg-primary))]">
+										{row.white}
+									</span>
+									<span className="flex-1 truncate text-left text-[rgb(var(--color-fg-primary))]">
+										{row.black}
+									</span>
+								</li>
+							))}
+						</ol>
+					</aside>
+
+					{/* Board */}
+					<div className="flex-1">
+						<div className="aspect-square w-full max-w-full border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] p-2">
+							<div className="size-full">
+								<Chessboard
+									options={{
+										position: chess.fen(),
+										boardOrientation: myColor,
+										onPieceDrop,
+										onSquareClick: handleSquareClick,
+										onPieceClick: handlePieceClick,
+										onPieceDrag: handlePieceDrag,
+										canDragPiece,
+										squareStyles,
+									}}
+								/>
+							</div>
 						</div>
 					</div>
 				</div>
+			</div>
 
 				{/* Right col: Controls and info */}
 				<div className="col-span-1">
@@ -503,29 +584,10 @@ export default function GameView() {
 								</div>
 
 								<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
-
-								<h3 className="mb-2 text-lg font-semibold">Move History</h3>
-								<div className="mt-2 max-h-48 overflow-y-auto text-sm font-mono">
-									{movesList.length === 0 ? (
-										<span className="text-gray-600 dark:text-gray-400">No moves yet</span>
-									) : (
-										movesList.map((move, i) => (
-											<span
-												// stable-ish key without using the raw index:
-												key={movesList.slice(0, i + 1).join(" ")}
-												className="mr-2"
-											>
-												{i % 2 === 0 && `${Math.floor(i / 2) + 1}. `}
-												{move}
-											</span>
-										))
-									)}
-								</div>
 							</div>
 						</div>
 					)}
 				</div>
 			</div>
-		</div>
 	);
 }
