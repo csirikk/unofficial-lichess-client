@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Chessboard, type ChessboardOptions } from "react-chessboard";
+import {
+	Chessboard,
+	type ChessboardOptions,
+	type PieceDropHandlerArgs,
+	defaultPieces,
+	type PieceRenderObject,
+	getRelativeCoords,
+} from "react-chessboard";
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { Flag, Handshake, CircleX } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
@@ -10,6 +17,30 @@ import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 import { GameStatusName } from "../../generated/types/gameStatusName";
 import { useGameClock } from "./gameClock";
+
+type PromotionPiece = "q" | "r" | "b" | "n";
+
+type PromotionRequest = {
+	from: Square;
+	to: Square;
+	color: "w" | "b";
+} | null;
+
+type PromotionDropdownMetrics = {
+	left: number;
+	top: number;
+	squareSize: number;
+	direction: "down" | "up";
+};
+
+const PROMOTION_PIECES: PromotionPiece[] = ["q", "r", "b", "n"];
+
+const PROMOTION_PIECE_LABELS: Record<PromotionPiece, string> = {
+	q: "Queen",
+	r: "Rook",
+	b: "Bishop",
+	n: "Knight",
+};
 
 const getGameIdFromURL = (): string | null => {
 	try {
@@ -55,6 +86,42 @@ export default function GameView() {
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
+	const [promotionRequest, setPromotionRequest] = useState<PromotionRequest>(null);
+	const [boardWidth, setBoardWidth] = useState(0);
+	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
+	const boardContainerRef = useCallback((node: HTMLDivElement | null) => {
+		boardResizeCleanupRef.current?.();
+		boardResizeCleanupRef.current = null;
+
+		if (!node) {
+			setBoardWidth(0);
+			return;
+		}
+
+		const measure = () => {
+			setBoardWidth(node.getBoundingClientRect().width);
+		};
+
+		measure();
+
+		if (typeof window === "undefined") return;
+		const globalWindow = window as Window & typeof globalThis;
+
+		if ("ResizeObserver" in globalWindow) {
+			const observer = new ResizeObserver(() => measure());
+			observer.observe(node);
+			boardResizeCleanupRef.current = () => observer.disconnect();
+			return;
+		}
+	}, []);
+
+	useEffect(
+		() => () => {
+			boardResizeCleanupRef.current?.();
+		},
+		[],
+	);
+
 	// Stream state
 	const { gameFull, gameState, isConnected, error: streamError, makeMove } = gameStream(gameId);
 
@@ -76,9 +143,86 @@ export default function GameView() {
 	const moveListRef = useRef<HTMLOListElement>(null);
 	const prevMoveCountRef = useRef(0);
 
-	const gameEnded = !!(gameState?.status && gameState.status !== GameStatusName.started);
+	const gameEnded = Boolean(gameState?.status && gameState.status !== GameStatusName.started);
 	const myColor = getPlayerColor(gameFull, user);
-	const playerColor = myColor === GameColor.white ? "w" : "b";
+	const boardOrientation = (myColor ?? GameColor.white) as "white" | "black";
+	const playerColor = boardOrientation === GameColor.white ? "w" : "b";
+
+	const promotionDropdown = useMemo<PromotionDropdownMetrics | null>(() => {
+		if (!promotionRequest || !boardWidth) return null;
+		const squareSize = boardWidth / 8;
+		const coords = getRelativeCoords(boardOrientation, boardWidth, 8, 8, promotionRequest.to);
+		const anchorLeft = coords.x - squareSize / 2;
+		const anchorTop = coords.y - squareSize / 2;
+		const dropdownHeight = squareSize * PROMOTION_PIECES.length;
+		const shouldOpenDownwards = anchorTop < boardWidth / 2;
+		const top = shouldOpenDownwards
+			? anchorTop + squareSize
+			: Math.max(anchorTop - dropdownHeight, 0);
+		return {
+			left: anchorLeft,
+			top,
+			squareSize,
+			direction: shouldOpenDownwards ? "down" : "up",
+		};
+	}, [boardOrientation, boardWidth, promotionRequest]);
+
+	const isPromotionMove = (source: string, target: string): boolean => {
+		const board = chessRef.current;
+		const piece = board.get(source as Square);
+		if (!piece || piece.type !== "p") return false;
+
+		// last rank for each color
+		if (piece.color === "w" && target[1] === "8") return true;
+		if (piece.color === "b" && target[1] === "1") return true;
+
+		return false;
+	};
+
+	const sendMoveWithPromotion = async (from: string, to: string, promotion: PromotionPiece) => {
+		if (!isConnected || !gameFull || !isPlayerInGame(gameFull, user)) return;
+
+		const board = chessRef.current;
+
+		if (board.turn() !== playerColor) return;
+
+		try {
+			const test = new Chess(board.fen());
+			const move = test.move({
+				from,
+				to,
+				promotion,
+			});
+			if (!move) return;
+
+			const uci = moveToUci({ from, to, promotion: move.promotion });
+
+			setPendingUci(uci);
+			setSelectedSquare(null);
+
+			try {
+				await makeMove(uci);
+			} catch (error) {
+				console.error("Failed to send move:", error);
+				setPendingUci(null);
+				const confirmed = latestConfirmedMovesRef.current ?? "";
+				const rollback = new Chess();
+				for (const u of confirmed.split(" ").filter(Boolean)) {
+					try {
+						rollback.move(uciToMove(u));
+					} catch {}
+				}
+				setChess(rollback);
+			}
+		} finally {
+			setPromotionRequest(null);
+		}
+	};
+
+	const handlePromotionChoice = (piece: PromotionPiece) => {
+		if (!promotionRequest) return;
+		void sendMoveWithPromotion(promotionRequest.from, promotionRequest.to, piece);
+	};
 
 	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
@@ -268,11 +412,7 @@ export default function GameView() {
 		return ownsSquare(square as Square);
 	};
 
-	const onPieceDrop = (args: {
-		piece: { pieceType: string; isSparePiece: boolean; position: string };
-		sourceSquare: string;
-		targetSquare: string | null;
-	}): boolean => {
+	const onPieceDrop: ChessboardOptions["onPieceDrop"] = (args: PieceDropHandlerArgs): boolean => {
 		const { sourceSquare, targetSquare } = args;
 		if (!targetSquare) return false;
 		if (!isConnected) return false;
@@ -285,19 +425,23 @@ export default function GameView() {
 		if (board.turn() !== playerColor) return false;
 
 		try {
-			const piece = board.get(sourceSquare as Square);
+			if (isPromotionMove(sourceSquare, targetSquare)) {
+				const piece = board.get(sourceSquare as Square);
+				if (!piece) return false;
 
-			// todo: handle promotions properly
-			const isPromo =
-				piece?.type === "p" &&
-				((piece.color === "w" && targetSquare[1] === "8") ||
-					(piece.color === "b" && targetSquare[1] === "1"));
+				setPromotionRequest({
+					from: sourceSquare as Square,
+					to: targetSquare as Square,
+					color: piece.color,
+				});
+				setSelectedSquare(null);
+				return false;
+			}
 
 			const test = new Chess(board.fen());
 			const move = test.move({
 				from: sourceSquare,
 				to: targetSquare,
-				promotion: isPromo ? "q" : undefined,
 			});
 			if (!move) return false;
 
@@ -576,11 +720,11 @@ export default function GameView() {
 					{/* Board */}
 					<div className="flex-1">
 						<div className="aspect-square w-full max-w-full border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] p-2">
-							<div className="size-full">
+							<div className="size-full relative" ref={boardContainerRef}>
 								<Chessboard
 									options={{
 										position: chess.fen(),
-										boardOrientation: myColor,
+										boardOrientation,
 										onPieceDrop,
 										onSquareClick: handleSquareClick,
 										onPieceClick: handlePieceClick,
@@ -589,6 +733,50 @@ export default function GameView() {
 										squareStyles,
 									}}
 								/>
+
+								{/* 🔹 Promotion picker overlay */}
+								{promotionRequest && promotionDropdown && (
+									<>
+										<button
+											type="button"
+											aria-label="Cancel pawn promotion"
+											onClick={() => setPromotionRequest(null)}
+											onContextMenu={(event) => {
+												event.preventDefault();
+												setPromotionRequest(null);
+											}}
+											className="absolute inset-0 z-30 cursor-default bg-black/30 p-0"
+										/>
+										<div
+											className="absolute z-40 flex overflow-hidden rounded-md border border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-card))] shadow-lg"
+											style={{
+												left: promotionDropdown.left,
+												top: promotionDropdown.top,
+												width: promotionDropdown.squareSize,
+												flexDirection:
+													promotionDropdown.direction === "down" ? "column" : "column-reverse",
+											}}
+										>
+											{PROMOTION_PIECES.map((piece) => {
+												const pieceKey =
+													`${promotionRequest.color}${piece.toUpperCase()}` as keyof PieceRenderObject;
+												const PieceIcon = defaultPieces[pieceKey];
+												return (
+													<button
+														key={piece}
+														type="button"
+														onClick={() => handlePromotionChoice(piece)}
+														onContextMenu={(event) => event.preventDefault()}
+														className="flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
+													>
+														{PieceIcon?.()}
+														<span className="sr-only">{PROMOTION_PIECE_LABELS[piece]}</span>
+													</button>
+												);
+											})}
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 					</div>
