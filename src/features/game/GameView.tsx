@@ -313,6 +313,7 @@ export default function GameView() {
 			const { gameId } = await startBotGame(selectedLevel, { limit: 300, increment: 3 });
 			setPendingUci(null);
 			setChess(new Chess());
+			prevMoveCountRef.current = 0;
 			setGameId(gameId);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Failed to create game");
@@ -355,6 +356,7 @@ export default function GameView() {
 		setChess(new Chess());
 		setPendingUci(null);
 		latestConfirmedMovesRef.current = "";
+		prevMoveCountRef.current = 0;
 	};
 
 	const ownsSquare = (square: Square) => {
