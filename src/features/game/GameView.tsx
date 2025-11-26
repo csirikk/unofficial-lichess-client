@@ -619,8 +619,10 @@ export default function GameView() {
 
 		const timerStatus = (() => {
 			if (!gameId) return "Waiting";
-			if (gameEnded ? null : !isConnected) return "Reconnecting…";
+			if (!gameEnded && !isConnected) return "Connecting…";
 			if (!isRunning && !gameEnded) return "Starting soon";
+			if (gameEnded) return "Game over";
+			return "Playing";
 		})();
 
 		const nameRating = (
