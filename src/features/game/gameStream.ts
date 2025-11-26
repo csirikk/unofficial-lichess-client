@@ -76,6 +76,13 @@ export function gameStream(gameId: string | null) {
 				streamControlRef.current = control;
 				await control.closePromise;
 			} catch (error) {
+				if (
+					(error instanceof DOMException && error.name === "AbortError") ||
+					(error instanceof Error && error.name === "AbortError")
+				) {
+					return;
+				}
+
 				if (mounted) {
 					setError(error instanceof Error ? error.message : "Stream error");
 				}
