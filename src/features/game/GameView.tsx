@@ -132,7 +132,7 @@ export default function GameView() {
 		gameState,
 		pendingMove: pendingUci,
 	});
-	const latestConfirmedMovesRef = useRef<string>("");
+	const serverMovesRef = useRef<string>("");
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [lastMoveSquares, setLastMoveSquares] = useState<{
 		from: Square | null;
@@ -205,7 +205,7 @@ export default function GameView() {
 			} catch (error) {
 				console.error("Failed to send move:", error);
 				setPendingUci(null);
-				const confirmed = latestConfirmedMovesRef.current ?? "";
+				const confirmed = serverMovesRef.current ?? "";
 				const rollback = new Chess();
 				for (const u of confirmed.split(" ").filter(Boolean)) {
 					try {
@@ -231,7 +231,7 @@ export default function GameView() {
 		const next = new Chess();
 
 		const confirmed = gameState?.moves ?? gameFull?.state?.moves ?? "";
-		latestConfirmedMovesRef.current = confirmed;
+		serverMovesRef.current = confirmed;
 
 		let source = confirmed;
 		if (pendingUci) {
@@ -355,7 +355,7 @@ export default function GameView() {
 		setGameId(null);
 		setChess(new Chess());
 		setPendingUci(null);
-		latestConfirmedMovesRef.current = "";
+		serverMovesRef.current = "";
 		prevMoveCountRef.current = 0;
 	};
 
@@ -457,7 +457,7 @@ export default function GameView() {
 				} catch (error) {
 					console.error("Failed to send move:", error);
 					setPendingUci(null);
-					const confirmed = latestConfirmedMovesRef.current ?? "";
+					const confirmed = serverMovesRef.current ?? "";
 					const rollback = new Chess();
 					for (const u of confirmed.split(" ").filter(Boolean)) {
 						try {
