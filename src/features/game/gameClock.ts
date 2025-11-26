@@ -29,6 +29,11 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 			if (initialTime !== null) {
 				setWhiteMs(initialTime);
 				setBlackMs(initialTime);
+			} else {
+				setWhiteMs(null);
+				setBlackMs(null);
+				setActiveColor(null);
+				setIsRunning(false);
 			}
 			return;
 		}
