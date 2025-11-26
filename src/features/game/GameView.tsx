@@ -233,12 +233,23 @@ export default function GameView() {
 		const confirmed = gameState?.moves ?? gameFull?.state?.moves ?? "";
 		serverMovesRef.current = confirmed;
 
+		const status = gameState?.status ?? gameFull?.state?.status;
+		const isGameOver = !!status && status !== GameStatusName.started;
+
 		let source = confirmed;
-		if (pendingUci) {
+
+		if (!isGameOver && pendingUci) {
 			const tokens = confirmed.split(" ").filter(Boolean);
 			const streamHasPending = tokens.includes(pendingUci);
-			if (!streamHasPending) source = confirmed ? `${confirmed} ${pendingUci}` : pendingUci;
-			else setPendingUci(null);
+
+			if (!streamHasPending) {
+				source = confirmed ? `${confirmed} ${pendingUci}` : pendingUci;
+			} else {
+				setPendingUci(null);
+			}
+		} else if (isGameOver && pendingUci) {
+			// game ended without confirming the pending move
+			setPendingUci(null);
 		}
 
 		if (source) {
