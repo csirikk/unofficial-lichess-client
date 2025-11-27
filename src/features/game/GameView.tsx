@@ -33,6 +33,17 @@ type PromotionDropdownMetrics = {
 	direction: "down" | "up";
 };
 
+type PremoveStep = {
+	uci: string;
+	from: Square;
+	to: Square;
+	promotion?: PromotionPiece;
+};
+
+type BoardPosition = {
+	[square: string]: { pieceType: string };
+};
+
 const PROMOTION_PIECES: PromotionPiece[] = ["q", "r", "b", "n"];
 
 const PROMOTION_PIECE_LABELS: Record<PromotionPiece, string> = {
@@ -127,6 +138,8 @@ export default function GameView() {
 
 	// Uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
+	const [premoveQueue, setPremoveQueue] = useState<PremoveStep[]>([]);
+	const [pendingIsPremove, setPendingIsPremove] = useState(false);
 	const { whiteMs, blackMs, activeColor, isRunning } = useGameClock({
 		gameFull,
 		gameState,
@@ -153,6 +166,18 @@ export default function GameView() {
 	const myColor = getPlayerColor(gameFull, user);
 	const boardOrientation = (myColor ?? GameColor.white) as "white" | "black";
 	const playerColor = boardOrientation === GameColor.white ? "w" : "b";
+
+	const isMyGame = Boolean(gameFull && isPlayerInGame(gameFull, user));
+
+	const canPlayMove = () =>
+		isConnected &&
+		!gameEnded &&
+		isMyGame &&
+		pendingUci == null &&
+		chessRef.current.turn() === playerColor;
+
+	const canQueuePremove = () =>
+		isConnected && !gameEnded && isMyGame && chessRef.current.turn() !== playerColor;
 
 	const promotionDropdown = useMemo<PromotionDropdownMetrics | null>(() => {
 		if (!promotionRequest || !boardWidth) return null;
@@ -204,6 +229,7 @@ export default function GameView() {
 			const uci = moveToUci({ from, to, promotion: move.promotion });
 
 			setPendingUci(uci);
+			setPendingIsPremove(false);
 			setSelectedSquare(null);
 
 			try {
@@ -211,6 +237,8 @@ export default function GameView() {
 			} catch (error) {
 				console.error("Failed to send move:", error);
 				setPendingUci(null);
+				setPendingIsPremove(false);
+				setPremoveQueue([]);
 				const confirmed = serverMovesRef.current ?? "";
 				const rollback = new Chess();
 				for (const u of confirmed.split(" ").filter(Boolean)) {
@@ -230,7 +258,6 @@ export default function GameView() {
 		void sendMoveWithPromotion(promotionRequest.from, promotionRequest.to, piece);
 	};
 
-	// Rebuild chess position from confirmed + pending move
 	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
 		if (!gameFull && !gameState) return;
@@ -252,10 +279,12 @@ export default function GameView() {
 			} else {
 				// server already confirmed this move
 				setPendingUci(null);
+				setPendingIsPremove(false);
 			}
 		} else if (gameEnded && pendingUci) {
 			// game ended without confirming the pending move → drop it
 			setPendingUci(null);
+			setPendingIsPremove(false);
 		}
 
 		if (source) {
@@ -279,6 +308,7 @@ export default function GameView() {
 		setChess(next);
 	}, [gameFull, gameState, pendingUci, gameEnded]);
 
+	// Keep ref in sync, and update check highlight / selection validity
 	useEffect(() => {
 		chessRef.current = chess;
 
@@ -295,6 +325,91 @@ export default function GameView() {
 			setCheckSquare(null);
 		}
 	}, [chess, playerColor, selectedSquare]);
+
+	// Send premoves when it becomes our turn according to the server state
+	useEffect(() => {
+		if (!gameFull || !gameState) return;
+		if (!isMyGame) return;
+		if (!isConnected) return;
+		if (gameEnded) return;
+		if (!premoveQueue.length) return;
+		if (pendingUci) return;
+
+		const latestState = gameState ?? gameFull.state;
+		if (!latestState) return;
+
+		const movesStr = latestState.moves ?? "";
+		const moveTokens = movesStr.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
+		const moveCount = moveTokens.length;
+		const serverTurn: "w" | "b" = moveCount % 2 === 0 ? "w" : "b";
+
+		if (serverTurn !== playerColor) return;
+
+		const [next, ...rest] = premoveQueue;
+
+		// Rebuild server board (confirmed only) to validate premove
+		const serverBoard = new Chess();
+		for (const uci of moveTokens) {
+			try {
+				serverBoard.move(uciToMove(uci));
+			} catch (error) {
+				console.error("Failed to apply server move while processing premove:", uci, error);
+				return;
+			}
+		}
+
+		let legal = false;
+		try {
+			const candidate = uciToMove(next.uci);
+			const test = new Chess(serverBoard.fen());
+			const result = test.move(candidate);
+			legal = Boolean(result);
+		} catch {
+			legal = false;
+		}
+
+		if (!legal) {
+			// Premove is no longer legal on the actual board
+			setPremoveQueue([]);
+			setSelectedSquare(null);
+			return;
+		}
+
+		// Send the premove as a normal move
+		setPendingUci(next.uci);
+		setPendingIsPremove(true);
+		setPremoveQueue(rest);
+		setSelectedSquare(null);
+
+		(async () => {
+			try {
+				await makeMove(next.uci);
+			} catch (error) {
+				console.error("Failed to send premove:", error);
+				setPendingUci(null);
+				setPendingIsPremove(false);
+				setPremoveQueue([]);
+				const confirmed = serverMovesRef.current ?? "";
+				const rollback = new Chess();
+				for (const u of confirmed.split(" ").filter(Boolean)) {
+					try {
+						rollback.move(uciToMove(u));
+					} catch {}
+				}
+				setChess(rollback);
+			}
+		})();
+	}, [
+		gameFull,
+		gameState,
+		isMyGame,
+		isConnected,
+		gameEnded,
+		premoveQueue,
+		pendingUci,
+		playerColor,
+		makeMove,
+	]);
 
 	// Show gameID change in url
 	useEffect(() => {
@@ -322,6 +437,63 @@ export default function GameView() {
 		}
 	}, [chess]);
 
+	// Build board position = server + pending board + local premove overlay
+	const boardPosition = useMemo<BoardPosition>(() => {
+		const pos: BoardPosition = {};
+		const matrix = chess.board();
+
+		// Base from chess.js (confirmed + pending)
+		for (let rank = 0; rank < matrix.length; rank += 1) {
+			for (let file = 0; file < matrix[rank].length; file += 1) {
+				const piece = matrix[rank][file];
+				if (!piece) continue;
+
+				const fileChar = String.fromCharCode("a".charCodeAt(0) + file);
+				const rankChar = (8 - rank).toString();
+				const square = `${fileChar}${rankChar}` as Square;
+
+				const colorPrefix = piece.color;
+				const typeLetter = piece.type.toUpperCase();
+
+				pos[square] = { pieceType: `${colorPrefix}${typeLetter}` };
+			}
+		}
+
+		// Apply premoves on top (ignore turn rules)
+		for (const step of premoveQueue) {
+			const from = step.from;
+			const to = step.to;
+			const piece = pos[from];
+			if (!piece) {
+				// no piece at from square
+				break;
+			}
+
+			const existingType = piece.pieceType;
+			const colorPrefix = existingType[0];
+			const baseType = existingType[1];
+			const finalType = step.promotion ? step.promotion.toUpperCase() : baseType;
+
+			delete pos[from];
+			pos[to] = { pieceType: `${colorPrefix}${finalType}` };
+		}
+
+		return pos;
+	}, [chess, premoveQueue]);
+
+	const getVisualPieceAt = useCallback(
+		(square: Square) => {
+			const entry = boardPosition[square];
+			if (!entry) return null;
+
+			const color = entry.pieceType[0] as "w" | "b";
+			const type = entry.pieceType[1].toLowerCase() as "p" | "n" | "b" | "r" | "q" | "k";
+
+			return { color, type };
+		},
+		[boardPosition],
+	);
+
 	const handleStartGame = async () => {
 		setIsCreatingGame(true);
 		setError(null);
@@ -329,6 +501,8 @@ export default function GameView() {
 			// TODO: more options
 			const { gameId } = await startBotGame(selectedLevel, { limit: 300, increment: 3 });
 			setPendingUci(null);
+			setPendingIsPremove(false);
+			setPremoveQueue([]);
 			setChess(new Chess());
 			prevMoveCountRef.current = 0;
 			setGameId(gameId);
@@ -372,13 +546,20 @@ export default function GameView() {
 		setGameId(null);
 		setChess(new Chess());
 		setPendingUci(null);
+		setPendingIsPremove(false);
+		setPremoveQueue([]);
+		setSelectedSquare(null);
+		setLastMoveSquares({ from: null, to: null });
+		setCheckSquare(null);
+		setPromotionRequest(null);
 		serverMovesRef.current = "";
 		prevMoveCountRef.current = 0;
 	};
 
 	const ownsSquare = (square: Square) => {
-		const piece = chessRef.current.get(square);
-		return Boolean(piece && piece.color === playerColor);
+		const piece = getVisualPieceAt(square);
+		if (!piece) return false;
+		return piece.color === playerColor;
 	};
 
 	const handleSelectSquare = (square: Square | null) => {
@@ -415,7 +596,7 @@ export default function GameView() {
 
 	const handlePieceDrag: ChessboardOptions["onPieceDrag"] = ({ square }) => {
 		if (!square) return;
-		if (!canPlayMove()) return;
+		if (!isMyGame || gameEnded) return;
 		const next = square as Square;
 		if (!ownsSquare(next)) return;
 		if (selectedSquare !== next) {
@@ -425,77 +606,119 @@ export default function GameView() {
 
 	const canDragPiece: ChessboardOptions["canDragPiece"] = ({ square }) => {
 		if (!square) return false;
+		if (!isMyGame || gameEnded) return false;
 		return ownsSquare(square as Square);
 	};
 
 	const onPieceDrop: ChessboardOptions["onPieceDrop"] = (args: PieceDropHandlerArgs): boolean => {
 		const { sourceSquare, targetSquare } = args;
 		if (!targetSquare) return false;
-		if (!canPlayMove()) return false;
-		if (pendingUci) return false;
+		if (!isMyGame || gameEnded) return false;
+
+		const isMyTurn = canPlayMove();
+		const canPremoveNow = !isMyTurn && canQueuePremove();
 
 		const board = chessRef.current;
 
-		try {
-			if (isPromotionMove(sourceSquare, targetSquare)) {
-				const piece = board.get(sourceSquare as Square);
-				if (!piece) return false;
+		// Real move path
+		if (isMyTurn) {
+			try {
+				if (isPromotionMove(sourceSquare, targetSquare)) {
+					const piece = board.get(sourceSquare as Square);
+					if (!piece) return false;
 
-				setPromotionRequest({
-					from: sourceSquare as Square,
-					to: targetSquare as Square,
-					color: piece.color,
+					setPromotionRequest({
+						from: sourceSquare as Square,
+						to: targetSquare as Square,
+						color: piece.color,
+					});
+					setSelectedSquare(null);
+					return false;
+				}
+
+				const test = new Chess(board.fen());
+				const move = test.move({
+					from: sourceSquare,
+					to: targetSquare,
 				});
+				if (!move) return false;
+
+				const uci = moveToUci({
+					from: sourceSquare,
+					to: targetSquare,
+					promotion: move.promotion,
+				});
+				setPendingUci(uci);
+				setPendingIsPremove(false);
 				setSelectedSquare(null);
+
+				(async () => {
+					try {
+						await makeMove(uci);
+					} catch (error) {
+						console.error("Failed to send move:", error);
+						setPendingUci(null);
+						setPendingIsPremove(false);
+						setPremoveQueue([]);
+						const confirmed = serverMovesRef.current ?? "";
+						const rollback = new Chess();
+						for (const u of confirmed.split(" ").filter(Boolean)) {
+							try {
+								rollback.move(uciToMove(u));
+							} catch {}
+						}
+						setChess(rollback);
+					}
+				})();
+
+				return true;
+			} catch {
 				return false;
 			}
+		}
 
-			const test = new Chess(board.fen());
-			const move = test.move({
+		// Premove path
+		if (canPremoveNow) {
+			const visualPiece = getVisualPieceAt(sourceSquare as Square);
+			if (!visualPiece || visualPiece.color !== playerColor) return false;
+
+			// TODO: change from autoqueen to promotion choice
+			const isLastRankForColor =
+				(visualPiece.color === "w" && targetSquare[1] === "8") ||
+				(visualPiece.color === "b" && targetSquare[1] === "1");
+
+			const promotion: PromotionPiece | undefined =
+				visualPiece.type === "p" && isLastRankForColor ? "q" : undefined;
+
+			const uci = moveToUci({
 				from: sourceSquare,
 				to: targetSquare,
+				promotion,
 			});
-			if (!move) return false;
 
-			const uci = moveToUci({ from: sourceSquare, to: targetSquare, promotion: move.promotion });
-			setPendingUci(uci);
+			setPremoveQueue((prev) => [
+				...prev,
+				{
+					uci,
+					from: sourceSquare as Square,
+					to: targetSquare as Square,
+					promotion,
+				},
+			]);
 			setSelectedSquare(null);
-
-			(async () => {
-				try {
-					await makeMove(uci);
-				} catch (error) {
-					console.error("Failed to send move:", error);
-					setPendingUci(null);
-					const confirmed = serverMovesRef.current ?? "";
-					const rollback = new Chess();
-					for (const u of confirmed.split(" ").filter(Boolean)) {
-						try {
-							rollback.move(uciToMove(u));
-						} catch {}
-					}
-					setChess(rollback);
-				}
-			})();
-
 			return true;
-		} catch {
-			return false;
 		}
-	};
 
-	const canPlayMove = () =>
-		isConnected &&
-		!gameEnded &&
-		gameFull != null &&
-		isPlayerInGame(gameFull, user) &&
-		chessRef.current.turn() === playerColor;
+		return false;
+	};
 
 	useEffect(() => {
 		if (!gameEnded) return;
 		setSelectedSquare(null);
 		setPromotionRequest(null);
 		setPendingUci(null);
+		setPendingIsPremove(false);
+		setPremoveQueue([]);
 	}, [gameEnded]);
 
 	const legalMoves = useMemo<ChessMove[]>(() => {
@@ -565,8 +788,16 @@ export default function GameView() {
 			appendShadow(checkSquare, "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)");
 		}
 
+		// Premove path highlight
+		for (const step of premoveQueue) {
+			tintSquare(step.from, "rgb(var(--color-primary-400) / 0.12)");
+			tintSquare(step.to, "rgb(var(--color-primary-400) / 0.28)");
+		}
+
 		return styles;
-	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare]);
+	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare, premoveQueue]);
+
+	const showBoardAnimations = !premoveQueue.length && !pendingIsPremove;
 
 	const movesList = chess.history();
 
@@ -755,7 +986,7 @@ export default function GameView() {
 							<div className="size-full relative" ref={boardContainerRef}>
 								<Chessboard
 									options={{
-										position: chess.fen(),
+										position: boardPosition,
 										boardOrientation,
 										onPieceDrop,
 										onSquareClick: handleSquareClick,
@@ -763,10 +994,10 @@ export default function GameView() {
 										onPieceDrag: handlePieceDrag,
 										canDragPiece,
 										squareStyles,
+										showAnimations: showBoardAnimations,
 									}}
 								/>
 
-								{/* 🔹 Promotion picker overlay */}
 								{promotionRequest && promotionDropdown && (
 									<>
 										<button
