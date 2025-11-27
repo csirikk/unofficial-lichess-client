@@ -186,7 +186,7 @@ export default function GameView() {
 	};
 
 	const sendMoveWithPromotion = async (from: string, to: string, promotion: PromotionPiece) => {
-		if (!isConnected || !gameFull || !isPlayerInGame(gameFull, user)) return;
+		if (!canPlayMove()) return;
 
 		const board = chessRef.current;
 
@@ -415,6 +415,7 @@ export default function GameView() {
 
 	const handlePieceDrag: ChessboardOptions["onPieceDrag"] = ({ square }) => {
 		if (!square) return;
+		if (!canPlayMove()) return;
 		const next = square as Square;
 		if (!ownsSquare(next)) return;
 		if (selectedSquare !== next) {
@@ -430,14 +431,10 @@ export default function GameView() {
 	const onPieceDrop: ChessboardOptions["onPieceDrop"] = (args: PieceDropHandlerArgs): boolean => {
 		const { sourceSquare, targetSquare } = args;
 		if (!targetSquare) return false;
-		if (!isConnected) return false;
+		if (!canPlayMove()) return false;
 		if (pendingUci) return false;
-		if (gameEnded) return false;
-
-		if (!isPlayerInGame(gameFull, user)) return false;
 
 		const board = chessRef.current;
-		if (board.turn() !== playerColor) return false;
 
 		try {
 			if (isPromotionMove(sourceSquare, targetSquare)) {
@@ -486,6 +483,13 @@ export default function GameView() {
 			return false;
 		}
 	};
+
+	const canPlayMove = () =>
+		isConnected &&
+		!gameEnded &&
+		gameFull != null &&
+		isPlayerInGame(gameFull, user) &&
+		chessRef.current.turn() === playerColor;
 
 	useEffect(() => {
 		if (!gameEnded) return;
