@@ -143,7 +143,13 @@ export default function GameView() {
 	const moveListRef = useRef<HTMLOListElement>(null);
 	const prevMoveCountRef = useRef(0);
 
-	const gameEnded = Boolean(gameState?.status && gameState.status !== GameStatusName.started);
+	// Canonical game status (prefers live gameState, falls back to initial gameFull.state)
+	const status = gameState?.status ?? gameFull?.state?.status ?? null;
+	const winner = gameState?.winner ?? gameFull?.state?.winner ?? null;
+
+	// Flag used everywhere in UI
+	const gameEnded = Boolean(status) && status !== GameStatusName.started;
+
 	const myColor = getPlayerColor(gameFull, user);
 	const boardOrientation = (myColor ?? GameColor.white) as "white" | "black";
 	const playerColor = boardOrientation === GameColor.white ? "w" : "b";
@@ -225,6 +231,7 @@ export default function GameView() {
 	};
 
 	// Rebuild chess position from confirmed + pending move
+	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
 		if (!gameFull && !gameState) return;
 
@@ -233,22 +240,21 @@ export default function GameView() {
 		const confirmed = gameState?.moves ?? gameFull?.state?.moves ?? "";
 		serverMovesRef.current = confirmed;
 
-		const status = gameState?.status ?? gameFull?.state?.status;
-		const isGameOver = !!status && status !== GameStatusName.started;
-
 		let source = confirmed;
 
-		if (!isGameOver && pendingUci) {
+		if (!gameEnded && pendingUci) {
+			// optimistic overlay while game is running
 			const tokens = confirmed.split(" ").filter(Boolean);
 			const streamHasPending = tokens.includes(pendingUci);
 
 			if (!streamHasPending) {
 				source = confirmed ? `${confirmed} ${pendingUci}` : pendingUci;
 			} else {
+				// server already confirmed this move
 				setPendingUci(null);
 			}
-		} else if (isGameOver && pendingUci) {
-			// game ended without confirming the pending move
+		} else if (gameEnded && pendingUci) {
+			// game ended without confirming the pending move → drop it
 			setPendingUci(null);
 		}
 
@@ -271,7 +277,7 @@ export default function GameView() {
 		}
 
 		setChess(next);
-	}, [gameFull, gameState, pendingUci]);
+	}, [gameFull, gameState, pendingUci, gameEnded]);
 
 	useEffect(() => {
 		chessRef.current = chess;
@@ -930,16 +936,16 @@ export default function GameView() {
 									<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
 									<dd className="font-medium text-xs">{gameId}</dd>
 								</div>
-								{gameState && (
+								{status && (
 									<>
 										<div className="flex justify-between">
 											<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
-											<dd className="font-medium">{gameState.status}</dd>
+											<dd className="font-medium">{status}</dd>
 										</div>
-										{gameState.winner && (
+										{winner && (
 											<div className="flex justify-between">
 												<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
-												<dd className="font-medium">{gameState.winner}</dd>
+												<dd className="font-medium">{winner}</dd>
 											</div>
 										)}
 									</>
