@@ -485,6 +485,13 @@ export default function GameView() {
 		}
 	};
 
+	useEffect(() => {
+		if (!gameEnded) return;
+		setSelectedSquare(null);
+		setPromotionRequest(null);
+		setPendingUci(null);
+	}, [gameEnded]);
+
 	const legalMoves = useMemo<ChessMove[]>(() => {
 		if (!selectedSquare) return [];
 		try {
