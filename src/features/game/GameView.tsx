@@ -397,25 +397,21 @@ export default function GameView() {
 		}
 	};
 
-	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) => {
+	const handleBoardClick = (square: string | null | undefined) => {
 		if (!square) return;
 		const next = square as Square;
 		if (ownsSquare(next)) {
 			handleSelectSquare(next);
-			return;
+		} else {
+			setSelectedSquare(null);
 		}
-		setSelectedSquare(null);
 	};
 
-	const handlePieceClick: ChessboardOptions["onPieceClick"] = ({ square }) => {
-		if (!square) return;
-		const next = square as Square;
-		if (ownsSquare(next)) {
-			handleSelectSquare(next);
-			return;
-		}
-		setSelectedSquare(null);
-	};
+	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) =>
+		handleBoardClick(square);
+
+	const handlePieceClick: ChessboardOptions["onPieceClick"] = ({ square }) =>
+		handleBoardClick(square);
 
 	const handlePieceDrag: ChessboardOptions["onPieceDrag"] = ({ square }) => {
 		if (!square) return;
