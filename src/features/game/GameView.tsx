@@ -8,7 +8,7 @@ import {
 	type PieceRenderObject,
 	getRelativeCoords,
 } from "react-chessboard";
-import { Chess, type Move as ChessMove, type Square } from "chess.js";
+import { Chess, type Move as ChessMove, type Square, type Color, type PieceSymbol } from "chess.js";
 import { Flag, Handshake, CircleX } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
@@ -42,6 +42,11 @@ type PremoveStep = {
 
 type BoardPosition = {
 	[square: string]: { pieceType: string };
+};
+
+type VisualPiece = {
+	color: Color;
+	type: PieceSymbol;
 };
 
 const PROMOTION_PIECES: PromotionPiece[] = ["q", "r", "b", "n"];
@@ -482,17 +487,78 @@ export default function GameView() {
 	}, [chess, premoveQueue]);
 
 	const getVisualPieceAt = useCallback(
-		(square: Square) => {
+		(square: Square): VisualPiece | null => {
 			const entry = boardPosition[square];
 			if (!entry) return null;
 
-			const color = entry.pieceType[0] as "w" | "b";
-			const type = entry.pieceType[1].toLowerCase() as "p" | "n" | "b" | "r" | "q" | "k";
+			const color = entry.pieceType[0] as Color;
+			const type = entry.pieceType[1].toLowerCase() as PieceSymbol;
 
 			return { color, type };
 		},
 		[boardPosition],
 	);
+
+	const isFeasiblePremove = (piece: VisualPiece, from: string, to: string): boolean => {
+		if (from.length !== 2 || to.length !== 2) return false;
+
+		const fileFrom = from.charCodeAt(0) - "a".charCodeAt(0); // 0..7
+		const rankFrom = parseInt(from[1], 10) - 1; // 0..7
+
+		const fileTo = to.charCodeAt(0) - "a".charCodeAt(0);
+		const rankTo = parseInt(to[1], 10) - 1;
+
+		if (
+			fileFrom < 0 ||
+			fileFrom > 7 ||
+			fileTo < 0 ||
+			fileTo > 7 ||
+			rankFrom < 0 ||
+			rankFrom > 7 ||
+			rankTo < 0 ||
+			rankTo > 7
+		) {
+			return false;
+		}
+
+		const dx = fileTo - fileFrom;
+		const dy = rankTo - rankFrom;
+
+		if (dx === 0 && dy === 0) return false;
+
+		switch (piece.type) {
+			case "p": {
+				const forward = piece.color === "w" ? 1 : -1;
+				const startRank = piece.color === "w" ? 1 : 6; // ranks 2 and 7
+
+				// Single push
+				if (dx === 0 && dy === forward) return true;
+
+				// Double push from starting rank
+				if (dx === 0 && dy === 2 * forward && rankFrom === startRank) return true;
+
+				// Diagonal capture
+				if (Math.abs(dx) === 1 && dy === forward) return true;
+
+				return false;
+			}
+			case "n": {
+				const adx = Math.abs(dx);
+				const ady = Math.abs(dy);
+				return (adx === 1 && ady === 2) || (adx === 2 && ady === 1);
+			}
+			case "b":
+				return Math.abs(dx) === Math.abs(dy);
+			case "r":
+				return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0);
+			case "q":
+				return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || Math.abs(dx) === Math.abs(dy);
+			case "k":
+				return Math.max(Math.abs(dx), Math.abs(dy)) === 1;
+			default:
+				return false;
+		}
+	};
 
 	const handleStartGame = async () => {
 		setIsCreatingGame(true);
@@ -681,6 +747,10 @@ export default function GameView() {
 		if (canPremoveNow) {
 			const visualPiece = getVisualPieceAt(sourceSquare as Square);
 			if (!visualPiece || visualPiece.color !== playerColor) return false;
+
+			if (!isFeasiblePremove(visualPiece, sourceSquare, targetSquare)) {
+				return false;
+			}
 
 			// TODO: change from autoqueen to promotion choice
 			const isLastRankForColor =
