@@ -706,12 +706,85 @@ export default function GameView() {
 
 	const handleBoardClick = (square: string | null | undefined) => {
 		if (!square) return;
-		const next = square as Square;
-		if (ownsSquare(next)) {
-			handleSelectSquare(next);
-		} else {
-			setSelectedSquare(null);
+		if (!isMyGame || gameEnded) return;
+
+		const targetSquare = square as Square;
+
+		if (!selectedSquare) {
+			handleSelectSquare(targetSquare);
+			return;
 		}
+
+		if (targetSquare === selectedSquare || ownsSquare(targetSquare)) {
+			handleSelectSquare(targetSquare);
+			return;
+		}
+
+		// We have a selected source and clicked a different square
+		const sourceSquare = selectedSquare;
+		const isMyTurn = canPlayMove();
+		const board = chessRef.current;
+
+		if (!isMyTurn) {
+			setSelectedSquare(null);
+			return;
+		}
+
+		// Real move path
+		try {
+			if (isPromotionMove(sourceSquare, targetSquare)) {
+				const piece = board.get(sourceSquare as Square);
+				if (!piece) {
+					setSelectedSquare(null);
+					return;
+				}
+
+				setPromotionRequest({
+					from: sourceSquare,
+					to: targetSquare,
+					color: piece.color,
+					mode: "live",
+				});
+				setSelectedSquare(null);
+				return;
+			}
+
+			const test = new Chess(board.fen());
+			const move = test.move({
+				from: sourceSquare,
+				to: targetSquare,
+			});
+			if (!move) return;
+
+			const uci = moveToUci({
+				from: sourceSquare,
+				to: targetSquare,
+				promotion: move.promotion,
+			});
+
+			setPendingUci(uci);
+			setPendingIsPremove(false);
+			setSelectedSquare(null);
+
+			(async () => {
+				try {
+					await makeMove(uci);
+				} catch (error) {
+					console.error("Failed to send move:", error);
+					setPendingUci(null);
+					setPendingIsPremove(false);
+					setPremoveQueue([]);
+					const confirmed = serverMovesRef.current ?? "";
+					const rollback = new Chess();
+					for (const u of confirmed.split(" ").filter(Boolean)) {
+						try {
+							rollback.move(uciToMove(u));
+						} catch {}
+					}
+					setChess(rollback);
+				}
+			})();
+		} catch {}
 	};
 
 	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) =>
