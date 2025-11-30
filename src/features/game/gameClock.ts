@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GameStatusName } from "../../generated/types/gameStatusName";
 import type { GameFullEvent, GameStateEvent } from "../../generated/types";
+import type { Color } from "chess.js";
+import { GameStatusName } from "../../generated/types/gameStatusName";
 
 type ClockConfig = {
 	gameFull: GameFullEvent | null;
@@ -8,7 +9,7 @@ type ClockConfig = {
 	pendingMove: string | null;
 };
 
-type ClockColor = "w" | "b";
+type ClockColor = Color;
 
 export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) {
 	const initialTime = useMemo(() => gameFull?.clock?.initial ?? null, [gameFull]);

@@ -1,97 +1,41 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Chess, type Move as ChessMove, type Square, type Color } from "chess.js";
+import { CircleX, Flag, Handshake } from "lucide-react";
 import type { CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Chessboard,
 	type ChessboardOptions,
-	type PieceDropHandlerArgs,
 	defaultPieces,
-	type PieceRenderObject,
 	getRelativeCoords,
+	type PieceDropHandlerArgs,
+	type PieceRenderObject,
 } from "react-chessboard";
-import { Chess, type Move as ChessMove, type Square, type Color, type PieceSymbol } from "chess.js";
-import { Flag, Handshake, CircleX } from "lucide-react";
-import { useAuth } from "../auth/AuthProvider";
-import { getPlayerColor, isPlayerInGame, uciToMove, moveToUci } from "../../libs/game";
-import { startBotGame, resignGame, abortGame, offerDraw } from "./gameActions";
-import { gameStream } from "./gameStream";
 import { GameColor } from "../../generated/types/gameColor";
 import { GameStatusName } from "../../generated/types/gameStatusName";
+import { getPlayerColor, isPlayerInGame, moveToUci, uciToMove } from "../../libs/game";
+import {
+	type UiBoard,
+	type UiGhostPiece,
+	type UiPiece,
+	type UiPieceKey,
+	type UiPremove,
+	type UiPromotionDropdownMetrics,
+	type UiPromotionPiece,
+	type UiPromotionRequest,
+	applyPremoves,
+	boardFromChess,
+	boardToChessboardPosition,
+	findKingSquare,
+	formatClockTime,
+	isFeasiblePremove,
+	keyToPiece,
+	pieceToKey,
+} from "../../libs/game";
+import { getGameIdFromURL, setGameIdInURL } from "../../libs/url";
+import { useAuth } from "../auth/AuthProvider";
+import { abortGame, offerDraw, resignGame, startBotGame } from "./gameActions";
 import { useGameClock } from "./gameClock";
-
-type PromotionPiece = "q" | "r" | "b" | "n";
-
-type PromotionRequest = {
-	from: Square;
-	to: Square;
-	color: "w" | "b";
-	mode: "live" | "premove";
-} | null;
-
-type PromotionDropdownMetrics = {
-	left: number;
-	top: number;
-	squareSize: number;
-	direction: "down" | "up";
-};
-
-type PremoveStep = {
-	uci: string;
-	from: Square;
-	to: Square;
-	promotion?: PromotionPiece;
-};
-
-type BoardPosition = {
-	[square: string]: { pieceType: string };
-};
-
-type VisualPiece = {
-	color: Color;
-	type: PieceSymbol;
-};
-
-const PROMOTION_PIECES: PromotionPiece[] = ["q", "r", "b", "n"];
-
-const PROMOTION_PIECE_LABELS: Record<PromotionPiece, string> = {
-	q: "Queen",
-	r: "Rook",
-	b: "Bishop",
-	n: "Knight",
-};
-
-const getGameIdFromURL = (): string | null => {
-	try {
-		return new URLSearchParams(window.location.search).get("game");
-	} catch {
-		return null;
-	}
-};
-
-const setGameIdInURL = (id: string | null) => {
-	try {
-		const url = new URL(window.location.href);
-		if (id) url.searchParams.set("game", id);
-		else url.searchParams.delete("game");
-		window.history.replaceState(null, "", url);
-	} catch (error) {
-		console.warn("Failed to update game ID in URL", error);
-	}
-};
-
-const findKingSquare = (board: Chess, color: "w" | "b"): Square | null => {
-	const matrix = board.board();
-	for (let rank = 0; rank < matrix.length; rank += 1) {
-		for (let file = 0; file < matrix[rank].length; file += 1) {
-			const piece = matrix[rank][file];
-			if (piece && piece.type === "k" && piece.color === color) {
-				const fileChar = String.fromCharCode("a".charCodeAt(0) + file);
-				const rankChar = (8 - rank).toString();
-				return `${fileChar}${rankChar}` as Square;
-			}
-		}
-	}
-	return null;
-};
+import { gameStream } from "./gameStream";
 
 export default function GameView() {
 	const { user } = useAuth();
@@ -103,12 +47,22 @@ export default function GameView() {
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
-	type GhostPiece = {
-		square: Square;
-		pieceType: string;
-	};
+	const [promotionRequest, setPromotionRequest] = useState<UiPromotionRequest>(null);
 
-	const [promotionRequest, setPromotionRequest] = useState<PromotionRequest>(null);
+	// Local promotion order and labels (kept in UI to allow flexible presentation)
+	const promotionOrder: UiPromotionPiece[] = ["q", "r", "b", "n"];
+	const promotionLabel = (p: UiPromotionPiece) => {
+		switch (p) {
+			case "q":
+				return "Queen";
+			case "r":
+				return "Rook";
+			case "b":
+				return "Bishop";
+			case "n":
+				return "Knight";
+		}
+	};
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
 	const boardContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -149,7 +103,7 @@ export default function GameView() {
 
 	// Uci overlay
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
-	const [premoveQueue, setPremoveQueue] = useState<PremoveStep[]>([]);
+	const [premoveQueue, setPremoveQueue] = useState<UiPremove[]>([]);
 	const [pendingIsPremove, setPendingIsPremove] = useState(false);
 	const { whiteMs, blackMs, activeColor, isRunning } = useGameClock({
 		gameFull,
@@ -190,13 +144,13 @@ export default function GameView() {
 	const canQueuePremove = () =>
 		isConnected && !gameEnded && isMyGame && chessRef.current.turn() !== playerColor;
 
-	const promotionDropdown = useMemo<PromotionDropdownMetrics | null>(() => {
+	const promotionDropdown = useMemo<UiPromotionDropdownMetrics | null>(() => {
 		if (!promotionRequest || !boardWidth) return null;
 		const squareSize = boardWidth / 8;
 		const coords = getRelativeCoords(boardOrientation, boardWidth, 8, 8, promotionRequest.to);
 		const anchorLeft = coords.x - squareSize / 2;
 		const anchorTop = coords.y - squareSize / 2;
-		const dropdownHeight = squareSize * PROMOTION_PIECES.length;
+		const dropdownHeight = squareSize * promotionOrder.length;
 		const shouldOpenDownwards = anchorTop < boardWidth / 2;
 		const top = shouldOpenDownwards
 			? anchorTop + squareSize
@@ -221,7 +175,7 @@ export default function GameView() {
 		return false;
 	};
 
-	const sendMoveWithPromotion = async (from: string, to: string, promotion: PromotionPiece) => {
+	const sendMoveWithPromotion = async (from: string, to: string, promotion: UiPromotionPiece) => {
 		if (!canPlayMove()) return;
 
 		const board = chessRef.current;
@@ -264,7 +218,7 @@ export default function GameView() {
 		}
 	};
 
-	const handlePromotionChoice = (piece: PromotionPiece) => {
+	const handlePromotionChoice = (piece: UiPromotionPiece) => {
 		if (!promotionRequest) return;
 
 		if (promotionRequest.mode === "live") {
@@ -356,7 +310,8 @@ export default function GameView() {
 		}
 
 		if (chess.isCheck()) {
-			setCheckSquare(findKingSquare(chess, chess.turn()) ?? null);
+			const uiBoard = boardFromChess(chess);
+			setCheckSquare(findKingSquare(uiBoard, chess.turn()) ?? null);
 		} else {
 			setCheckSquare(null);
 		}
@@ -377,7 +332,7 @@ export default function GameView() {
 		const movesStr = latestState.moves ?? "";
 		const moveTokens = movesStr.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
 		const moveCount = moveTokens.length;
-		const serverTurn: "w" | "b" = moveCount % 2 === 0 ? "w" : "b";
+		const serverTurn: Color = moveCount % 2 === 0 ? "w" : "b";
 
 		if (serverTurn !== playerColor) return;
 
@@ -475,150 +430,53 @@ export default function GameView() {
 
 	// Build board position = server + pending board + local premove overlay
 	const { boardPosition, ghostPieces } = useMemo(() => {
-		const basePos: BoardPosition = {};
-		const matrix = chess.board();
+		// Get base board from chess.js
+		const baseBoard = boardFromChess(chess);
 
-		// Base from chess.js (confirmed + pending)
-		for (let rank = 0; rank < matrix.length; rank += 1) {
-			for (let file = 0; file < matrix[rank].length; file += 1) {
-				const piece = matrix[rank][file];
-				if (!piece) continue;
+		// Apply premoves visually
+		let visualBoard: UiBoard;
+		let ghosts: UiGhostPiece[] = [];
 
-				const fileChar = String.fromCharCode("a".charCodeAt(0) + file);
-				const rankChar = (8 - rank).toString();
-				const square = `${fileChar}${rankChar}` as Square;
-
-				const colorPrefix = piece.color;
-				const typeLetter = piece.type.toUpperCase();
-
-				basePos[square] = { pieceType: `${colorPrefix}${typeLetter}` };
-			}
-		}
-
-		// Start visual position as a copy of base (actual) board
-		const pos: BoardPosition = { ...basePos };
-
-		// Apply premoves on top (ignore turn rules)
-		for (const step of premoveQueue) {
-			const from = step.from;
-			const to = step.to;
-			const piece = pos[from];
-			if (!piece) {
-				continue;
-			}
-
-			const existingType = piece.pieceType;
-			const colorPrefix = existingType[0];
-			const baseType = existingType[1];
-			const finalType = step.promotion ? step.promotion.toUpperCase() : baseType;
-
-			delete pos[from];
-			pos[to] = { pieceType: `${colorPrefix}${finalType}` };
+		if (premoveQueue.length > 0) {
+			const result = applyPremoves(baseBoard, premoveQueue);
+			visualBoard = result.board;
+			ghosts = result.ghosts;
+		} else {
+			visualBoard = { ...baseBoard };
 		}
 
 		// Apply visual overlay for a pending premove promotion request
 		if (promotionRequest && promotionRequest.mode === "premove") {
 			const { from, to } = promotionRequest;
-			const piece = pos[from];
+			const piece = visualBoard[from];
 			if (piece) {
 				// Move the pawn visually to the target
-				pos[to] = piece;
-				delete pos[from];
+				visualBoard[to] = piece;
+				delete visualBoard[from];
+				// Add ghost at original position
+				ghosts.push({ square: from, piece });
 			}
 		}
 
-		const ghosts: GhostPiece[] = [];
-		// We only need ghosts where something moved
-		for (const [square, basePiece] of Object.entries(basePos)) {
-			const visualPiece = pos[square];
-			if (!visualPiece || visualPiece.pieceType !== basePiece.pieceType) {
-				ghosts.push({
-					square: square as Square,
-					pieceType: basePiece.pieceType,
-				});
-			}
-		}
+		// Convert to react-chessboard format
+		const pos = boardToChessboardPosition(visualBoard);
 
 		if (!premoveQueue.length && !(promotionRequest && promotionRequest.mode === "premove")) {
-			return { boardPosition: pos, ghostPieces: [] as GhostPiece[] };
+			return { boardPosition: pos, ghostPieces: [] as UiGhostPiece[] };
 		}
 
 		return { boardPosition: pos, ghostPieces: ghosts };
 	}, [chess, premoveQueue, promotionRequest]);
 
 	const getVisualPieceAt = useCallback(
-		(square: Square): VisualPiece | null => {
+		(square: Square): UiPiece | null => {
 			const entry = boardPosition[square];
 			if (!entry) return null;
 
-			const color = entry.pieceType[0] as Color;
-			const type = entry.pieceType[1].toLowerCase() as PieceSymbol;
-
-			return { color, type };
+			return keyToPiece(entry.pieceType as UiPieceKey);
 		},
 		[boardPosition],
 	);
-
-	const isFeasiblePremove = (piece: VisualPiece, from: string, to: string): boolean => {
-		if (from.length !== 2 || to.length !== 2) return false;
-
-		const fileFrom = from.charCodeAt(0) - "a".charCodeAt(0); // 0..7
-		const rankFrom = parseInt(from[1], 10) - 1; // 0..7
-
-		const fileTo = to.charCodeAt(0) - "a".charCodeAt(0);
-		const rankTo = parseInt(to[1], 10) - 1;
-
-		if (
-			fileFrom < 0 ||
-			fileFrom > 7 ||
-			fileTo < 0 ||
-			fileTo > 7 ||
-			rankFrom < 0 ||
-			rankFrom > 7 ||
-			rankTo < 0 ||
-			rankTo > 7
-		) {
-			return false;
-		}
-
-		const dx = fileTo - fileFrom;
-		const dy = rankTo - rankFrom;
-
-		if (dx === 0 && dy === 0) return false;
-
-		switch (piece.type) {
-			case "p": {
-				const forward = piece.color === "w" ? 1 : -1;
-				const startRank = piece.color === "w" ? 1 : 6; // ranks 2 and 7
-
-				// Single push
-				if (dx === 0 && dy === forward) return true;
-
-				// Double push from starting rank
-				if (dx === 0 && dy === 2 * forward && rankFrom === startRank) return true;
-
-				// Diagonal capture
-				if (Math.abs(dx) === 1 && dy === forward) return true;
-
-				return false;
-			}
-			case "n": {
-				const adx = Math.abs(dx);
-				const ady = Math.abs(dy);
-				return (adx === 1 && ady === 2) || (adx === 2 && ady === 1);
-			}
-			case "b":
-				return Math.abs(dx) === Math.abs(dy);
-			case "r":
-				return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0);
-			case "q":
-				return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || Math.abs(dx) === Math.abs(dy);
-			case "k":
-				return Math.max(Math.abs(dx), Math.abs(dy)) === 1;
-			default:
-				return false;
-		}
-	};
 
 	const handleStartGame = async () => {
 		setIsCreatingGame(true);
@@ -882,7 +740,7 @@ export default function GameView() {
 			const visualPiece = getVisualPieceAt(sourceSquare as Square);
 			if (!visualPiece || visualPiece.color !== playerColor) return false;
 
-			if (!isFeasiblePremove(visualPiece, sourceSquare, targetSquare)) {
+			if (!isFeasiblePremove(visualPiece, sourceSquare as Square, targetSquare as Square)) {
 				return false;
 			}
 
@@ -1032,15 +890,6 @@ export default function GameView() {
 	const showBoardAnimations = !premoveQueue.length && !pendingIsPremove;
 
 	const movesList = chess.history();
-
-	const formatClockValue = (ms: number | null) => {
-		if (ms == null) return "--:--";
-		const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
-		const minutes = Math.floor(totalSeconds / 60);
-		const seconds = totalSeconds % 60;
-		return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-	};
-
 	const moveRows = useMemo(
 		() =>
 			movesList.reduce(
@@ -1135,7 +984,7 @@ export default function GameView() {
 			<div>
 				{position === "top" && nameRating}
 				<div key={color} className={containerClasses}>
-					<div className={timerClasses}>{formatClockValue(ms)}</div>
+					<div className={timerClasses}>{formatClockTime(ms)}</div>
 				</div>
 				{position === "bottom" && nameRating}
 				<div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-[rgb(var(--color-fg-secondary))]">
@@ -1257,10 +1106,9 @@ export default function GameView() {
 										ghost.square,
 									);
 
-									const pieceKey = ghost.pieceType as keyof PieceRenderObject;
+									const pieceKey = pieceToKey(ghost.piece) as keyof PieceRenderObject;
 									const PieceIcon = defaultPieces[pieceKey];
 									if (!PieceIcon) return null;
-
 									return (
 										<div
 											key={`ghost-${ghost.square}`}
@@ -1300,7 +1148,7 @@ export default function GameView() {
 													promotionDropdown.direction === "down" ? "column" : "column-reverse",
 											}}
 										>
-											{PROMOTION_PIECES.map((piece) => {
+											{promotionOrder.map((piece) => {
 												const pieceKey =
 													`${promotionRequest.color}${piece.toUpperCase()}` as keyof PieceRenderObject;
 												const PieceIcon = defaultPieces[pieceKey];
@@ -1313,7 +1161,7 @@ export default function GameView() {
 														className="flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
 													>
 														{PieceIcon?.()}
-														<span className="sr-only">{PROMOTION_PIECE_LABELS[piece]}</span>
+														<span className="sr-only">{promotionLabel(piece)}</span>
 													</button>
 												);
 											})}

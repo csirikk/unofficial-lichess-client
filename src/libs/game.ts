@@ -1,6 +1,27 @@
+import { GameColor } from "../generated/types/gameColor";
 import type { GameFullEvent } from "../generated/types/gameFullEvent";
 import type { UserExtended } from "../generated/types/userExtended";
-import { GameColor } from "../generated/types/gameColor";
+export {
+	findKingSquare,
+	isFeasiblePremove,
+	formatClockTime,
+	pieceToKey,
+	keyToPiece,
+	boardFromChess,
+	boardToChessboardPosition,
+	applyPremoves,
+} from "./chess";
+
+export type {
+	UiPiece,
+	UiBoard,
+	UiPieceKey,
+	UiPremove,
+	UiPromotionPiece,
+	UiPromotionRequest,
+	UiGhostPiece,
+	UiPromotionDropdownMetrics,
+} from "./chess";
 
 export function getPlayerColor(
 	gameFull: GameFullEvent | null,

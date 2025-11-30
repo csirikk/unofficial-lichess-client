@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { apiToken, apiTokenDelete } from "../../generated/client/oauth";
+import { createContext, useContext, useEffect, useState } from "react";
 import { accountMe } from "../../generated/client/account";
+import { apiToken, apiTokenDelete } from "../../generated/client/oauth";
 import type { UserExtended } from "../../generated/types/userExtended";
+import { CLIENT_ID, createAuthHeaders, REDIRECT_URI, SCOPES } from "../../libs/api";
 import {
 	buildAuthorizationUrl,
 	clearPKCEData,
@@ -12,7 +13,6 @@ import {
 	storeAccessToken,
 	validateState,
 } from "./pkce";
-import { createAuthHeaders, CLIENT_ID, REDIRECT_URI, SCOPES } from "../../libs/api";
 
 interface AuthContextType {
 	user: UserExtended | null;

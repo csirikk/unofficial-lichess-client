@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "./AuthProvider";
 import Layout from "../../ui/Layout";
+import { useAuth } from "./AuthProvider";
 
 export default function AuthCallback() {
 	const { handleCallback } = useAuth();

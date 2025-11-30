@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { boardGameStream, boardGameMove } from "../../generated/client/board";
+import { boardGameMove, boardGameStream } from "../../generated/client/board";
 import type { BoardGameStream200 } from "../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../generated/types/gameFullEvent";
 import type { GameStateEvent } from "../../generated/types/gameStateEvent";

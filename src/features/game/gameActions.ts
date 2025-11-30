@@ -1,5 +1,5 @@
+import { boardGameAbort, boardGameDraw, boardGameResign } from "../../generated/client/board";
 import { challengeAi } from "../../generated/client/challenges";
-import { boardGameResign, boardGameAbort, boardGameDraw } from "../../generated/client/board";
 import { createAuthHeaders } from "../../libs/api";
 
 export async function startBotGame(
