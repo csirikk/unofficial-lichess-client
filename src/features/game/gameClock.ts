@@ -88,8 +88,8 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 
 		lastUiTurnRef.current = uiTurn;
 
-		// First server move
-		if (moveCount > 0 && !hasStartedRef.current) {
+		// Game starts only after both sides move
+		if (moveCount > 1 && !hasStartedRef.current) {
 			hasStartedRef.current = true;
 		}
 
@@ -107,7 +107,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 			return;
 		}
 
-		// GRACE: before first move, show base times not ticking
+		// GRACE: until both sides have played, show base times not ticking
 		if (!hasStartedRef.current) {
 			if (initialTime != null) {
 				setWhiteBaseMs(initialTime);
@@ -118,7 +118,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 				if (btime != null) setBlackBaseMs(btime);
 			}
 			setIsRunning(false);
-			setActiveColor(serverTurn === "w" ? "w" : null);
+			setActiveColor(serverTurn);
 			turnStartedAtRef.current = null;
 			return;
 		}
