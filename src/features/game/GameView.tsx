@@ -24,6 +24,7 @@ type PromotionRequest = {
 	from: Square;
 	to: Square;
 	color: "w" | "b";
+	mode: "live" | "premove";
 } | null;
 
 type PromotionDropdownMetrics = {
@@ -260,7 +261,32 @@ export default function GameView() {
 
 	const handlePromotionChoice = (piece: PromotionPiece) => {
 		if (!promotionRequest) return;
-		void sendMoveWithPromotion(promotionRequest.from, promotionRequest.to, piece);
+
+		if (promotionRequest.mode === "live") {
+			void sendMoveWithPromotion(promotionRequest.from, promotionRequest.to, piece);
+			return;
+		}
+
+		// Premove promotion
+		const { from, to } = promotionRequest;
+		const uci = moveToUci({
+			from,
+			to,
+			promotion: piece,
+		});
+
+		setPremoveQueue((prev) => [
+			...prev,
+			{
+				uci,
+				from,
+				to,
+				promotion: piece,
+			},
+		]);
+
+		setSelectedSquare(null);
+		setPromotionRequest(null);
 	};
 
 	// Rebuild chess position from confirmed + pending move
@@ -483,8 +509,19 @@ export default function GameView() {
 			pos[to] = { pieceType: `${colorPrefix}${finalType}` };
 		}
 
+		// Apply visual overlay for a pending premove promotion request
+		if (promotionRequest && promotionRequest.mode === "premove") {
+			const { from, to } = promotionRequest;
+			const piece = pos[from];
+			if (piece) {
+				// Move the pawn visually to the target
+				pos[to] = piece;
+				delete pos[from];
+			}
+		}
+
 		return pos;
-	}, [chess, premoveQueue]);
+	}, [chess, premoveQueue, promotionRequest]);
 
 	const getVisualPieceAt = useCallback(
 		(square: Square): VisualPiece | null => {
@@ -697,6 +734,7 @@ export default function GameView() {
 						from: sourceSquare as Square,
 						to: targetSquare as Square,
 						color: piece.color,
+						mode: "live",
 					});
 					setSelectedSquare(null);
 					return false;
@@ -752,18 +790,24 @@ export default function GameView() {
 				return false;
 			}
 
-			// TODO: change from autoqueen to promotion choice
-			const isLastRankForColor =
-				(visualPiece.color === "w" && targetSquare[1] === "8") ||
-				(visualPiece.color === "b" && targetSquare[1] === "1");
+			const isPremovablePromotion =
+				visualPiece.type === "p" &&
+				((visualPiece.color === "w" && targetSquare[1] === "8") ||
+					(visualPiece.color === "b" && targetSquare[1] === "1"));
 
-			const promotion: PromotionPiece | undefined =
-				visualPiece.type === "p" && isLastRankForColor ? "q" : undefined;
-
+			if (isPremovablePromotion) {
+				setPromotionRequest({
+					from: sourceSquare as Square,
+					to: targetSquare as Square,
+					color: visualPiece.color,
+					mode: "premove",
+				});
+				setSelectedSquare(null);
+				return true;
+			}
 			const uci = moveToUci({
 				from: sourceSquare,
 				to: targetSquare,
-				promotion,
 			});
 
 			setPremoveQueue((prev) => [
@@ -772,7 +816,6 @@ export default function GameView() {
 					uci,
 					from: sourceSquare as Square,
 					to: targetSquare as Square,
-					promotion,
 				},
 			]);
 			setSelectedSquare(null);
