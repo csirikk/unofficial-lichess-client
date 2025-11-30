@@ -103,6 +103,11 @@ export default function GameView() {
 	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
+	type GhostPiece = {
+		square: Square;
+		pieceType: string;
+	};
+
 	const [promotionRequest, setPromotionRequest] = useState<PromotionRequest>(null);
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
@@ -469,8 +474,8 @@ export default function GameView() {
 	}, [chess]);
 
 	// Build board position = server + pending board + local premove overlay
-	const boardPosition = useMemo<BoardPosition>(() => {
-		const pos: BoardPosition = {};
+	const { boardPosition, ghostPieces } = useMemo(() => {
+		const basePos: BoardPosition = {};
 		const matrix = chess.board();
 
 		// Base from chess.js (confirmed + pending)
@@ -486,9 +491,12 @@ export default function GameView() {
 				const colorPrefix = piece.color;
 				const typeLetter = piece.type.toUpperCase();
 
-				pos[square] = { pieceType: `${colorPrefix}${typeLetter}` };
+				basePos[square] = { pieceType: `${colorPrefix}${typeLetter}` };
 			}
 		}
+
+		// Start visual position as a copy of base (actual) board
+		const pos: BoardPosition = { ...basePos };
 
 		// Apply premoves on top (ignore turn rules)
 		for (const step of premoveQueue) {
@@ -496,8 +504,7 @@ export default function GameView() {
 			const to = step.to;
 			const piece = pos[from];
 			if (!piece) {
-				// no piece at from square
-				break;
+				continue;
 			}
 
 			const existingType = piece.pieceType;
@@ -520,7 +527,23 @@ export default function GameView() {
 			}
 		}
 
-		return pos;
+		const ghosts: GhostPiece[] = [];
+		// We only need ghosts where something moved
+		for (const [square, basePiece] of Object.entries(basePos)) {
+			const visualPiece = pos[square];
+			if (!visualPiece || visualPiece.pieceType !== basePiece.pieceType) {
+				ghosts.push({
+					square: square as Square,
+					pieceType: basePiece.pieceType,
+				});
+			}
+		}
+
+		if (!premoveQueue.length && !(promotionRequest && promotionRequest.mode === "premove")) {
+			return { boardPosition: pos, ghostPieces: [] as GhostPiece[] };
+		}
+
+		return { boardPosition: pos, ghostPieces: ghosts };
 	}, [chess, premoveQueue, promotionRequest]);
 
 	const getVisualPieceAt = useCallback(
@@ -1110,6 +1133,40 @@ export default function GameView() {
 										showAnimations: showBoardAnimations,
 									}}
 								/>
+
+								{/* Ghost overlay - actual pieces in low opacity during premoves */}
+								{ghostPieces.map((ghost) => {
+									if (!boardWidth) return null;
+
+									const squareSize = boardWidth / 8;
+									const coords = getRelativeCoords(
+										boardOrientation,
+										boardWidth,
+										8,
+										8,
+										ghost.square,
+									);
+
+									const pieceKey = ghost.pieceType as keyof PieceRenderObject;
+									const PieceIcon = defaultPieces[pieceKey];
+									if (!PieceIcon) return null;
+
+									return (
+										<div
+											key={`ghost-${ghost.square}`}
+											className="absolute pointer-events-none"
+											style={{
+												left: coords.x - squareSize / 2,
+												top: coords.y - squareSize / 2,
+												width: squareSize,
+												height: squareSize,
+												opacity: 0.3,
+											}}
+										>
+											<PieceIcon />
+										</div>
+									);
+								})}
 
 								{promotionRequest && promotionDropdown && (
 									<>
