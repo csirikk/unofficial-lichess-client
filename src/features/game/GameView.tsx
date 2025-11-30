@@ -907,14 +907,37 @@ export default function GameView() {
 				};
 			} else {
 				// Quiet move
-				styles[target] = {
-					...styles[target],
-					backgroundImage:
-						"radial-gradient(circle, rgb(var(--color-chess-move-legal-dot) / 0.2) 0, rgb(var(--color-chess-move-legal-dot) / 0.2) 32%, transparent 36%)",
-					backgroundRepeat: "no-repeat",
-					backgroundPosition: "center",
-					backgroundSize: "38% 38%",
-				};
+				const fileIndex = target.charCodeAt(0) - "a".charCodeAt(0); // 0..7
+				const rankIndex = parseInt(target[1], 10) - 1; // 0..7
+				const isLightSquare = (fileIndex + rankIndex) % 2 === 1; // a1 is dark so odd = light
+
+				if (isLightSquare) {
+					styles[target] = {
+						...styles[target],
+						backgroundImage: `
+							radial-gradient(circle,
+								rgb(var(--color-primary-900) / 0.8) 0,
+								rgb(var(--color-primary-900) / 0.8) 30%,
+								transparent 35%
+							)`,
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						backgroundSize: "40% 40%",
+					};
+				} else {
+					styles[target] = {
+						...styles[target],
+						backgroundImage: `
+							radial-gradient(circle,
+								rgb(var(--color-chess-move-legal-dot) / 0.5) 0,
+								rgb(var(--color-chess-move-legal-dot) / 0.5) 30%,
+								transparent 35%
+							)`,
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						backgroundSize: "40% 40%",
+					};
+				}
 			}
 		}
 
@@ -1131,6 +1154,20 @@ export default function GameView() {
 										canDragPiece,
 										squareStyles,
 										showAnimations: showBoardAnimations,
+										animationDurationInMs: 150,
+										arrowOptions: {
+											color: "rgb(var(--color-chess-move-premove) / 0.9)",
+											secondaryColor: "rgb(var(--color-chess-move-last) / 0.9)",
+											tertiaryColor: "rgb(var(--color-chess-move-last) / 0.9)",
+											arrowLengthReducerDenominator: 3,
+											sameTargetArrowLengthReducerDenominator: 4,
+											arrowWidthDenominator: 6,
+											activeArrowWidthMultiplier: 0.9,
+											opacity: 0.6,
+											activeOpacity: 0.5,
+										},
+										lightSquareStyle: { backgroundColor: "rgb(var(--color-chess-light-square))" },
+										darkSquareStyle: { backgroundColor: "rgb(var(--color-chess-dark-square))" },
 									}}
 								/>
 
