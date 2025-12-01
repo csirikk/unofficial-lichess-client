@@ -35,7 +35,9 @@ import { getGameIdFromURL, setGameIdInURL } from "../../libs/url";
 import { useAuth } from "../auth/AuthProvider";
 import { abortGame, offerDraw, resignGame, startBotGame } from "./gameActions";
 import { useGameClock } from "./gameClock";
+import { GameModeTabs } from "./GameModeTabs";
 import { gameStream } from "./gameStream";
+import type { UiBotLevel, UiColorChoice } from "../../libs/gameSetup";
 
 export default function GameView() {
 	const { user } = useAuth();
@@ -44,7 +46,6 @@ export default function GameView() {
 	const [chess, setChess] = useState(new Chess());
 	const chessRef = useRef(chess);
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
-	const [selectedLevel, setSelectedLevel] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
 	const [promotionRequest, setPromotionRequest] = useState<UiPromotionRequest>(null);
@@ -478,12 +479,15 @@ export default function GameView() {
 		[boardPosition],
 	);
 
-	const handleStartGame = async () => {
+	const handleStartBotGame = async (config: {
+		level: UiBotLevel;
+		clock: { limit: number; increment: number } | null;
+		color: UiColorChoice;
+	}) => {
 		setIsCreatingGame(true);
 		setError(null);
 		try {
-			// TODO: more options
-			const { gameId } = await startBotGame(selectedLevel, { limit: 300, increment: 3 });
+			const { gameId } = await startBotGame(config.level, config.clock, config.color);
 			setPendingUci(null);
 			setPendingIsPremove(false);
 			setPremoveQueue([]);
@@ -945,25 +949,20 @@ export default function GameView() {
 		const isLow = typeof ms === "number" && ms <= 10000; // 10 seconds
 		const isCritical = typeof ms === "number" && ms <= 5000; // 5 seconds
 
+		// Detect unlimited game (no clock on gameFull)
+		const isUnlimited = !gameFull?.clock;
+
 		const timerClasses = `font-mono text-7xl ${
-			isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"
-		} ${isCritical ? "animate-pulse" : ""}`;
+			isUnlimited
+				? "text-[rgb(var(--color-surface-card))]"
+				: isLow
+					? "text-[rgb(var(--color-error))]"
+					: "text-[rgb(var(--color-fg-primary))]"
+		} ${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
 		const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] p-4 text-center transition-opacity ${
 			isActive ? "" : "opacity-40"
 		}`;
-
-		const timerStatus = (() => {
-			if (!gameId) return "Waiting";
-
-			if (status && status !== GameStatusName.started) {
-				return "Game over";
-			}
-
-			if (!isConnected) return "Connecting…";
-			if (!isRunning) return "Starting soon";
-			return "Playing";
-		})();
 
 		const nameRating = (
 			<div className="flex text-[rgb(var(--color-fg-primary))]">
@@ -987,9 +986,6 @@ export default function GameView() {
 					<div className={timerClasses}>{formatClockTime(ms)}</div>
 				</div>
 				{position === "bottom" && nameRating}
-				<div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-[rgb(var(--color-fg-secondary))]">
-					{timerStatus}
-				</div>
 			</div>
 		);
 	};
@@ -1177,47 +1173,11 @@ export default function GameView() {
 			{/* Right col: Controls and info */}
 			<div className="col-span-1">
 				{!gameId ? (
-					<div>
-						<h2 className="text-xl font-bold">Play against bot</h2>
-						<div className="mt-4 space-y-4">
-							<div>
-								<label
-									htmlFor="level"
-									className="block text-sm text-[rgb(var(--color-fg-secondary))]"
-								>
-									Bot strength (1-8)
-								</label>
-								<input
-									id="level"
-									type="range"
-									min="1"
-									max="8"
-									value={selectedLevel}
-									onChange={(e) => setSelectedLevel(Number(e.target.value))}
-									className="w-full h-2 rounded-lg bg-[rgb(var(--color-surface-card))] appearance-none cursor-pointer"
-								/>
-								<div className="mt-1 text-sm">Level {selectedLevel}</div>
-							</div>
-
-							{error && (
-								<div
-									className="rounded bg-[rgb(var(--color-error)/0.1)] p-4 text-sm text-[rgb(var(--color-error))]"
-									role="alert"
-								>
-									Error: {error}
-								</div>
-							)}
-
-							<button
-								type="button"
-								onClick={handleStartGame}
-								disabled={isCreatingGame}
-								className="rounded bg-[rgb(var(--color-secondary-500))] px-6 py-2 text-white hover:bg-[rgb(var(--color-secondary-700))]"
-							>
-								{isCreatingGame ? " Creating game..." : "Start Game"}
-							</button>
-						</div>
-					</div>
+					<GameModeTabs
+						isCreating={isCreatingGame}
+						error={error}
+						onStartBotGame={handleStartBotGame}
+					/>
 				) : (
 					<div>
 						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -1250,21 +1210,13 @@ export default function GameView() {
 						</div>
 
 						{gameEnded && (
-							<div className="mb-6 flex flex-col gap-2 sm:flex-row">
+							<div className="mb-6">
 								<button
 									type="button"
 									onClick={resetToLobby}
-									className="rounded-lg bg-[rgb(var(--color-surface-nav))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-primary))] transition hover:bg-[rgb(var(--color-surface-border))] disabled:opacity-50"
+									className="rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:opacity-50"
 								>
 									New Game
-								</button>
-								<button
-									type="button"
-									onClick={handleStartGame}
-									disabled={isCreatingGame}
-									className="rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-700))] disabled:opacity-50"
-								>
-									{isCreatingGame ? "Starting…" : "Rematch"}
 								</button>
 							</div>
 						)}

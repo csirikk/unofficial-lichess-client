@@ -31,6 +31,7 @@ export function gameStream(gameId: string | null) {
 
 		(async () => {
 			try {
+				// TODO: fix fails when bullet bot game
 				// GET /api/board/game/stream/${gameId}
 				const response = await boardGameStream(gameId, {
 					...createStreamHeaders(),

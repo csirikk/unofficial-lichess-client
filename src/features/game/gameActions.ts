@@ -1,16 +1,27 @@
 import { boardGameAbort, boardGameDraw, boardGameResign } from "../../generated/client/board";
 import { challengeAi } from "../../generated/client/challenges";
 import { createAuthHeaders } from "../../libs/api";
+import type { UiBotLevel, UiColorChoice } from "../../libs/gameSetup";
 
+// gameActions.ts
 export async function startBotGame(
-	level: number,
-	clock: { limit: number; increment: number } = { limit: 300, increment: 3 },
+	level: UiBotLevel,
+	clock: { limit: number; increment: number } | null = { limit: 300, increment: 3 },
+	color: UiColorChoice = "random",
 ): Promise<{ gameId: string }> {
-	// POST /api/challenge/ai
-	const response = await challengeAi(
-		{ level, "clock.limit": clock.limit, "clock.increment": clock.increment },
-		createAuthHeaders(),
-	);
+	// Build body
+	const body: Parameters<typeof challengeAi>[0] = {
+		level,
+		color,
+	};
+
+	// Only add clock params if we have a timed game
+	if (clock && (clock.limit > 0 || clock.increment > 0)) {
+		body["clock.limit"] = clock.limit;
+		body["clock.increment"] = clock.increment;
+	}
+
+	const response = await challengeAi(body, createAuthHeaders());
 
 	if (response.status === 201 && "id" in response.data && response.data.id) {
 		return { gameId: String(response.data.id) };
