@@ -189,7 +189,7 @@ export function isFeasiblePremove(piece: UiPiece, from: Square, to: Square): boo
 		case "q":
 			return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || Math.abs(dx) === Math.abs(dy);
 		case "k":
-			return Math.max(Math.abs(dx), Math.abs(dy)) <= 2;
+			return (dy === 0 && (dx === 2 || dx === -2)) || Math.max(Math.abs(dx), Math.abs(dy)) === 1;
 		default:
 			return false;
 	}
