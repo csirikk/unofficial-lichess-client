@@ -133,15 +133,17 @@ export default function GameContainer() {
 	const moveCount = boardState.moveHistory.length;
 
 	return (
-		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2.2fr)]">
+		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 			{/* Left col: moves column + board */}
 			<div className={`md:col-span-1 transition-opacity ${!gameId ? "opacity-80" : ""}`}>
-				<div className="flex h-full items-stretch gap-4">
-					{/* Moves column */}
-					<MoveList moves={boardState.moveHistory} visible={!!gameId} />
-
+				<div className="grid h-full items-stretch gap-4 grid-cols-[auto_1fr]">
+					{gameId ? (
+						<MoveList moves={boardState.moveHistory} visible={true} />
+					) : (
+						<div className="hidden md:block w-64" />
+					)}
 					{/* Board */}
-					<div className="flex-1">
+					<div className="min-w-0">
 						<Board
 							position={boardState.position}
 							boardOrientation={boardOrientation}
@@ -165,8 +167,8 @@ export default function GameContainer() {
 				</div>
 			</div>
 
-			{/* Right col: Controls and info */}
-			<div className="col-span-1">
+			{/* Right col: info + clocks + actions */}
+			<div className="col-span-1 flex flex-col">
 				{!gameId ? (
 					<GameModeTabs
 						isCreating={isCreatingGame}
@@ -174,42 +176,10 @@ export default function GameContainer() {
 						onStartBotGame={handleStartBotGame}
 					/>
 				) : (
-					<div>
-						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-							<ClockPanel
-								gameFull={gameFull}
-								whiteMs={whiteMs}
-								blackMs={blackMs}
-								activeColor={activeColor}
-								timerOrder={timerOrder}
-							/>
-							{/* Game Actions */}
-							<Controls
-								onOfferDraw={handleOfferDraw}
-								onResign={handleResign}
-								onAbort={handleAbort}
-								isConnected={isConnected}
-								gameEnded={gameEnded}
-								moveCount={moveCount}
-							/>
-						</div>
-
-						{gameEnded && (
-							<div className="mb-6">
-								<button
-									type="button"
-									onClick={resetToLobby}
-									className="rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:opacity-50"
-								>
-									New Game
-								</button>
-							</div>
-						)}
-
-						{/* Connection status */}
-						<div className="grid grid-cols-2 flex items-center mb-4">
-							<h2 className="text-xl font-bold">Playing vs Bot</h2>
-							<div className="text-sm text-[rgb(var(--color-fg-secondary))] justify-end flex mr-4">
+					<div className="flex flex-col gap-6">
+						{/* Info */}
+						<div className="rounded-lg p-2">
+							<div className="text-md font-medium">
 								{gameEnded ? null : isConnected ? (
 									<span className="text-[rgb(var(--color-success))]" title="Connected">
 										Connected
@@ -228,55 +198,95 @@ export default function GameContainer() {
 									</span>
 								) : null}
 							</div>
-						</div>
 
-						{streamError && (
-							<div
-								className="rounded bg-[rgb(var(--color-error)/0.1)] p-3 text-sm text-[rgb(var(--color-error))]"
-								role="alert"
-							>
-								Error: {streamError}
-							</div>
-						)}
-
-						{/* Game Info Panel */}
-						<div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-4 mb-4">
-							<h3 className="text-lg font-semibold">Game Info</h3>
-							<dl className="mt-2 space-y-2 text-sm">
-								<div className="flex justify-between">
-									<dt className="text-gray-600 dark:text-gray-400">Game ID:</dt>
-									<dd className="font-medium text-xs">{gameId}</dd>
+							<div className="space-y-2 text-xs">
+								<div className="">
+									<span className="text-[rgb(var(--color-fg-secondary))]">Game ID: </span>
+									<span className="font-mono text-[rgb(var(--color-fg-primary))]">{gameId}</span>
 								</div>
 								{status && (
 									<>
-										<div className="flex justify-between">
-											<dt className="text-gray-600 dark:text-gray-400">Status:</dt>
-											<dd className="font-medium">{status}</dd>
+										<div className="">
+											<span className="text-[rgb(var(--color-fg-secondary))]">Status: </span>
+											<span className="font-medium">{status}</span>
 										</div>
 										{winner && (
-											<div className="flex justify-between">
-												<dt className="text-gray-600 dark:text-gray-400">Winner:</dt>
-												<dd className="font-medium">{winner}</dd>
+											<div className="">
+												<span className="text-[rgb(var(--color-fg-secondary))]">Winner: </span>
+												<span className="font-medium">{winner}</span>
 											</div>
 										)}
 									</>
 								)}
-							</dl>
-
-							<div className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
-
-							<h3 className="text-lg font-semibold">Position</h3>
-							<div className="mt-2 text-sm">
-								<div className="text-gray-600 dark:text-gray-400">
-									Turn: {boardState.chess.turn() === "w" ? "White" : "Black"}
+								<div className="">
+									<span className="text-[rgb(var(--color-fg-secondary))]">Turn: </span>
+									<span className="font-medium">
+										{boardState.chess.turn() === "w" ? "White" : "Black"}
+									</span>
 								</div>
-								<div className="mt-2 text-gray-600 dark:text-gray-400">
-									{boardState.chess.isCheck() && "Check! "}
-									{boardState.chess.isCheckmate() && "Checkmate! "}
-									{boardState.chess.isStalemate() && "Stalemate! "}
-									{boardState.chess.isDraw() && "Draw! "}
-								</div>
+								{(boardState.chess.isCheck() ||
+									boardState.chess.isCheckmate() ||
+									boardState.chess.isStalemate() ||
+									boardState.chess.isDraw()) && (
+									<div className="">
+										<span className="text-[rgb(var(--color-fg-secondary))]">State: </span>
+										<span className="font-medium">
+											{boardState.chess.isCheck() && (
+												<span className="text-[rgb(var(--color-warning))]">Check</span>
+											)}
+											{boardState.chess.isCheckmate() && (
+												<span className="text-[rgb(var(--color-error))]">Checkmate</span>
+											)}
+											{boardState.chess.isStalemate() && <span>Stalemate</span>}
+											{boardState.chess.isDraw() && <span>Draw</span>}
+										</span>
+									</div>
+								)}
 							</div>
+
+							{streamError && (
+								<div
+									className="rounded bg-[rgb(var(--color-error)/0.1)] p-3 text-sm text-[rgb(var(--color-error))]"
+									role="alert"
+								>
+									Error: {streamError}
+								</div>
+							)}
+						</div>
+
+						{/* Clocks*/}
+						<div className="flex justify-center">
+							<ClockPanel
+								gameFull={gameFull}
+								whiteMs={whiteMs}
+								blackMs={blackMs}
+								activeColor={activeColor}
+								timerOrder={timerOrder}
+							/>
+						</div>
+
+						{/* Game Actions */}
+						<div className="flex flex-col gap-4">
+							<div className="flex justify-center">
+								<Controls
+									onOfferDraw={handleOfferDraw}
+									onResign={handleResign}
+									onAbort={handleAbort}
+									isConnected={isConnected}
+									gameEnded={gameEnded}
+									moveCount={moveCount}
+								/>
+							</div>
+
+							{gameEnded && (
+								<button
+									type="button"
+									onClick={resetToLobby}
+									className="w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:opacity-50"
+								>
+									New Game
+								</button>
+							)}
 						</div>
 					</div>
 				)}

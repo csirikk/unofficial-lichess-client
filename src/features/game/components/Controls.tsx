@@ -46,7 +46,7 @@ export function Controls({
 	];
 
 	return (
-		<div className="flex flex-col gap-1 self-center">
+		<div className="flex flex-row items-center justify-center gap-2 w-full mt-2">
 			{gameActions.map(({ label, icon: Icon, onClick, disabled }) => (
 				<button
 					key={label}
@@ -56,13 +56,17 @@ export function Controls({
 					aria-label={label}
 					title={label}
 					className={`
-						inline-flex items-center justify-center p-2 
-						rounded-full transition 
+						flex-1 inline-flex items-center justify-center gap-2 p-3 
+						rounded-lg transition-colors border border-transparent
+						text-sm font-medium
 						disabled:opacity-40 disabled:cursor-not-allowed 
-						text-gray-500 hover:bg-[rgb(var(--color-surface-border)/0.1)] hover:text-[rgb(var(--color-fg-primary))]
-						${disabled ? "hover:bg-transparent hover:text-gray-500" : ""}`}
+						text-[rgb(var(--color-fg-secondary))] 
+						hover:bg-[rgb(var(--color-surface-border)/0.5)] 
+						hover:text-[rgb(var(--color-fg-primary))]
+						${disabled ? "hover:bg-transparent" : ""}`}
 				>
-					<Icon className="h-6 w-6" aria-hidden />
+					<Icon className="h-5 w-5" aria-hidden />
+					<span className="hidden sm:inline">{label}</span>
 				</button>
 			))}
 		</div>

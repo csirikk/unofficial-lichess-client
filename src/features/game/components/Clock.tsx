@@ -22,7 +22,7 @@ export function Clock({ color, position, player, timeMs, isActive, isUnlimited }
 	const isLow = typeof timeMs === "number" && timeMs <= 10000; // 10 seconds
 	const isCritical = typeof timeMs === "number" && timeMs <= 5000; // 5 seconds
 
-	const timerClasses = `font-mono text-7xl ${
+	const timerClasses = `font-mono font-bold tabular-nums tracking-wider leading-none text-7xl ${
 		isUnlimited
 			? "text-[rgb(var(--color-surface-card))]"
 			: isLow
@@ -30,7 +30,7 @@ export function Clock({ color, position, player, timeMs, isActive, isUnlimited }
 				: "text-[rgb(var(--color-fg-primary))]"
 	} ${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
-	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] p-4 text-center transition-opacity ${
+	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] px-6 py-4 text-center transition-opacity ${
 		isActive ? "" : "opacity-40"
 	}`;
 

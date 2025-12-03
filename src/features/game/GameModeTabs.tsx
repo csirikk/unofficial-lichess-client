@@ -26,26 +26,30 @@ export function GameModeTabs({ isCreating, error, onStartBotGame }: GameModeTabs
 	const [mode, setMode] = useState<GameMode>("bot");
 
 	return (
-		<div className="space-y-4">
+		<div className="flex flex-col gap-4 h-full justify-start">
 			{/* Mode Selector */}
-			<SegmentedControl value={mode} options={modeOptions} onChange={setMode} />
+			<div className="shrink-0">
+				<SegmentedControl value={mode} options={modeOptions} onChange={setMode} />
+			</div>
 
 			{/* Mode Content */}
-			{mode === "bot" && (
-				<BotGameTab isCreating={isCreating} error={error} onStart={onStartBotGame} />
-			)}
+			<div className="flex-1">
+				{mode === "bot" && (
+					<BotGameTab isCreating={isCreating} error={error} onStart={onStartBotGame} />
+				)}
 
-			{mode === "unrated" && (
-				<Card title="Unrated Games">
-					<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
-				</Card>
-			)}
+				{mode === "unrated" && (
+					<Card title="Unrated Games">
+						<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
+					</Card>
+				)}
 
-			{mode === "rated" && (
-				<Card title="Rated Games">
-					<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
-				</Card>
-			)}
+				{mode === "rated" && (
+					<Card title="Rated Games">
+						<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
+					</Card>
+				)}
+			</div>
 		</div>
 	);
 }
