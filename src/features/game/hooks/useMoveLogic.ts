@@ -56,6 +56,7 @@ export type BoardState = {
 	promotionRequest: UiPromotionRequest;
 	showAnimations: boolean;
 	moveHistory: string[];
+	rightClickedSquares: Record<string, boolean>;
 };
 
 export type MoveHandlers = {
@@ -69,6 +70,7 @@ export type MoveHandlers = {
 	resetBoard: () => void;
 	getVisualPieceAt: (square: Square) => UiPiece | null;
 	ownsSquare: (square: Square) => boolean;
+	handleRightClick: (square: Square) => void;
 };
 
 export type MoveLogicReturn = {
@@ -105,6 +107,7 @@ export function useMoveLogic({
 	}>({ from: null, to: null });
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
 	const [promotionRequest, setPromotionRequest] = useState<UiPromotionRequest>(null);
+	const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, boolean>>({});
 	const serverMovesRef = useRef<string>("");
 
 	// Derived game state
@@ -394,8 +397,33 @@ export function useMoveLogic({
 		setLastMoveSquares({ from: null, to: null });
 		setCheckSquare(null);
 		setPromotionRequest(null);
+		setRightClickedSquares({});
 		serverMovesRef.current = "";
 	}, []);
+
+	const handleRightClick = useCallback(
+		(square: Square) => {
+			// Clear premoves if they exist
+			if (premoveQueue.length > 0 || pendingUci) {
+				setPendingUci(null);
+				setPendingIsPremove(false);
+				setPremoveQueue([]);
+				return;
+			}
+
+			// Toggle highlight
+			setRightClickedSquares((prev) => {
+				const newStyles = { ...prev };
+				if (newStyles[square]) {
+					delete newStyles[square];
+				} else {
+					newStyles[square] = true;
+				}
+				return newStyles;
+			});
+		},
+		[premoveQueue, pendingUci],
+	);
 
 	// Rebuild chess position from confirmed + pending move
 	useEffect(() => {
@@ -460,6 +488,8 @@ export function useMoveLogic({
 		} else {
 			setCheckSquare(null);
 		}
+
+		setRightClickedSquares({});
 	}, [chess, playerColor, selectedSquare]);
 
 	// Send premoves when it becomes our turn according to the server state
@@ -558,6 +588,7 @@ export function useMoveLogic({
 			promotionRequest,
 			showAnimations,
 			moveHistory: chess.history(),
+			rightClickedSquares,
 		},
 		handlers: {
 			handleMoveIntent,
@@ -570,6 +601,7 @@ export function useMoveLogic({
 			resetBoard,
 			getVisualPieceAt,
 			ownsSquare,
+			handleRightClick,
 		},
 		gameInfo: {
 			myColor,

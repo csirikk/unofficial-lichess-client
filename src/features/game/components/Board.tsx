@@ -39,6 +39,8 @@ export type BoardProps = {
 	onPieceDrop: (sourceSquare: string, targetSquare: string | null) => boolean;
 	onPromotionChoice: (piece: UiPromotionPiece) => void;
 	onCancelPromotion: () => void;
+	rightClickedSquares: Record<string, boolean>;
+	onRightClick: (square: string) => void;
 };
 
 export function Board({
@@ -59,6 +61,8 @@ export function Board({
 	onPieceDrop,
 	onPromotionChoice,
 	onCancelPromotion,
+	rightClickedSquares,
+	onRightClick,
 }: BoardProps) {
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
@@ -132,6 +136,11 @@ export function Board({
 			appendShadow(square, `inset 0 0 0 9999px ${color}`);
 		};
 
+		// Right-click highlights
+		for (const square of Object.keys(rightClickedSquares)) {
+			tintSquare(square as Square, "rgb(var(--color-error) / 0.7)");
+		}
+
 		// Last move
 		tintSquare(lastMoveSquares.from, "rgb(var(--color-chess-move-last) / 0.37)");
 		tintSquare(lastMoveSquares.to, "rgb(var(--color-chess-move-last) / 0.37)");
@@ -203,7 +212,7 @@ export function Board({
 		}
 
 		return styles;
-	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare, premoveQueue]);
+	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare, premoveQueue, rightClickedSquares]);
 
 	// Handlers for react-chessboard
 	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) => {
@@ -231,6 +240,12 @@ export function Board({
 		return onPieceDrop(sourceSquare, targetSquare);
 	};
 
+	const handleSquareRightClick: ChessboardOptions["onSquareRightClick"] = ({ square }) => {
+		if (square) {
+			onRightClick(square);
+		}
+	};
+
 	return (
 		<div className="aspect-square w-full max-w-full border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] p-2">
 			<div className="size-full relative" ref={boardContainerRef}>
@@ -243,6 +258,7 @@ export function Board({
 						onPieceClick: handlePieceClick,
 						onPieceDrag: handlePieceDrag,
 						canDragPiece: handleCanDragPiece,
+						onSquareRightClick: handleSquareRightClick,
 						squareStyles,
 						showAnimations,
 						animationDurationInMs: 150,

@@ -4,6 +4,7 @@
  * Main entry point for the game feature.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Square } from "chess.js";
 import { GameColor } from "../../generated/types/gameColor";
 import { useAuth } from "../auth/hooks/useAuth";
 import { getGameIdFromURL, setGameIdInURL } from "../../lib/url";
@@ -166,6 +167,8 @@ export default function GameContainer() {
 							onPieceDrop={(src, tgt) => handlers.onPieceDrop(src, tgt)}
 							onPromotionChoice={handlers.handlePromotionChoice}
 							onCancelPromotion={() => handlers.handleSelectSquare(null)}
+							rightClickedSquares={boardState.rightClickedSquares}
+							onRightClick={(sq) => handlers.handleRightClick(sq as Square)}
 						/>
 					</div>
 				</div>
