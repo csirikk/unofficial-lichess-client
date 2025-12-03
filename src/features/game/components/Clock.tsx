@@ -41,12 +41,11 @@ export function Clock({
 	const isLow = typeof timeMs === "number" && timeMs <= 10000; // 10 seconds
 	const isCritical = typeof timeMs === "number" && timeMs <= 5000; // 5 seconds
 
-	const timerClasses = `font-mono font-bold tabular-nums tracking-wider leading-none text-7xl ${
-		isUnlimited
-			? "text-[rgb(var(--color-surface-card))]"
-			: isLow
-				? "text-[rgb(var(--color-error))]"
-				: "text-[rgb(var(--color-fg-primary))]"
+	const timeString = formatClockTime(timeMs);
+	const [minutes, seconds] = timeString.split(":");
+
+	const timerClasses = `flex justify-center items-baseline font-mono font-bold tracking-wider leading-none text-7xl ${
+		isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"
 	} ${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
 	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] px-6 py-4 text-center transition-opacity ${
@@ -100,7 +99,11 @@ export function Clock({
 			{position === "top" && infoRow}
 			{position === "top" && nameRating}
 			<div key={color} className={containerClasses}>
-				<div className={timerClasses}>{formatClockTime(timeMs)}</div>
+				<div className={timerClasses}>
+					<div className="flex-1 select-none text-right tabular-nums">{minutes}</div>
+					<div className="mx-1 select-none">:</div>
+					<div className="flex-1 select-none text-left tabular-nums">{seconds}</div>
+				</div>
 			</div>
 			{position === "bottom" && nameRating}
 			{position === "bottom" && infoRow}
@@ -165,7 +168,10 @@ export function ClockPanel({
 		<div className="flex-1 space-y-3">
 			{timerOrder.map((color, index) => {
 				const isWhite = color === "white";
-				const ms = isWhite ? whiteMs : blackMs;
+				let ms = isWhite ? whiteMs : blackMs;
+				if (isUnlimited) {
+					ms = null;
+				}
 				const isActive = activeColor === (isWhite ? "w" : "b");
 				const myCaptured = isWhite ? captured.white : captured.black;
 				const diff = isWhite ? whiteDiff : blackDiff;
