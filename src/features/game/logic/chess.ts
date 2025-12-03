@@ -1,10 +1,13 @@
 /**
- * Canonical UI types for chess display and interaction. Bridge between chess.js, Lichess API types, and react-chessboard.
+ * Chess Logic
  */
 import type { Chess, Color, PieceSymbol, Square } from "chess.js";
+import { GameColor } from "../../../generated/types/gameColor";
+import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
+import type { UserExtended } from "../../../generated/types/userExtended";
 
 /**
- * Canonical piece type used everywhere in the frontend. Directly compatible with chess.js.
+ * Compatible with chess.js.
  */
 export type UiPiece = {
 	color: Color; // "w" | "b"
@@ -17,7 +20,7 @@ export type UiPiece = {
 export type UiBoard = Partial<Record<Square, UiPiece>>;
 
 /**
- * Piece key used by react-chessboard and defaultPieces ("wP", "bK", ...).
+ * Compatible with react-chessboard.
  */
 export type UiPieceKey = `${Color}${Uppercase<PieceSymbol>}`;
 
@@ -30,13 +33,10 @@ export type UiGhostPiece = {
 };
 
 /**
- * Promotion letters (UCI / chess.js compatible).
+ * Compatible with chess.js.
  */
 export type UiPromotionPiece = "q" | "r" | "b" | "n";
 
-/**
- * Premove (queued move) with UCI as canonical ID.
- */
 export type UiPremove = {
 	uci: string;
 	from: Square;
@@ -44,9 +44,6 @@ export type UiPremove = {
 	promotion?: UiPromotionPiece;
 };
 
-/**
- * Promotion request state for UI.
- */
 export type UiPromotionRequest = {
 	from: Square;
 	to: Square;
@@ -98,7 +95,7 @@ export function boardFromChess(chess: Chess): UiBoard {
 }
 
 /**
- * Convert UiBoard to the position format expected by react-chessboard
+ * Convert UiBoard to the format expected by react-chessboard
  */
 export function boardToChessboardPosition(uiBoard: UiBoard): Record<string, { pieceType: string }> {
 	const out: Record<string, { pieceType: string }> = {};
@@ -142,7 +139,7 @@ export function applyPremoves(
 }
 
 /**
- * Check if a piece can feasibly make a premove pattern. Ignores blocking pieces, captures, etc.
+ * Check if a piece can feasibly make a premove. Ignores blocking pieces, captures, etc.
  */
 export function isFeasiblePremove(piece: UiPiece, from: Square, to: Square): boolean {
 	const fileFrom = from.charCodeAt(0) - "a".charCodeAt(0);
@@ -180,24 +177,49 @@ export function isFeasiblePremove(piece: UiPiece, from: Square, to: Square): boo
 		case "n": {
 			const adx = Math.abs(dx);
 			const ady = Math.abs(dy);
-			return (adx === 1 && ady === 2) || (adx === 2 && ady === 1);
+			return (adx === 1 && ady === 2) || (adx === 2 && ady === 1); // L-shape
 		}
 		case "b":
-			return Math.abs(dx) === Math.abs(dy);
+			return Math.abs(dx) === Math.abs(dy); // Diagonal
 		case "r":
-			return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0);
+			return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0); // Straight
 		case "q":
-			return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || Math.abs(dx) === Math.abs(dy);
+			return (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || Math.abs(dx) === Math.abs(dy); // Straight or diagonal
 		case "k":
-			return (dy === 0 && (dx === 2 || dx === -2)) || Math.max(Math.abs(dx), Math.abs(dy)) === 1;
+			return (dy === 0 && (dx === 2 || dx === -2)) || Math.max(Math.abs(dx), Math.abs(dy)) === 1; // One square any direction or castling
 		default:
 			return false;
 	}
 }
 
 /**
- * Find the king square for a given color.
+ * UCI format: e2e4, e7e5, e7e8q (promotion)
+ * chess.js format: { from: 'e2', to: 'e4', promotion?: 'q' }
  */
+export function uciToMove(uci: string): {
+	from: string;
+	to: string;
+	promotion?: string;
+} {
+	if (uci.length < 4) {
+		throw new Error(`Invalid UCI move: ${uci}`);
+	}
+
+	const from = uci.substring(0, 2);
+	const to = uci.substring(2, 4);
+	const promotion = uci.length > 4 ? uci.substring(4, 5) : undefined;
+
+	return { from, to, promotion };
+}
+
+/**
+ * UCI format: e2e4, e7e5, e7e8q (promotion)
+ * chess.js format: { from: 'e2', to: 'e4', promotion?: 'q' }
+ */
+export function moveToUci(move: { from: string; to: string; promotion?: string }): string {
+	return `${move.from}${move.to}${move.promotion || ""}`;
+}
+
 export function findKingSquare(board: UiBoard, color: Color): Square | null {
 	for (const [square, piece] of Object.entries(board)) {
 		if (piece && piece.type === "k" && piece.color === color) {
@@ -205,6 +227,31 @@ export function findKingSquare(board: UiBoard, color: Color): Square | null {
 		}
 	}
 	return null;
+}
+
+export function getPlayerColor(
+	gameFull: GameFullEvent | null,
+	user: UserExtended | null,
+): GameColor {
+	if (!gameFull || !user) return GameColor.white;
+
+	const userId = user.id?.toLowerCase();
+	const whiteId = gameFull.white?.id?.toLowerCase();
+	const blackId = gameFull.black?.id?.toLowerCase();
+
+	if (userId && whiteId === userId) return GameColor.white;
+	if (userId && blackId === userId) return GameColor.black;
+	return GameColor.white;
+}
+
+export function isPlayerInGame(gameFull: GameFullEvent | null, user: UserExtended | null): boolean {
+	if (!gameFull || !user) return false;
+
+	const userId = user.id?.toLowerCase();
+	const whiteId = gameFull.white?.id?.toLowerCase();
+	const blackId = gameFull.black?.id?.toLowerCase();
+
+	return Boolean(userId && (whiteId === userId || blackId === userId));
 }
 
 /**

@@ -1,13 +1,13 @@
 import { boardGameAbort, boardGameDraw, boardGameResign } from "../../generated/client/board";
 import { challengeAi } from "../../generated/client/challenges";
-import { createAuthHeaders } from "../../libs/api";
-import type { UiBotLevel, UiColorChoice } from "../../libs/gameSetup";
+import { createAuthHeaders } from "../../lib/api";
+import type { SetupBotLevel, SetupColorChoice } from "./logic/setup";
 
 // gameActions.ts
 export async function startBotGame(
-	level: UiBotLevel,
+	level: SetupBotLevel,
 	clock: { limit: number; increment: number } | null = { limit: 300, increment: 3 },
-	color: UiColorChoice = "random",
+	color: SetupColorChoice = "random",
 ): Promise<{ gameId: string }> {
 	// Build body
 	const body: Parameters<typeof challengeAi>[0] = {

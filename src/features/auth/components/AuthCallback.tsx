@@ -1,6 +1,11 @@
+/**
+ * AuthCallback Component
+ *
+ * Handles the OAuth callback from Lichess.
+ */
 import { useEffect, useRef, useState } from "react";
-import Layout from "../../ui/Layout";
-import { useAuth } from "./AuthProvider";
+import Layout from "../../../ui/Layout";
+import { useAuth } from "../hooks/useAuth";
 
 export default function AuthCallback() {
 	const { handleCallback } = useAuth();

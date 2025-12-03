@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 
-export type UiSelectableCard<T extends string> = {
+export type SelectableCard<T extends string> = {
 	id: T;
 	title: ReactNode;
 	subtitle?: ReactNode;
 };
 
-type UiSelectableCardGridProps<T extends string> = {
+type SelectableCardGridProps<T extends string> = {
 	value: T;
-	items: UiSelectableCard<T>[];
+	items: SelectableCard<T>[];
 	onChange: (value: T) => void;
 };
 
-export function UiSelectableCardGrid<T extends string>({
+export function SelectableCardGrid<T extends string>({
 	value,
 	items,
 	onChange,
-}: UiSelectableCardGridProps<T>) {
+}: SelectableCardGridProps<T>) {
 	return (
 		<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 			{items.map((item) => {

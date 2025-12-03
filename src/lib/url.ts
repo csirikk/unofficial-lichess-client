@@ -1,6 +1,7 @@
 /**
- * Get a query parameter from the current URL
+ * URL manipulation utilities
  */
+
 export function getQueryParam(key: string): string | null {
 	try {
 		return new URLSearchParams(window.location.search).get(key);
@@ -9,9 +10,6 @@ export function getQueryParam(key: string): string | null {
 	}
 }
 
-/**
- * Set or delete a query parameter in the current URL
- */
 export function setQueryParam(key: string, value: string | null): void {
 	try {
 		const url = new URL(window.location.href);
@@ -26,16 +24,10 @@ export function setQueryParam(key: string, value: string | null): void {
 	}
 }
 
-/**
- * Get the game ID from the URL query string
- */
 export function getGameIdFromURL(): string | null {
 	return getQueryParam("game");
 }
 
-/**
- * Set the game ID in the URL query string
- */
 export function setGameIdInURL(id: string | null): void {
 	setQueryParam("game", id);
 }

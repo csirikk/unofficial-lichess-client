@@ -1,9 +1,15 @@
+/**
+ * AuthProvider Component
+ *
+ * Provides authentication context to the entire application.
+ * Manages user state, login, logout, and OAuth callback handling.
+ */
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { accountMe } from "../../generated/client/account";
 import { apiToken, apiTokenDelete } from "../../generated/client/oauth";
 import type { UserExtended } from "../../generated/types/userExtended";
-import { CLIENT_ID, createAuthHeaders, REDIRECT_URI, SCOPES } from "../../libs/api";
+import { CLIENT_ID, createAuthHeaders, REDIRECT_URI, SCOPES } from "../../lib/api";
 import {
 	buildAuthorizationUrl,
 	clearPKCEData,
@@ -12,26 +18,10 @@ import {
 	removeAccessToken,
 	storeAccessToken,
 	validateState,
-} from "./pkce";
+} from "./logic/pkce";
+import type { AuthContextType } from "./hooks/useAuth";
 
-interface AuthContextType {
-	user: UserExtended | null;
-	isLoading: boolean;
-	isAuthenticated: boolean;
-	login: () => Promise<void>;
-	logout: () => Promise<void>;
-	handleCallback: (code: string, state: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-	const context = useContext(AuthContext);
-	if (!context) {
-		throw new Error("useAuth must be used within AuthProvider");
-	}
-	return context;
-}
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
 	children: ReactNode;
@@ -47,7 +37,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			setIsLoading(true);
 			try {
 				const token = getAccessToken();
-				console.log("[auth] loadProfile: found token?", Boolean(token));
 				if (token) {
 					// GET /api/account
 					const response = await accountMe(createAuthHeaders());

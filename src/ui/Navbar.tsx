@@ -1,5 +1,5 @@
 import { Settings } from "lucide-react";
-import { useAuth } from "../features/auth";
+import { useAuth } from "../features/auth/hooks/useAuth";
 
 export default function Navbar() {
 	const { user, login, logout } = useAuth();

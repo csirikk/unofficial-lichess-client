@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { AuthCallback, AuthProvider } from "../features/auth";
+import AuthCallback from "../features/auth/components/AuthCallback";
+import { AuthProvider } from "../features/auth/AuthProvider";
 import HomePage from "../ui/HomePage";
 
 export default function App() {

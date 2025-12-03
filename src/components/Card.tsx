@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type UiCardProps = {
+type CardProps = {
 	title?: string;
 	subtitle?: string;
 	actions?: ReactNode;
@@ -8,7 +8,7 @@ type UiCardProps = {
 	className?: string;
 };
 
-export function UiCard({ title, subtitle, actions, children, className = "" }: UiCardProps) {
+export function Card({ title, subtitle, actions, children, className = "" }: CardProps) {
 	const baseClasses =
 		"rounded-2xl border border-[rgb(var(--color-surface-border)/0.9)] bg-[rgb(var(--color-surface-card))] p-5 shadow-sm";
 

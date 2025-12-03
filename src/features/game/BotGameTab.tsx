@@ -1,28 +1,28 @@
 import { useState } from "react";
-import { UiCard } from "../../components/ui/UiCard";
-import { UiSectionLabel } from "../../components/ui/UiSectionLabel";
-import { UiSegmentedControl, type UiSegmentedOption } from "../../components/ui/UiSegmentedControl";
+import { Card } from "../../components/Card";
+import { SectionLabel } from "../../components/SectionLabel";
+import { SegmentedControl, type SegmentedOption } from "../../components/SegmentedControl";
 import {
-	type UiBotLevel,
-	type UiColorChoice,
+	type SetupBotLevel,
+	type SetupColorChoice,
 	UI_BOT_LEVELS,
 	UI_TIME_PRESETS,
 	createDefaultBotGameSetup,
 	findTimePreset,
-} from "../../libs/gameSetup";
-import { UiSelectableCardGrid } from "../../components/ui/UiSelectableCardGrid";
+} from "./logic/setup";
+import { SelectableCardGrid } from "../../components/SelectableCardGrid";
 
 type BotGameTabProps = {
 	isCreating: boolean;
 	error: string | null;
 	onStart: (config: {
-		level: UiBotLevel;
+		level: SetupBotLevel;
 		clock: { limit: number; increment: number } | null;
-		color: UiColorChoice;
+		color: SetupColorChoice;
 	}) => void;
 };
 
-const colorOptions: UiSegmentedOption<UiColorChoice>[] = [
+const colorOptions: SegmentedOption<SetupColorChoice>[] = [
 	{ value: "white", label: "White" },
 	{ value: "random", label: "Random" },
 	{ value: "black", label: "Black" },
@@ -32,14 +32,14 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 	const [setup, setSetup] = useState(createDefaultBotGameSetup);
 
 	const handleLevelChange = (id: string) => {
-		setSetup((prev) => ({ ...prev, botLevel: Number(id) as UiBotLevel }));
+		setSetup((prev) => ({ ...prev, botLevel: Number(id) as SetupBotLevel }));
 	};
 
 	const handleTimeChange = (id: string) => {
 		setSetup((prev) => ({ ...prev, timePresetId: id }));
 	};
 
-	const handleColorChange = (color: UiColorChoice) => {
+	const handleColorChange = (color: SetupColorChoice) => {
 		setSetup((prev) => ({ ...prev, colorChoice: color }));
 	};
 
@@ -64,14 +64,14 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 	const currentLevel = UI_BOT_LEVELS.find((l) => l.level === setup.botLevel) ?? UI_BOT_LEVELS[0];
 
 	return (
-		<UiCard
+		<Card
 			title="Play against Bot"
 			subtitle="Choose difficulty, time control and the color you want to play."
 		>
 			<div className="space-y-5">
 				{/* Bot Level */}
 				<div>
-					<UiSectionLabel hint={`${currentLevel.label}`}>Bot strength</UiSectionLabel>
+					<SectionLabel hint={`${currentLevel.label}`}>Bot strength</SectionLabel>
 
 					<div className="grid">
 						<div className="space-y-3">
@@ -148,8 +148,8 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 
 				{/* Time Control */}
 				<div>
-					<UiSectionLabel>Time Control</UiSectionLabel>
-					<UiSelectableCardGrid
+					<SectionLabel>Time Control</SectionLabel>
+					<SelectableCardGrid
 						value={setup.timePresetId}
 						items={UI_TIME_PRESETS.map((p) => ({
 							id: p.id,
@@ -162,8 +162,8 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 
 				{/* Color Choice */}
 				<div>
-					<UiSectionLabel>Play as</UiSectionLabel>
-					<UiSegmentedControl
+					<SectionLabel>Play as</SectionLabel>
+					<SegmentedControl
 						value={setup.colorChoice}
 						options={colorOptions}
 						onChange={handleColorChange}
@@ -190,6 +190,6 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 					{isCreating ? "Starting…" : "Start Game"}
 				</button>
 			</div>
-		</UiCard>
+		</Card>
 	);
 }

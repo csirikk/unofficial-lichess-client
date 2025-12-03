@@ -26,7 +26,6 @@ export function readNdjsonStream<T = unknown>(
 
 		try {
 			const msg = JSON.parse(trimmed) as T;
-			// console.debug(`[${name}]`, msg);
 			handler(msg);
 		} catch (error) {
 			console.error(`[${name}] Failed to parse JSON:`, json, error);
@@ -54,7 +53,6 @@ export function readNdjsonStream<T = unknown>(
 				}
 			}
 		} catch (error) {
-			// Ignore abort errors
 			if (
 				(error instanceof DOMException && error.name === "AbortError") ||
 				(error instanceof Error && error.name === "AbortError")

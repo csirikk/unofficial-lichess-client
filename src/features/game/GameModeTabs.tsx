@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { UiCard } from "../../components/ui/UiCard";
-import { UiSegmentedControl, type UiSegmentedOption } from "../../components/ui/UiSegmentedControl";
-import type { UiBotLevel, UiColorChoice } from "../../libs/gameSetup";
+import { Card } from "../../components/Card";
+import { SegmentedControl, type SegmentedOption } from "../../components/SegmentedControl";
+import type { SetupBotLevel, SetupColorChoice } from "./logic/setup";
 import { BotGameTab } from "./BotGameTab";
 
 type GameMode = "bot" | "unrated" | "rated";
 
-const modeOptions: UiSegmentedOption<GameMode>[] = [
+const modeOptions: SegmentedOption<GameMode>[] = [
 	{ value: "bot", label: "Bots" },
 	{ value: "unrated", label: "Unrated" },
 	{ value: "rated", label: "Rated" },
@@ -16,9 +16,9 @@ type GameModeTabsProps = {
 	isCreating: boolean;
 	error: string | null;
 	onStartBotGame: (config: {
-		level: UiBotLevel;
+		level: SetupBotLevel;
 		clock: { limit: number; increment: number } | null;
-		color: UiColorChoice;
+		color: SetupColorChoice;
 	}) => void;
 };
 
@@ -28,7 +28,7 @@ export function GameModeTabs({ isCreating, error, onStartBotGame }: GameModeTabs
 	return (
 		<div className="space-y-4">
 			{/* Mode Selector */}
-			<UiSegmentedControl value={mode} options={modeOptions} onChange={setMode} />
+			<SegmentedControl value={mode} options={modeOptions} onChange={setMode} />
 
 			{/* Mode Content */}
 			{mode === "bot" && (
@@ -36,15 +36,15 @@ export function GameModeTabs({ isCreating, error, onStartBotGame }: GameModeTabs
 			)}
 
 			{mode === "unrated" && (
-				<UiCard title="Unrated Games">
+				<Card title="Unrated Games">
 					<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
-				</UiCard>
+				</Card>
 			)}
 
 			{mode === "rated" && (
-				<UiCard title="Rated Games">
+				<Card title="Rated Games">
 					<p className="text-sm text-[rgb(var(--color-fg-secondary))] text-center">todo</p>
-				</UiCard>
+				</Card>
 			)}
 		</div>
 	);

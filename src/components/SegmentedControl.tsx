@@ -1,23 +1,23 @@
 import type { ReactNode } from "react";
 
-export type UiSegmentedOption<T extends string> = {
+export type SegmentedOption<T extends string> = {
 	value: T;
 	label: ReactNode;
 };
 
-type UiSegmentedControlProps<T extends string> = {
+type SegmentedControlProps<T extends string> = {
 	value: T;
-	options: UiSegmentedOption<T>[];
+	options: SegmentedOption<T>[];
 	onChange: (value: T) => void;
 	className?: string;
 };
 
-export function UiSegmentedControl<T extends string>({
+export function SegmentedControl<T extends string>({
 	value,
 	options,
 	onChange,
 	className = "",
-}: UiSegmentedControlProps<T>) {
+}: SegmentedControlProps<T>) {
 	const containerClasses = [
 		"inline-flex rounded-full border border-[rgb(var(--color-surface-border))]",
 		"bg-[rgb(var(--color-surface-base))] p-1 text-sm font-medium",

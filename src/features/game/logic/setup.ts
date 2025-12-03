@@ -1,22 +1,15 @@
-/**
- * Game setup types and constants for time controls and game configuration.
- */
+export type TimeCategory = "unlimited" | "bullet" | "blitz" | "rapid" | "classical";
 
-export type UiTimeCategory = "unlimited" | "bullet" | "blitz" | "rapid" | "classical";
-
-export type UiTimePreset = {
+export type TimePreset = {
 	id: string;
 	label: string;
-	subtitle: UiTimeCategory;
+	subtitle: TimeCategory;
 	limitSeconds: number;
 	incrementSeconds: number;
-	category: UiTimeCategory;
+	category: TimeCategory;
 };
 
-/**
- * Predefined time presets matching common Lichess time controls.
- */
-export const UI_TIME_PRESETS: UiTimePreset[] = [
+export const UI_TIME_PRESETS: TimePreset[] = [
 	// Unlimited
 	{
 		id: "unlimited",
@@ -131,29 +124,29 @@ export const UI_TIME_PRESETS: UiTimePreset[] = [
 /**
  * Player color selection for game setup.
  */
-export type UiColorChoice = "white" | "black" | "random";
+export type SetupColorChoice = "white" | "black" | "random";
 
 /**
  * Configuration for setting up a new game.
  */
-export type UiGameSetup = {
+export type GameSetup = {
 	timePresetId: string;
-	colorChoice: UiColorChoice;
+	colorChoice: SetupColorChoice;
 	rated: boolean;
 };
 
 /**
  * Bot difficulty level configuration.
  */
-export type UiBotLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type SetupBotLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-export type UiBotLevelInfo = {
-	level: UiBotLevel;
+export type SetupBotLevelInfo = {
+	level: SetupBotLevel;
 	label: string;
 	description: string;
 };
 
-export const UI_BOT_LEVELS: UiBotLevelInfo[] = [
+export const UI_BOT_LEVELS: SetupBotLevelInfo[] = [
 	{ level: 1, label: "Level 1", description: "Novice" },
 	{ level: 2, label: "Level 2", description: "Beginner" },
 	{ level: 3, label: "Level 3", description: "Casual" },
@@ -167,16 +160,13 @@ export const UI_BOT_LEVELS: UiBotLevelInfo[] = [
 /**
  * Configuration for a bot game setup.
  */
-export type UiBotGameSetup = {
+export type BotGameSetup = {
 	timePresetId: string;
-	colorChoice: UiColorChoice;
-	botLevel: UiBotLevel;
+	colorChoice: SetupColorChoice;
+	botLevel: SetupBotLevel;
 };
 
-/**
- * Creates a default bot game setup configuration.
- */
-export function createDefaultBotGameSetup(): UiBotGameSetup {
+export function createDefaultBotGameSetup(): BotGameSetup {
 	return {
 		timePresetId: "unlimited",
 		colorChoice: "random",
@@ -184,10 +174,7 @@ export function createDefaultBotGameSetup(): UiBotGameSetup {
 	};
 }
 
-/**
- * Creates a default game setup configuration.
- */
-export function createDefaultGameSetup(): UiGameSetup {
+export function createDefaultGameSetup(): GameSetup {
 	return {
 		timePresetId: "5+0",
 		colorChoice: "random",
@@ -195,16 +182,10 @@ export function createDefaultGameSetup(): UiGameSetup {
 	};
 }
 
-/**
- * Finds a time preset by its ID.
- */
-export function findTimePreset(presetId: string): UiTimePreset | undefined {
+export function findTimePreset(presetId: string): TimePreset | undefined {
 	return UI_TIME_PRESETS.find((p) => p.id === presetId);
 }
 
-/**
- * Finds a bot level info by its level number.
- */
-export function findBotLevel(level: UiBotLevel): UiBotLevelInfo | undefined {
+export function findBotLevel(level: SetupBotLevel): SetupBotLevelInfo | undefined {
 	return UI_BOT_LEVELS.find((b) => b.level === level);
 }

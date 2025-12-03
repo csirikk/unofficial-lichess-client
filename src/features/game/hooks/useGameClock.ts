@@ -1,17 +1,29 @@
+/**
+ * useGameClock Hook
+ *
+ * Manages chess clock state with local ticking and server synchronization.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { GameFullEvent, GameStateEvent } from "../../generated/types";
+import type { GameFullEvent, GameStateEvent } from "../../../generated/types";
 import type { Color } from "chess.js";
-import { GameStatusName } from "../../generated/types/gameStatusName";
+import { GameStatusName } from "../../../generated/types/gameStatusName";
 
-type ClockConfig = {
+export type ClockConfig = {
 	gameFull: GameFullEvent | null;
 	gameState: GameStateEvent | null;
 	pendingMove: string | null;
 };
 
+export type ClockState = {
+	whiteMs: number | null;
+	blackMs: number | null;
+	activeColor: Color | null;
+	isRunning: boolean;
+};
+
 type ClockColor = Color;
 
-export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) {
+export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig): ClockState {
 	const initialTime = useMemo(() => gameFull?.clock?.initial ?? null, [gameFull]);
 
 	const [whiteBaseMs, setWhiteBaseMs] = useState<number | null>(initialTime);
@@ -149,7 +161,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 			const turnStartedAt = turnStartedAtRef.current;
 			const elapsed = turnStartedAt != null ? nowTs - turnStartedAt : 0;
 
-			// 1. Finish previous turn: subtract elapsed + add increment
+			// Finish previous turn: subtract time elapsed + add increment
 			if (elapsed > 0) {
 				if (prevUiTurn === "w") {
 					setWhiteBaseMs((prev) => {
@@ -166,7 +178,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 				}
 			}
 
-			// 2. Start new turn: enforce their server time now
+			// Start new turn: enforce their server time now
 			if (uiTurn === "w") {
 				if (wtime != null) setWhiteBaseMs(wtime);
 			} else {
@@ -195,7 +207,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig) 
 		return () => clearInterval(timer);
 	}, [isRunning, activeColor]);
 
-	// Derive display times from baselines + elapsed
+	// Derive display times from baselines + elapsed time
 	const computeDisplayMs = (baseMs: number | null, color: ClockColor): number | null => {
 		if (baseMs == null) return null;
 

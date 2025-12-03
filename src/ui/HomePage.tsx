@@ -1,5 +1,5 @@
-import { useAuth } from "../features/auth";
-import GameView from "../features/game/GameView";
+import { useAuth } from "../features/auth/hooks/useAuth";
+import GameContainer from "../features/game/GameContainer";
 import Layout from "./Layout";
 
 export default function HomePage() {
@@ -15,7 +15,7 @@ export default function HomePage() {
 
 			{!user ? <h1 className="text-2xl justify-center flex font-bold">...</h1> : null}
 
-			{!isLoading && user ? <GameView /> : null}
+			{!isLoading && user ? <GameContainer /> : null}
 		</Layout>
 	);
 }

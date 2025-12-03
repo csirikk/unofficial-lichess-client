@@ -1,4 +1,7 @@
-import { getAccessToken } from "../features/auth/pkce";
+/**
+ * API utilities
+ */
+import { getAccessToken } from "../features/auth/logic/pkce";
 
 export const CLIENT_ID = "itu";
 export const REDIRECT_URI = "http://localhost:3000/auth/callback";
