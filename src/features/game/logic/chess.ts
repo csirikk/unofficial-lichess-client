@@ -121,10 +121,12 @@ export function applyPremoves(
 		const piece = board[premove.from];
 		if (!piece) continue;
 
-		// Record ghost at original position
-		ghosts.push({ square: premove.from, piece });
+		const originalPiece = baseBoard[premove.from];
 
-		// Move piece
+		if (originalPiece && originalPiece.type === piece.type && originalPiece.color === piece.color) {
+			ghosts.push({ square: premove.from, piece: originalPiece });
+		}
+
 		delete board[premove.from];
 
 		// Apply promotion if any

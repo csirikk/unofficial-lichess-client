@@ -265,7 +265,12 @@ export function useMoveLogic({
 			}
 
 			if (canPremove) {
-				const visualPiece = getVisualPieceAt(from);
+				let visualPiece = getVisualPieceAt(from);
+
+				if (!visualPiece && promotionRequest?.from === from && promotionRequest?.to === to) {
+					visualPiece = getVisualPieceAt(to);
+				}
+
 				if (!visualPiece || visualPiece.color !== playerColor) return false;
 				if (!isFeasiblePremove(visualPiece, from, to)) return false;
 
@@ -293,6 +298,7 @@ export function useMoveLogic({
 			getVisualPieceAt,
 			playerColor,
 			executeMove,
+			promotionRequest,
 		],
 	);
 
