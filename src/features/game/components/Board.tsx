@@ -196,10 +196,10 @@ export function Board({
 			appendShadow(checkSquare, "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)");
 		}
 
-		// Premove path highlight
+		// Premove highlight
 		for (const step of premoveQueue) {
-			tintSquare(step.from, "rgb(var(--color-primary-400) / 0.12)");
-			tintSquare(step.to, "rgb(var(--color-primary-400) / 0.28)");
+			tintSquare(step.from, "rgb(var(--color-chess-move-premove) / 0.2)");
+			tintSquare(step.to, "rgb(var(--color-chess-move-premove) / 0.4)");
 		}
 
 		return styles;
