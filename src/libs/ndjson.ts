@@ -26,47 +26,41 @@ export function readNdjsonStream<T = unknown>(
 
 		try {
 			const msg = JSON.parse(trimmed) as T;
-			console.debug(`[${name}]`, msg);
+			// console.debug(`[${name}]`, msg);
 			handler(msg);
 		} catch (error) {
 			console.error(`[${name}] Failed to parse JSON:`, json, error);
 		}
 	};
 
-	const loop: () => Promise<void> = async () => {
+	const loop = async () => {
 		try {
-			const { done, value } = await stream.read();
+			while (true) {
+				const { done, value } = await stream.read();
 
-			if (done) {
-				// Process any remaining data in buffer
-				if (buf.length > 0) process(buf);
-				return;
+				if (done) {
+					if (buf.length > 0) process(buf);
+					break;
+				}
+
+				const chunk = decoder.decode(value, { stream: true });
+				buf += chunk;
+
+				const parts = buf.split(matcher);
+				buf = parts.pop() || "";
+
+				for (const part of parts) {
+					process(part);
+				}
 			}
-
-			// Decode chunk and add to buffer
-			const chunk = decoder.decode(value, { stream: true });
-			buf += chunk;
-
-			// Split by newlines
-			const parts = buf.split(matcher);
-			// Keep the last (incomplete) part in buffer
-			buf = parts.pop() || "";
-
-			// Process all complete lines
-			for (const part of parts) {
-				process(part);
-			}
-
-			return loop();
 		} catch (error) {
-			// Ignore abort errors, they are expected on stream close
+			// Ignore abort errors
 			if (
 				(error instanceof DOMException && error.name === "AbortError") ||
 				(error instanceof Error && error.name === "AbortError")
 			) {
 				return;
 			}
-
 			throw error;
 		}
 	};
