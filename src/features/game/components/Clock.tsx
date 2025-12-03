@@ -1,5 +1,13 @@
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
-import { formatClockTime } from "../logic/chess";
+import type { Chess, PieceSymbol } from "chess.js";
+import {
+	PIECES_UNICODE,
+	formatClockTime,
+	getMaterialScore,
+	getCapturedFromHistory,
+	boardFromChess,
+} from "../logic/chess";
+import { useMemo } from "react";
 
 export type PlayerInfo = {
 	name: string;
@@ -13,12 +21,23 @@ export type ClockProps = {
 	timeMs: number | null;
 	isActive: boolean;
 	isUnlimited: boolean;
+	capturedPieces?: PieceSymbol[];
+	materialDiff?: number;
 };
 
 /**
  * Renders one clock.
  */
-export function Clock({ color, position, player, timeMs, isActive, isUnlimited }: ClockProps) {
+export function Clock({
+	color,
+	position,
+	player,
+	timeMs,
+	isActive,
+	isUnlimited,
+	materialDiff,
+	capturedPieces = [],
+}: ClockProps) {
 	const isLow = typeof timeMs === "number" && timeMs <= 10000; // 10 seconds
 	const isCritical = typeof timeMs === "number" && timeMs <= 5000; // 5 seconds
 
@@ -49,13 +68,42 @@ export function Clock({ color, position, player, timeMs, isActive, isUnlimited }
 		</div>
 	);
 
+	const capturedKeys = useMemo(() => {
+		const counts: Record<string, number> = {};
+		return capturedPieces.map((p) => {
+			counts[p] = (counts[p] || 0) + 1;
+			return `${p}-${counts[p]}`;
+		});
+	}, [capturedPieces]);
+
+	const infoRow = (
+		<div className="flex items-center px-2 h-3 text-[rgb(var(--color-fg-secondary))]">
+			{/* Captured Pieces */}
+			<div className="-space-x-1 text-lg">
+				{capturedPieces.map((p, i) => (
+					<span key={capturedKeys[i]} title={p}>
+						{PIECES_UNICODE[p]}
+					</span>
+				))}
+			</div>
+			{/* Material Difference */}
+			{materialDiff != null && materialDiff > 0 && (
+				<span className="ml-2 text-sm font-semibold text-[rgb(var(--color-fg-secondary))]">
+					+{materialDiff}
+				</span>
+			)}
+		</div>
+	);
+
 	return (
 		<div>
+			{position === "top" && infoRow}
 			{position === "top" && nameRating}
 			<div key={color} className={containerClasses}>
 				<div className={timerClasses}>{formatClockTime(timeMs)}</div>
 			</div>
 			{position === "bottom" && nameRating}
+			{position === "bottom" && infoRow}
 		</div>
 	);
 }
@@ -66,6 +114,7 @@ export type ClockPanelProps = {
 	blackMs: number | null;
 	activeColor: "w" | "b" | null;
 	timerOrder: Array<"white" | "black">;
+	chess: Chess;
 };
 
 /**
@@ -77,6 +126,7 @@ export function ClockPanel({
 	blackMs,
 	activeColor,
 	timerOrder,
+	chess,
 }: ClockPanelProps) {
 	const isUnlimited = !gameFull?.clock;
 
@@ -101,12 +151,24 @@ export function ClockPanel({
 		},
 	};
 
+	const { material, captured } = useMemo(() => {
+		const board = boardFromChess(chess);
+		return {
+			material: getMaterialScore(board),
+			captured: getCapturedFromHistory(chess),
+		};
+	}, [chess]);
+	const whiteDiff = Math.max(0, material.white - material.black);
+	const blackDiff = Math.max(0, material.black - material.white);
+
 	return (
 		<div className="flex-1 space-y-3">
 			{timerOrder.map((color, index) => {
 				const isWhite = color === "white";
 				const ms = isWhite ? whiteMs : blackMs;
 				const isActive = activeColor === (isWhite ? "w" : "b");
+				const myCaptured = isWhite ? captured.white : captured.black;
+				const diff = isWhite ? whiteDiff : blackDiff;
 
 				return (
 					<Clock
@@ -117,6 +179,8 @@ export function ClockPanel({
 						timeMs={ms}
 						isActive={isActive}
 						isUnlimited={isUnlimited}
+						capturedPieces={myCaptured}
+						materialDiff={diff}
 					/>
 				);
 			})}

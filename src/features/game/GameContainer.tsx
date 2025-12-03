@@ -239,6 +239,7 @@ export default function GameContainer() {
 								blackMs={blackMs}
 								activeColor={activeColor}
 								timerOrder={timerOrder}
+								chess={boardState.chess}
 							/>
 						</div>
 

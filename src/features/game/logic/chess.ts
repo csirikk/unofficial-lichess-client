@@ -61,6 +61,62 @@ export type UiPromotionDropdownMetrics = {
 	direction: "down" | "up";
 };
 
+export const PIECES_VALUES: Record<string, number> = {
+	p: 1,
+	n: 3,
+	b: 3,
+	r: 5,
+	q: 9,
+	k: 0,
+};
+
+export const PIECES_UNICODE: Record<PieceSymbol, string> = {
+	p: "♟︎",
+	n: "♞",
+	b: "♝",
+	r: "♜",
+	q: "♛",
+	k: "♚",
+};
+
+export function getMaterialScore(board: UiBoard): { white: number; black: number } {
+	let white = 0;
+	let black = 0;
+	for (const piece of Object.values(board)) {
+		if (!piece) continue;
+		const val = PIECES_VALUES[piece.type] || 0;
+		if (piece.color === "w") white += val;
+		else black += val;
+	}
+	return { white, black };
+}
+
+export function getCapturedFromHistory(chess: Chess): {
+	white: PieceSymbol[];
+	black: PieceSymbol[];
+} {
+	const history = chess.history({ verbose: true });
+	const whiteCaptured: PieceSymbol[] = [];
+	const blackCaptured: PieceSymbol[] = [];
+
+	for (const move of history) {
+		if (move.captured) {
+			if (move.color === "w") {
+				whiteCaptured.push(move.captured);
+			} else {
+				blackCaptured.push(move.captured);
+			}
+		}
+	}
+
+	// Sort by value (p -> q)
+	const sortOrder: Record<string, number> = { p: 1, n: 2, b: 3, r: 4, q: 5, k: 0 };
+	whiteCaptured.sort((a, b) => sortOrder[a] - sortOrder[b]);
+	blackCaptured.sort((a, b) => sortOrder[a] - sortOrder[b]);
+
+	return { white: whiteCaptured, black: blackCaptured };
+}
+
 export function pieceToKey(piece: UiPiece): UiPieceKey {
 	return `${piece.color}${piece.type.toUpperCase()}` as UiPieceKey;
 }
