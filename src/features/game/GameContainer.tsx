@@ -133,17 +133,21 @@ export default function GameContainer() {
 	const moveCount = boardState.moveHistory.length;
 
 	return (
-		<div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-			{/* Left col: moves column + board */}
-			<div className={`md:col-span-1 transition-opacity ${!gameId ? "opacity-80" : ""}`}>
-				<div className="grid h-full items-stretch gap-4 grid-cols-[auto_1fr]">
-					{gameId ? (
-						<MoveList moves={boardState.moveHistory} visible={true} />
-					) : (
-						<div className="hidden md:block w-64" />
-					)}
-					{/* Board */}
-					<div className="min-w-0">
+		<div className="flex flex-col md:flex-row h-full gap-4 min-h-0 w-full">
+			{/* Left: Move List + Chessboard */}
+			<div
+				className={`flex-1 flex flex-row min-w-0 h-full transition-opacity gap-4 ${!gameId ? "opacity-80" : ""}`}
+			>
+				{/* Move List */}
+				<div
+					className={`${!gameId ? "invisible md:opacity-0 pointer-events-none" : ""} transition-opacity shrink-0 flex flex-col h-full overflow-hidden`}
+				>
+					<MoveList moves={boardState.moveHistory} visible={true} />
+				</div>
+
+				{/* Board */}
+				<div className="flex-1 min-w-0 h-full flex items-center justify-center">
+					<div className="aspect-square max-h-full shrink-0 max-w-full w-full relative">
 						<Board
 							position={boardState.position}
 							boardOrientation={boardOrientation}
@@ -167,8 +171,8 @@ export default function GameContainer() {
 				</div>
 			</div>
 
-			{/* Right col: info + clocks + actions */}
-			<div className="col-span-1 flex flex-col">
+			{/* Right: Info + Clocks + Controls */}
+			<div className="w-full md:w-[400px] shrink-0 flex flex-col h-full min-h-0">
 				{!gameId ? (
 					<GameModeTabs
 						isCreating={isCreatingGame}
@@ -176,86 +180,59 @@ export default function GameContainer() {
 						onStartBotGame={handleStartBotGame}
 					/>
 				) : (
-					<div className="flex flex-col gap-6">
+					<div className="flex flex-col h-full justify-between relative min-h-0">
 						{/* Info */}
-						<div className="rounded-lg p-2">
-							<div className="text-md font-medium">
-								{gameEnded ? null : isConnected ? (
-									<span className="text-[rgb(var(--color-success))]" title="Connected">
-										Connected
-									</span>
-								) : isReconnecting ? (
-									<span className="text-[rgb(var(--color-warning))]" title="Reconnecting">
-										Reconnecting...
-									</span>
-								) : isOffline ? (
-									<span className="text-[rgb(var(--color-error))]" title="Connection lost">
-										{streamNotFound ? "Game Not Found" : "Offline"}
-									</span>
-								) : isConnecting ? (
-									<span className="text-[rgb(var(--color-warning))]" title="Connecting">
-										Connecting...
-									</span>
-								) : null}
+						<div className="p-2 mb-4">
+							<div className="font-semibold text-xl text-[rgb(var(--color-fg-secondary))]">
+								{status && <span className="uppercase tracking-wide">{status}</span>}
 							</div>
 
-							<div className="space-y-2 text-xs">
-								<div className="">
-									<span className="text-[rgb(var(--color-fg-secondary))]">Game ID: </span>
-									<span className="font-mono text-[rgb(var(--color-fg-primary))]">{gameId}</span>
-								</div>
-								{status && (
-									<>
-										<div className="">
-											<span className="text-[rgb(var(--color-fg-secondary))]">Status: </span>
-											<span className="font-medium">{status}</span>
-										</div>
-										{winner && (
-											<div className="">
-												<span className="text-[rgb(var(--color-fg-secondary))]">Winner: </span>
-												<span className="font-medium">{winner}</span>
-											</div>
-										)}
-									</>
+							<div className="font-medium">
+								{boardState.chess.isCheck() && !boardState.chess.isCheckmate() && (
+									<span className="text-[rgb(var(--color-warning))]">Check!</span>
 								)}
-								<div className="">
-									<span className="text-[rgb(var(--color-fg-secondary))]">Turn: </span>
-									<span className="font-medium">
-										{boardState.chess.turn() === "w" ? "White" : "Black"}
-									</span>
-								</div>
-								{(boardState.chess.isCheck() ||
-									boardState.chess.isCheckmate() ||
-									boardState.chess.isStalemate() ||
-									boardState.chess.isDraw()) && (
-									<div className="">
-										<span className="text-[rgb(var(--color-fg-secondary))]">State: </span>
-										<span className="font-medium">
-											{boardState.chess.isCheck() && (
-												<span className="text-[rgb(var(--color-warning))]">Check</span>
-											)}
-											{boardState.chess.isCheckmate() && (
-												<span className="text-[rgb(var(--color-error))]">Checkmate</span>
-											)}
-											{boardState.chess.isStalemate() && <span>Stalemate</span>}
-											{boardState.chess.isDraw() && <span>Draw</span>}
+								{boardState.chess.isCheckmate() && (
+									<span className="text-[rgb(var(--color-error))]">Checkmate!</span>
+								)}
+								{winner && (
+									<span className="ml-2 text-[rgb(var(--color-success))]">Winner: {winner}</span>
+								)}
+							</div>
+							<span className="text-sm font-mono text-[rgb(var(--color-fg-secondary))] opacity-50">
+								#{gameId}
+							</span>
+							<div className="text-sm font-medium">
+								<div className="text-sm font-medium">
+									{gameEnded ? (
+										<span className="text-[rgb(var(--color-fg-secondary))]">Game Over</span>
+									) : isConnected ? (
+										<span className="text-[rgb(var(--color-success))]" title="Connected">
+											Connected
 										</span>
-									</div>
-								)}
+									) : isReconnecting ? (
+										<span className="text-[rgb(var(--color-warning))]" title="Reconnecting">
+											Reconnecting...
+										</span>
+									) : isOffline ? (
+										<span className="text-[rgb(var(--color-error))]" title="Connection lost">
+											{streamNotFound ? "Game Not Found" : "Offline"}
+										</span>
+									) : isConnecting ? (
+										<span className="text-[rgb(var(--color-warning))]" title="Connecting">
+											Connecting...
+										</span>
+									) : null}
+								</div>
 							</div>
-
 							{streamError && (
-								<div
-									className="rounded bg-[rgb(var(--color-error)/0.1)] p-3 text-sm text-[rgb(var(--color-error))]"
-									role="alert"
-								>
+								<div className="mt-2 text-sm text-[rgb(var(--color-error))]">
 									Error: {streamError}
 								</div>
 							)}
 						</div>
 
-						{/* Clocks*/}
-						<div className="flex justify-center">
+						{/* Clocks */}
+						<div className="absolute top-1/2 w-full -translate-y-1/2">
 							<ClockPanel
 								gameFull={gameFull}
 								whiteMs={whiteMs}
@@ -266,23 +243,21 @@ export default function GameContainer() {
 						</div>
 
 						{/* Game Actions */}
-						<div className="flex flex-col gap-4">
-							<div className="flex justify-center">
-								<Controls
-									onOfferDraw={handleOfferDraw}
-									onResign={handleResign}
-									onAbort={handleAbort}
-									isConnected={isConnected}
-									gameEnded={gameEnded}
-									moveCount={moveCount}
-								/>
-							</div>
+						<div className="p-2">
+							<Controls
+								onOfferDraw={handleOfferDraw}
+								onResign={handleResign}
+								onAbort={handleAbort}
+								isConnected={isConnected}
+								gameEnded={gameEnded}
+								moveCount={moveCount}
+							/>
 
 							{gameEnded && (
 								<button
 									type="button"
 									onClick={resetToLobby}
-									className="w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:opacity-50"
+									className="mt-3 w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
 								>
 									New Game
 								</button>

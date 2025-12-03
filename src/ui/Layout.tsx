@@ -7,7 +7,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
 	return (
-		<div className="min-h-screen bg-[rgb(var(--color-surface-base))] text-[rgb(var(--color-fg-primary))]">
+		<div className="h-screen bg-[rgb(var(--color-surface-base))] text-[rgb(var(--color-fg-primary))] flex flex-col overflow-hidden">
 			<Navbar />
 			<main className="container mx-auto w-full p-4 text-[rgb(var(--color-fg-primary))]">
 				{children}

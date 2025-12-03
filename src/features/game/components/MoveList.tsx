@@ -52,13 +52,13 @@ export function MoveList({ moves, visible = true }: MoveListProps) {
 
 	return (
 		<aside className="w-full md:w-64 shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-xs text-[rgb(var(--color-fg-secondary))] md:flex max-h-[70vh]">
-			<div className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))]">
+			<div className="mb-2 text-xl font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))]">
 				Moves
 			</div>
-			<div className="flex items-center justify-between text-sm font-mono py-1 px-4 uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]">
+			<div className="flex items-center justify-between text-sm font-mono py-1 px-0.5 uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]">
 				<span className="w-8 opacity-50">#</span>
-				<span className="flex-1 font-medium">White</span>
-				<span className="flex-1 font-medium">Black</span>
+				<span className="flex-1 text-lg">White</span>
+				<span className="flex-1 text-lg">Black</span>
 			</div>
 			<ol
 				className="mt-1 flex-1 space-y-px overflow-y-auto pr-1 text-[14px] scroll-smooth"
