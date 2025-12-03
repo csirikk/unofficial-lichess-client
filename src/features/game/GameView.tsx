@@ -994,15 +994,15 @@ export default function GameView() {
 
 	const gameActions = [
 		{
-			label: "Resign",
-			icon: Flag,
-			onClick: handleResign,
-			disabled: !isConnected || gameEnded,
-		},
-		{
 			label: "Offer draw",
 			icon: Handshake,
 			onClick: handleOfferDraw,
+			disabled: !isConnected || gameEnded,
+		},
+		{
+			label: "Resign",
+			icon: Flag,
+			onClick: handleResign,
 			disabled: !isConnected || gameEnded,
 		},
 		{
