@@ -26,31 +26,31 @@ export const UI_TIME_PRESETS: UiTimePreset[] = [
 		incrementSeconds: 0,
 		category: "unlimited",
 	},
-	// Bullet
-	{
-		id: "1+0",
-		label: "1+0",
-		subtitle: "bullet",
-		limitSeconds: 60,
-		incrementSeconds: 0,
-		category: "bullet",
-	},
-	{
-		id: "1+1",
-		label: "1+1",
-		subtitle: "bullet",
-		limitSeconds: 60,
-		incrementSeconds: 1,
-		category: "bullet",
-	},
-	{
-		id: "2+1",
-		label: "2+1",
-		subtitle: "bullet",
-		limitSeconds: 120,
-		incrementSeconds: 1,
-		category: "bullet",
-	},
+	// // Bullet
+	// {
+	// 	id: "1+0",
+	// 	label: "1+0",
+	// 	subtitle: "bullet",
+	// 	limitSeconds: 60,
+	// 	incrementSeconds: 0,
+	// 	category: "bullet",
+	// },
+	// {
+	// 	id: "1+1",
+	// 	label: "1+1",
+	// 	subtitle: "bullet",
+	// 	limitSeconds: 60,
+	// 	incrementSeconds: 1,
+	// 	category: "bullet",
+	// },
+	// {
+	// 	id: "2+1",
+	// 	label: "2+1",
+	// 	subtitle: "bullet",
+	// 	limitSeconds: 120,
+	// 	incrementSeconds: 1,
+	// 	category: "bullet",
+	// },
 	// Blitz
 	{
 		id: "3+0",
