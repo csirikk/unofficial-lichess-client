@@ -990,6 +990,8 @@ export default function GameView() {
 		);
 	};
 
+	const moveCount = chess.history().length;
+
 	const gameActions = [
 		{
 			label: "Resign",
@@ -1007,7 +1009,7 @@ export default function GameView() {
 			label: "Abort",
 			icon: CircleX,
 			onClick: handleAbort,
-			disabled: !isConnected || gameEnded,
+			disabled: !isConnected || gameEnded || moveCount >= 2,
 		},
 	];
 
