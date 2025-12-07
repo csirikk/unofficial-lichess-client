@@ -1,12 +1,6 @@
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
-import type { Chess, PieceSymbol } from "chess.js";
-import {
-	PIECES_UNICODE,
-	formatClockTime,
-	getMaterialScore,
-	getCapturedFromHistory,
-	boardFromChess,
-} from "../logic/chess";
+import type { PieceSymbol } from "chess.js";
+import { PIECES_UNICODE, formatClockTime } from "../logic/chess";
 import { useMemo } from "react";
 
 export type PlayerInfo = {
@@ -117,7 +111,9 @@ export type ClockPanelProps = {
 	blackMs: number | null;
 	activeColor: "w" | "b" | null;
 	timerOrder: Array<"white" | "black">;
-	chess: Chess;
+	captured: { white: PieceSymbol[]; black: PieceSymbol[] };
+	whiteDiff: number;
+	blackDiff: number;
 };
 
 /**
@@ -129,7 +125,9 @@ export function ClockPanel({
 	blackMs,
 	activeColor,
 	timerOrder,
-	chess,
+	captured,
+	whiteDiff,
+	blackDiff,
 }: ClockPanelProps) {
 	const isUnlimited = !gameFull?.clock;
 
@@ -153,16 +151,6 @@ export function ClockPanel({
 						: "",
 		},
 	};
-
-	const { material, captured } = useMemo(() => {
-		const board = boardFromChess(chess);
-		return {
-			material: getMaterialScore(board),
-			captured: getCapturedFromHistory(chess),
-		};
-	}, [chess]);
-	const whiteDiff = Math.max(0, material.white - material.black);
-	const blackDiff = Math.max(0, material.black - material.white);
 
 	return (
 		<div className="flex-1 space-y-3">

@@ -4,6 +4,7 @@
  * Manages the game stream connection to Lichess Board API.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Chess, type Color } from "chess.js";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
@@ -11,12 +12,16 @@ import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
 import { createAuthHeaders, createStreamHeaders } from "../../../lib/api";
 import { readNdjsonStream, type StreamControl } from "../../../lib/stream";
+import { buildGameHistory, type UiMove } from "../logic/chess";
 
 const RECONNECT_DELAYS = [250, 500, 1000, 2000, 5000]; // ms between attempts
 
 export type GameStreamState = {
 	gameFull: GameFullEvent | null;
 	gameState: GameStateEvent | null;
+	serverFen: string;
+	serverTurn: Color;
+	serverHistory: UiMove[];
 	error: string | null;
 	streamNotFound: boolean;
 	isConnected: boolean;
@@ -32,6 +37,9 @@ export type GameStreamReturn = GameStreamState & {
 export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [gameFull, setGameFull] = useState<GameFullEvent | null>(null);
 	const [gameState, setGameState] = useState<GameStateEvent | null>(null);
+	const [serverFen, setServerFen] = useState<string>(() => new Chess().fen());
+	const [serverTurn, setServerTurn] = useState<Color>("w");
+	const [serverHistory, setServerHistory] = useState<UiMove[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
 
@@ -42,6 +50,14 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const statusRef = useRef<GameStatusName | null>(null);
 	const activeGameIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
+	const initialFenRef = useRef<string>("start");
+
+	const updateStateFromMoves = useCallback((movesStr: string, initialFen = "start") => {
+		const { history, fen, turn } = buildGameHistory(movesStr, initialFen);
+		setServerFen(fen);
+		setServerTurn(turn);
+		setServerHistory(history);
+	}, []);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -60,10 +76,14 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			activeGameIdRef.current = gameId;
 			setGameFull(null);
 			setGameState(null);
+			setServerFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+			setServerTurn("w");
+			setServerHistory([]);
 			setError(null);
 			setStreamNotFound(false);
 			setConnectionStatus("connecting");
 			statusRef.current = null;
+			initialFenRef.current = "start";
 		}
 
 		const abortController = new AbortController();
@@ -105,13 +125,16 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 						if (event.type === "gameFull") {
 							const full = event as GameFullEvent;
 							statusRef.current = full.state.status;
+							initialFenRef.current = full.initialFen;
 							setGameFull(full);
 							setGameState(full.state);
+							updateStateFromMoves(full.state.moves, full.initialFen);
 						} else if (event.type === "gameState") {
 							const state = event as GameStateEvent;
 							statusRef.current = state.status;
 							setGameState(state);
 							setGameFull((prev) => (prev ? { ...prev, state } : prev));
+							updateStateFromMoves(state.moves, initialFenRef.current);
 						}
 
 						if (statusRef.current && statusRef.current !== GameStatusName.started) {
@@ -130,28 +153,13 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 					err,
 				);
 
-				if (attempt >= RECONNECT_DELAYS.length) {
+				if (attempt < RECONNECT_DELAYS.length) {
+					reconnectTimer = setTimeout(() => {
+						connect(attempt + 1);
+					}, RECONNECT_DELAYS[attempt]);
+				} else {
 					setConnectionStatus("offline");
-					setError("Connection lost. Please refresh.");
-				}
-			} finally {
-				if (mountedRef.current) {
-					const isGameActive = !statusRef.current || statusRef.current === GameStatusName.started;
-
-					if (
-						isGameActive &&
-						!abortController.signal.aborted &&
-						attempt < RECONNECT_DELAYS.length
-					) {
-						// Schedule reconnect
-						const delay = RECONNECT_DELAYS[attempt];
-						reconnectTimer = setTimeout(() => {
-							connect(attempt + 1);
-						}, delay);
-					} else if (!isGameActive) {
-						// Game ended naturally
-						setConnectionStatus("connected");
-					}
+					setError("Connection lost");
 				}
 			}
 		};
@@ -163,7 +171,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			streamControl?.close();
 			if (reconnectTimer) clearTimeout(reconnectTimer);
 		};
-	}, [gameId]);
+	}, [gameId, updateStateFromMoves]);
 
 	const makeMove = useCallback(
 		async (uci: string) => {
@@ -178,6 +186,9 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	return {
 		gameFull,
 		gameState,
+		serverFen,
+		serverTurn,
+		serverHistory,
 		error,
 		streamNotFound,
 		makeMove,

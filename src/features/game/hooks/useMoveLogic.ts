@@ -13,7 +13,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
-import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
 import type { UserExtended } from "../../../generated/types/userExtended";
 import {
 	type UiBoard,
@@ -33,12 +32,15 @@ import {
 	keyToPiece,
 	moveToUci,
 	uciToMove,
+	type UiMove,
 } from "../logic/chess";
 
 export type MoveLogicConfig = {
 	gameId: string | null;
 	gameFull: GameFullEvent | null;
-	gameState: GameStateEvent | null;
+	serverFen: string;
+	serverTurn: Color;
+	serverHistory: UiMove[];
 	user: UserExtended | null;
 	isConnected: boolean;
 	makeMove: (uci: string) => Promise<unknown>;
@@ -90,12 +92,14 @@ export type MoveLogicReturn = {
 
 export function useMoveLogic({
 	gameFull,
-	gameState,
+	serverFen,
+	serverTurn,
+	serverHistory,
 	user,
 	isConnected,
 	makeMove,
 }: MoveLogicConfig): MoveLogicReturn {
-	const [chess, setChess] = useState(new Chess());
+	const [chess, setChess] = useState(() => new Chess(serverFen));
 	const chessRef = useRef(chess);
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
 	const [pendingIsPremove, setPendingIsPremove] = useState(false);
@@ -108,11 +112,10 @@ export function useMoveLogic({
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
 	const [promotionRequest, setPromotionRequest] = useState<UiPromotionRequest>(null);
 	const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, boolean>>({});
-	const serverMovesRef = useRef<string>("");
 
 	// Derived game state
-	const status = gameState?.status ?? gameFull?.state?.status ?? null;
-	const winner = gameState?.winner ?? gameFull?.state?.winner ?? null;
+	const status = gameFull?.state?.status ?? null;
+	const winner = gameFull?.state?.winner ?? null;
 	const gameEnded = Boolean(status) && status !== GameStatusName.started;
 
 	const myColor = getPlayerColor(gameFull, user);
@@ -141,16 +144,7 @@ export function useMoveLogic({
 		setPendingUci(null);
 		setPendingIsPremove(false);
 		setPremoveQueue([]);
-		const confirmed = serverMovesRef.current ?? "";
-		const rollback = new Chess();
-		for (const uci of confirmed.split(" ").filter(Boolean)) {
-			try {
-				rollback.move(uciToMove(uci));
-			} catch {
-				// Ignore invalid moves during rollback
-			}
-		}
-		setChess(rollback);
+		// chess will update via useEffect
 	}, []);
 
 	// Execute a move optimistically, rollback on error
@@ -200,22 +194,21 @@ export function useMoveLogic({
 		}
 
 		if (promotionRequest) {
-			const { from, to } = promotionRequest;
+			const { from, to, mode } = promotionRequest;
 			const piece = visualBoard[from];
 			if (piece) {
 				visualBoard[to] = piece;
 				delete visualBoard[from];
-				ghosts.push({ square: from, piece });
+				if (mode === "premove") {
+					ghosts.push({ square: from, piece });
+				}
 			}
 		}
 
 		const pos = boardToChessboardPosition(visualBoard);
 
-		if (!premoveQueue.length && !(promotionRequest && promotionRequest.mode === "premove")) {
-			return { boardPosition: pos, ghostPieces: [] as UiGhostPiece[] };
-		}
-
-		return { boardPosition: pos, ghostPieces: ghosts };
+		const shouldShowGhosts = premoveQueue.length > 0 || promotionRequest?.mode === "premove";
+		return { boardPosition: pos, ghostPieces: shouldShowGhosts ? ghosts : [] };
 	}, [chess, premoveQueue, promotionRequest]);
 
 	const getVisualPieceAt = useCallback(
@@ -398,7 +391,6 @@ export function useMoveLogic({
 		setCheckSquare(null);
 		setPromotionRequest(null);
 		setRightClickedSquares({});
-		serverMovesRef.current = "";
 	}, []);
 
 	const handleRightClick = useCallback(
@@ -425,23 +417,21 @@ export function useMoveLogic({
 		[premoveQueue, pendingUci],
 	);
 
-	// Rebuild chess position from confirmed + pending move
+	// Rebuild chess position from serverFen + pending move
 	useEffect(() => {
-		if (!gameFull && !gameState) return;
-
-		const next = new Chess();
-		const confirmed = gameState?.moves ?? gameFull?.state?.moves ?? "";
-		serverMovesRef.current = confirmed;
-
-		let source = confirmed;
+		const next = new Chess(serverFen);
 
 		if (!gameEnded && pendingUci) {
-			const tokens = confirmed.split(" ").filter(Boolean);
-			const streamHasPending = tokens.includes(pendingUci);
-
-			if (!streamHasPending) {
-				source = confirmed ? `${confirmed} ${pendingUci}` : pendingUci;
-			} else {
+			try {
+				const move = uciToMove(pendingUci);
+				const result = next.move(move);
+				if (!result) {
+					console.warn(`Optimistic move '${pendingUci}' is illegal on serverFen.`);
+					setPendingUci(null);
+					setPendingIsPremove(false);
+				}
+			} catch (error) {
+				console.warn(`Failed to apply pending move '${pendingUci}':`, error);
 				setPendingUci(null);
 				setPendingIsPremove(false);
 			}
@@ -450,26 +440,18 @@ export function useMoveLogic({
 			setPendingIsPremove(false);
 		}
 
-		if (source) {
-			for (const uci of source.split(" ").filter(Boolean)) {
-				try {
-					next.move(uciToMove(uci));
-				} catch (error) {
-					console.error("Invalid move:", uci, error);
-				}
-			}
-		}
-
-		const tokens = source.split(" ").filter(Boolean);
-		if (tokens.length > 0) {
-			const { from, to } = uciToMove(tokens[tokens.length - 1]);
+		if (pendingUci) {
+			const { from, to } = uciToMove(pendingUci);
 			setLastMoveSquares({ from: from as Square, to: to as Square });
+		} else if (serverHistory.length > 0) {
+			const last = serverHistory[serverHistory.length - 1];
+			setLastMoveSquares({ from: last.from as Square, to: last.to as Square });
 		} else {
 			setLastMoveSquares({ from: null, to: null });
 		}
 
 		setChess(next);
-	}, [gameFull, gameState, pendingUci, gameEnded]);
+	}, [serverFen, pendingUci, gameEnded, serverHistory]);
 
 	// Keep ref in sync, and update check highlight / selection validity
 	useEffect(() => {
@@ -494,40 +476,23 @@ export function useMoveLogic({
 
 	// Send premoves when it becomes our turn according to the server state
 	useEffect(() => {
-		if (!gameFull || !gameState) return;
+		if (!gameFull) return;
 		if (!isMyGame) return;
 		if (!isConnected) return;
 		if (gameEnded) return;
 		if (!premoveQueue.length) return;
 		if (pendingUci) return;
 
-		const latestState = gameState ?? gameFull.state;
-		if (!latestState) return;
-
-		const movesStr = latestState.moves ?? "";
-		const moveTokens = movesStr.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
-		const moveCount = moveTokens.length;
-		const serverTurn: Color = moveCount % 2 === 0 ? "w" : "b";
-
 		if (serverTurn !== playerColor) return;
 
 		const [next, ...rest] = premoveQueue;
 
-		const serverBoard = new Chess();
-		for (const uci of moveTokens) {
-			try {
-				serverBoard.move(uciToMove(uci));
-			} catch (error) {
-				console.error("Failed to apply server move while processing premove:", uci, error);
-				return;
-			}
-		}
+		const serverBoard = new Chess(serverFen);
 
 		let legal = false;
 		try {
 			const candidate = uciToMove(next.uci);
-			const test = new Chess(serverBoard.fen());
-			const result = test.move(candidate);
+			const result = serverBoard.move(candidate);
 			legal = Boolean(result);
 		} catch {
 			legal = false;
@@ -543,7 +508,8 @@ export function useMoveLogic({
 		void executeMove(next.uci, true);
 	}, [
 		gameFull,
-		gameState,
+		serverFen,
+		serverTurn,
 		isMyGame,
 		isConnected,
 		gameEnded,
@@ -573,6 +539,12 @@ export function useMoveLogic({
 		}
 	}, [chess, selectedSquare]);
 
+	const moveHistory = useMemo(() => {
+		const serverSans = serverHistory.map((m) => m.san);
+		const localSans = chess.history();
+		return [...serverSans, ...localSans];
+	}, [serverHistory, chess]);
+
 	const showAnimations = !premoveQueue.length && !pendingIsPremove;
 
 	return {
@@ -587,7 +559,7 @@ export function useMoveLogic({
 			premoveQueue,
 			promotionRequest,
 			showAnimations,
-			moveHistory: chess.history(),
+			moveHistory,
 			rightClickedSquares,
 		},
 		handlers: {

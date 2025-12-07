@@ -7,11 +7,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameFullEvent, GameStateEvent } from "../../../generated/types";
 import type { Color } from "chess.js";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
+import type { UiMove } from "../logic/chess";
 
 export type ClockConfig = {
 	gameFull: GameFullEvent | null;
 	gameState: GameStateEvent | null;
 	pendingMove: string | null;
+	serverTurn: Color;
+	serverHistory: UiMove[];
 };
 
 export type ClockState = {
@@ -23,7 +26,13 @@ export type ClockState = {
 
 type ClockColor = Color;
 
-export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig): ClockState {
+export function useGameClock({
+	gameFull,
+	gameState,
+	pendingMove,
+	serverTurn,
+	serverHistory,
+}: ClockConfig): ClockState {
 	const initialTime = useMemo(() => gameFull?.clock?.initial ?? null, [gameFull]);
 
 	const [whiteBaseMs, setWhiteBaseMs] = useState<number | null>(initialTime);
@@ -82,16 +91,15 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig):
 			return;
 		}
 
-		const { status, moves: movesStr, wtime, btime, winc = 0, binc = 0 } = latestState;
+		const { status, wtime, btime, winc = 0, binc = 0 } = latestState;
 
 		if (wtime != null) lastServerWhiteMsRef.current = wtime;
 		if (btime != null) lastServerBlackMsRef.current = btime;
 
-		const moves = movesStr?.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
-		const moveCount = moves.length;
-		const serverTurn: ClockColor = moveCount % 2 === 0 ? "w" : "b";
+		const moveCount = serverHistory.length;
 
-		const hasPendingNotAcked = !!pendingMove && !moves.includes(pendingMove);
+		const lastMove = serverHistory[serverHistory.length - 1];
+		const hasPendingNotAcked = !!pendingMove && lastMove?.uci !== pendingMove;
 
 		// UI turn (flip during pending move)
 		const uiTurn: ClockColor = hasPendingNotAcked ? (serverTurn === "w" ? "b" : "w") : serverTurn;
@@ -194,7 +202,7 @@ export function useGameClock({ gameFull, gameState, pendingMove }: ClockConfig):
 
 		setActiveColor(uiTurn);
 		setIsRunning(true);
-	}, [gameFull, gameState, pendingMove, initialTime]);
+	}, [gameFull, gameState, pendingMove, initialTime, serverTurn, serverHistory]);
 
 	// Local ticking
 	useEffect(() => {

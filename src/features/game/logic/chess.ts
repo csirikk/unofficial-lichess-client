@@ -1,7 +1,7 @@
 /**
  * Chess Logic
  */
-import type { Chess, Color, PieceSymbol, Square } from "chess.js";
+import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
 import { GameColor } from "../../../generated/types/gameColor";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { UserExtended } from "../../../generated/types/userExtended";
@@ -52,6 +52,21 @@ export type UiPromotionRequest = {
 } | null;
 
 /**
+ * A single move in the history
+ */
+export type UiMove = {
+	uci: string;
+	san: string;
+	fen: string;
+	check: boolean;
+	color: Color;
+	from: string;
+	to: string;
+	promotion?: string;
+	captured?: PieceSymbol;
+};
+
+/**
  * Metrics for positioning the promotion dropdown overlay.
  */
 export type UiPromotionDropdownMetrics = {
@@ -79,6 +94,52 @@ export const PIECES_UNICODE: Record<PieceSymbol, string> = {
 	k: "♚",
 };
 
+/**
+ * Builds a game from a list of moves string to build a rich history.
+ */
+export function buildGameHistory(
+	movesStr: string,
+	initialFen = "startpos",
+): {
+	history: UiMove[];
+	fen: string;
+	turn: Color;
+} {
+	const fenToLoad = initialFen === "startpos" ? undefined : initialFen;
+	const chess = new Chess(fenToLoad);
+
+	const moves = movesStr.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
+	const history: UiMove[] = [];
+
+	for (const uci of moves) {
+		try {
+			const moveObj = uciToMove(uci);
+			const result = chess.move(moveObj);
+			if (result) {
+				history.push({
+					uci,
+					san: result.san,
+					fen: chess.fen(),
+					check: chess.isCheck(),
+					color: chess.turn(),
+					from: result.from,
+					to: result.to,
+					promotion: result.promotion,
+					captured: result.captured,
+				});
+			}
+		} catch (e) {
+			console.error(`Failed to process move ${uci}`, e);
+		}
+	}
+
+	return {
+		history,
+		fen: chess.fen(),
+		turn: chess.turn(),
+	};
+}
+
 export function getMaterialScore(board: UiBoard): { white: number; black: number } {
 	let white = 0;
 	let black = 0;
@@ -91,30 +152,36 @@ export function getMaterialScore(board: UiBoard): { white: number; black: number
 	return { white, black };
 }
 
-export function getCapturedFromHistory(chess: Chess): {
-	white: PieceSymbol[];
-	black: PieceSymbol[];
-} {
-	const history = chess.history({ verbose: true });
-	const whiteCaptured: PieceSymbol[] = [];
-	const blackCaptured: PieceSymbol[] = [];
+/**
+ * Aggregates captured pieces from the history up to a specific point.
+ */
+export function computeCapturedAt(
+	history: UiMove[],
+	atIndex: number | null,
+): { white: PieceSymbol[]; black: PieceSymbol[] } {
+	const white: PieceSymbol[] = [];
+	const black: PieceSymbol[] = [];
 
-	for (const move of history) {
+	// Determine how many moves to count
+	const limit = atIndex === null ? history.length : atIndex + 1;
+	const subset = history.slice(0, limit);
+
+	for (const move of subset) {
 		if (move.captured) {
-			if (move.color === "w") {
-				whiteCaptured.push(move.captured);
+			if (move.color === "b") {
+				white.push(move.captured); // If its about to be blacks turn, white captured
 			} else {
-				blackCaptured.push(move.captured);
+				black.push(move.captured);
 			}
 		}
 	}
 
 	// Sort by value (p -> q)
 	const sortOrder: Record<string, number> = { p: 1, n: 2, b: 3, r: 4, q: 5, k: 0 };
-	whiteCaptured.sort((a, b) => sortOrder[a] - sortOrder[b]);
-	blackCaptured.sort((a, b) => sortOrder[a] - sortOrder[b]);
+	white.sort((a, b) => sortOrder[a] - sortOrder[b]);
+	black.sort((a, b) => sortOrder[a] - sortOrder[b]);
 
-	return { white: whiteCaptured, black: blackCaptured };
+	return { white, black };
 }
 
 export function pieceToKey(piece: UiPiece): UiPieceKey {
