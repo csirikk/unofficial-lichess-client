@@ -303,7 +303,7 @@ export function Board({ viewModel }: BoardProps) {
 								event.preventDefault();
 								onCancelPromotion();
 							}}
-							className="absolute inset-0 z-30 cursor-default bg-black/30 p-0"
+							className="cursor-pointer absolute inset-0 z-30 bg-black/30 p-0"
 						/>
 						<div
 							className="absolute z-40 flex overflow-hidden rounded-md border border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-card))] shadow-lg"

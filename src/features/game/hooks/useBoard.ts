@@ -101,7 +101,7 @@ export function useBoard({
 			canDragPiece: isViewingHistory ? () => false : interactionHandlers.canDragPiece,
 			onPieceDrop: isViewingHistory ? () => false : interactionHandlers.onPieceDrop,
 			onPromotionChoice: interactionHandlers.handlePromotionChoice,
-			onCancelPromotion: () => interactionHandlers.handleSelectSquare(null),
+			onCancelPromotion: () => interactionHandlers.cancelPromotion(),
 			onRightClick: (sq: string) =>
 				!isViewingHistory && interactionHandlers.handleRightClick(sq as Square),
 		}),

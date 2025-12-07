@@ -34,6 +34,7 @@ export type BoardInteractionHandlers = {
 	onPieceDrop: (sourceSquare: string, targetSquare: string | null) => boolean;
 	resetBoard: () => void;
 	handleRightClick: (square: Square) => void;
+	cancelPromotion: () => void;
 };
 
 export type BoardInteractionReturn = {
@@ -274,6 +275,11 @@ export function useBoardInteraction({
 		}
 	}, [chess, selectedSquare]);
 
+	const cancelPromotion = useCallback(() => {
+		setPromotionRequest(null);
+		setSelectedSquare(null);
+	}, [setPromotionRequest]);
+
 	return {
 		state: {
 			selectedSquare,
@@ -290,6 +296,7 @@ export function useBoardInteraction({
 			onPieceDrop,
 			resetBoard,
 			handleRightClick,
+			cancelPromotion,
 		},
 	};
 }
