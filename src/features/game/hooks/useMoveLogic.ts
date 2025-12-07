@@ -419,6 +419,16 @@ export function useMoveLogic({
 
 	// Rebuild chess position from serverFen + pending move
 	useEffect(() => {
+		const lastServerMove =
+			serverHistory.length > 0 ? serverHistory[serverHistory.length - 1] : null;
+
+		if (pendingUci && lastServerMove?.uci === pendingUci) {
+			setPendingUci(null);
+			setPendingIsPremove(false);
+			setChess(new Chess(serverFen));
+			return;
+		}
+
 		const next = new Chess(serverFen);
 
 		if (!gameEnded && pendingUci) {

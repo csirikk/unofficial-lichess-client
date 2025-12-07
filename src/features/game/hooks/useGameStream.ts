@@ -174,11 +174,24 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	}, [gameId, updateStateFromMoves]);
 
 	const makeMove = useCallback(
-		async (uci: string) => {
-			if (!gameId) throw new Error("No game ID");
-			const response = await boardGameMove(gameId, uci, undefined, createAuthHeaders());
-			if (response.status !== 200) throw new Error("Move failed");
-			return response.data;
+		async (uci: string): Promise<boolean> => {
+			if (!gameId) {
+				console.warn("No game ID available for making a move.");
+				return false;
+			}
+			try {
+				const response = await boardGameMove(gameId, uci, undefined, createAuthHeaders());
+
+				if (response.status === 200) {
+					return true;
+				}
+
+				console.warn("Lichess rejected move:", response.status);
+				return false;
+			} catch (e) {
+				console.error("Network error sending move:", e);
+				return false;
+			}
 		},
 		[gameId],
 	);
