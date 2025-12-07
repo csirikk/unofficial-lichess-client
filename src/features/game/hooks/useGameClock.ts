@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameFullEvent, GameStateEvent } from "../../../generated/types";
 import type { Color } from "chess.js";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
-import type { UiMove } from "../logic/chess";
+import type { UiMove } from "../model/chess";
 
 export type ClockConfig = {
 	gameFull: GameFullEvent | null;

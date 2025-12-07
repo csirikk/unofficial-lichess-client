@@ -9,8 +9,8 @@ import {
 	type PieceDropHandlerArgs,
 	type PieceRenderObject,
 } from "react-chessboard";
-import type { UiPromotionPiece } from "../logic/chess";
-import { pieceToKey } from "../logic/chess";
+import type { UiPromotionPiece } from "../model/chess";
+import { pieceToKey } from "../model/chess";
 import type { BoardViewModel } from "../hooks/useBoard";
 
 // Promotion order and labels

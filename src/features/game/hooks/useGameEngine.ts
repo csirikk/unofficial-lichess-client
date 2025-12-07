@@ -29,7 +29,7 @@ import {
 	keyToPiece,
 	uciToMove,
 	type UiMove,
-} from "../logic/chess";
+} from "../model/chess";
 
 export type GameEngineConfig = {
 	gameFull: GameFullEvent | null;
@@ -135,7 +135,6 @@ export function useGameEngine({
 		setPendingUci(null);
 		setPendingIsPremove(false);
 		setPremoveQueue([]);
-		// chess will update via useEffect
 	}, []);
 
 	// Execute a move optimistically, rollback on error

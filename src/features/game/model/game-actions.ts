@@ -1,9 +1,8 @@
-import { boardGameAbort, boardGameDraw, boardGameResign } from "../../generated/client/board";
-import { challengeAi } from "../../generated/client/challenges";
-import { createAuthHeaders } from "../../lib/api";
-import type { SetupBotLevel, SetupColorChoice } from "./logic/setup";
+import { boardGameAbort, boardGameDraw, boardGameResign } from "../../../generated/client/board";
+import { challengeAi } from "../../../generated/client/challenges";
+import { createAuthHeaders } from "../../../lib/api";
+import type { SetupBotLevel, SetupColorChoice } from "./setup";
 
-// gameActions.ts
 export async function startBotGame(
 	level: SetupBotLevel,
 	clock: { limit: number; increment: number } | null = { limit: 300, increment: 3 },

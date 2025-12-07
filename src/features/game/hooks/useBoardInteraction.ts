@@ -9,7 +9,7 @@
  */
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type UiPromotionPiece, isFeasiblePremove, moveToUci } from "../logic/chess";
+import { type UiPromotionPiece, isFeasiblePremove, moveToUci } from "../model/chess";
 import type { GameEngineHandlers, GameEngineInfo, GameEngineState } from "./useGameEngine";
 
 export type BoardInteractionConfig = {

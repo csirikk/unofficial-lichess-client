@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card } from "../../components/Card";
-import { SegmentedControl, type SegmentedOption } from "../../components/SegmentedControl";
-import type { SetupBotLevel, SetupColorChoice } from "./logic/setup";
+import { Card } from "../../../components/Card";
+import { SegmentedControl, type SegmentedOption } from "../../../components/SegmentedControl";
+import type { SetupBotLevel, SetupColorChoice } from "../model/setup";
 import { BotGameTab } from "./BotGameTab";
 
 type GameMode = "bot" | "unrated" | "rated";

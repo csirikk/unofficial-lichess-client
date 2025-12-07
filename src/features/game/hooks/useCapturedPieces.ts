@@ -12,7 +12,7 @@ import {
 	computeCapturedAt,
 	getMaterialScore,
 	uciToMove,
-} from "../logic/chess";
+} from "../model/chess";
 
 export type CapturedPiecesConfig = {
 	serverHistory: UiMove[];

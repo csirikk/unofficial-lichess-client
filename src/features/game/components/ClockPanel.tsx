@@ -1,6 +1,6 @@
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { PieceSymbol } from "chess.js";
-import { PIECES_UNICODE, formatClockTime } from "../logic/chess";
+import { PIECES_UNICODE, formatClockTime } from "../model/chess";
 import { useMemo } from "react";
 
 export type PlayerInfo = {

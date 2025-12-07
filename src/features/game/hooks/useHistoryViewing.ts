@@ -5,8 +5,8 @@
  */
 import { Chess, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { boardFromChess, boardToChessboardPosition } from "../logic/chess";
-import type { UiMove } from "../logic/chess"; // Ensure correct import path
+import { boardFromChess, boardToChessboardPosition } from "../model/chess";
+import type { UiMove } from "../model/chess";
 
 export type HistoryViewingConfig = {
 	chess: Chess; // The main chess.js instance representing the current game

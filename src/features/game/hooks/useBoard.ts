@@ -5,7 +5,7 @@
  */
 import { useMemo } from "react";
 import type { Move as ChessMove, Square } from "chess.js";
-import type { UiGhostPiece, UiPremove, UiPromotionPiece, UiPromotionRequest } from "../logic/chess";
+import type { UiGhostPiece, UiPremove, UiPromotionPiece, UiPromotionRequest } from "../model/chess";
 import type { GameEngineState, GameEngineInfo } from "./useGameEngine";
 import type { BoardInteractionState, BoardInteractionHandlers } from "./useBoardInteraction";
 

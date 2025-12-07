@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card } from "../../components/Card";
-import { SectionLabel } from "../../components/SectionLabel";
-import { SegmentedControl, type SegmentedOption } from "../../components/SegmentedControl";
+import { Card } from "../../../components/Card";
+import { SectionLabel } from "../../../components/SectionLabel";
+import { SegmentedControl, type SegmentedOption } from "../../../components/SegmentedControl";
 import {
 	type SetupBotLevel,
 	type SetupColorChoice,
@@ -9,8 +9,8 @@ import {
 	UI_TIME_PRESETS,
 	createDefaultBotGameSetup,
 	findTimePreset,
-} from "./logic/setup";
-import { SelectableCardGrid } from "../../components/SelectableCardGrid";
+} from "../model/setup";
+import { SelectableCardGrid } from "../../../components/SelectableCardGrid";
 
 type BotGameTabProps = {
 	isCreating: boolean;
