@@ -262,6 +262,12 @@ export function Board({ viewModel }: BoardProps) {
 						},
 						lightSquareStyle: { backgroundColor: "rgb(var(--color-chess-light-square))" },
 						darkSquareStyle: { backgroundColor: "rgb(var(--color-chess-dark-square))" },
+						darkSquareNotationStyle: {
+							color: "rgb(var(--color-chess-light-square))",
+						},
+						lightSquareNotationStyle: {
+							color: "rgb(var(--color-chess-dark-square))",
+						},
 					}}
 				/>
 
