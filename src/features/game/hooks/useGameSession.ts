@@ -116,11 +116,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		if (!gameId || !isConnected) return;
 		try {
 			await resignGame(gameId);
-			setGameId(null);
 		} catch (e) {
 			console.error("Resign failed:", e);
 		}
-	}, [gameId, isConnected, setGameId]);
+	}, [gameId, isConnected]);
 
 	const handleAbort = useCallback(async () => {
 		if (!gameId || !isConnected) return;
