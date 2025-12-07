@@ -1,4 +1,5 @@
 import { Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
 export default function Navbar() {
@@ -11,21 +12,21 @@ export default function Navbar() {
 			<nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2">
 				{/* Left: logo + brand */}
 				<div className="flex items-center gap-2">
-					<a href="/" className="text-lg font-semibold text-primary-500">
+					<Link to="/" className="text-lg font-semibold text-primary-500">
 						Chess
-					</a>
+					</Link>
 				</div>
 
 				{/* Right: nav links + auth + settings */}
 				<div className="flex items-center gap-4 sm:gap-6">
 					{/* Nav links */}
 					<div className="flex items-center gap-4 text-sm">
-						<a href="/" className="font-medium text-primary-400 hover:text-primary-300">
+						<Link to="/" className="font-medium text-primary-400 hover:text-primary-300">
 							Play
-						</a>
-						<a href="/history" className="font-medium text-fg-secondary hover:text-fg-primary">
+						</Link>
+						<Link to="/" className="font-medium text-fg-secondary hover:text-fg-primary">
 							History
-						</a>
+						</Link>
 					</div>
 
 					{/* Divider */}

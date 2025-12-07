@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getGameIdFromURL, setGameIdInURL } from "../../../lib/url";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
 import { Board } from "../components/Board";
@@ -10,18 +10,26 @@ import { MoveList } from "../components/MoveList";
 import { GameModeTabs } from "./GameModeTabs";
 
 export default function GameView() {
-	const [gameId, setGameId] = useState<string | null>(() => getGameIdFromURL());
+	const [searchParams, setSearchParams] = useSearchParams();
 
-	const session = useGameSession(gameId, setGameId);
+	const gameId = searchParams.get("game");
+
+	const updateGameId = (newId: string | null) => {
+		if (newId) {
+			setSearchParams({ game: newId });
+		} else {
+			setSearchParams({});
+		}
+	};
+
+	const session = useGameSession(gameId, updateGameId);
 	const { boardViewModel, clockState, historyState, capturedState, gameState, actions } = session;
 
 	useEffect(() => {
-		setGameIdInURL(gameId);
-	}, [gameId]);
-
-	useEffect(() => {
-		if (gameState.gameEnded) setGameIdInURL(null);
-	}, [gameState.gameEnded]);
+		if (gameState.gameEnded) {
+			setSearchParams({});
+		}
+	}, [gameState.gameEnded, setSearchParams]);
 
 	return (
 		<div className="flex flex-col md:flex-row h-full gap-4 min-h-0 w-full">

@@ -4,11 +4,14 @@
  * Handles the OAuth callback from Lichess.
  */
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Layout from "../../../ui/Layout";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AuthCallback() {
 	const { handleCallback } = useAuth();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const navigate = useNavigate();
 	const [error, setError] = useState<string | null>(null);
 	const hasRun = useRef(false);
 
@@ -18,16 +21,14 @@ export default function AuthCallback() {
 		hasRun.current = true;
 
 		const processCallback = async () => {
-			// Read URL
-			const url = new URL(window.location.href);
-			const code = url.searchParams.get("code");
-			const state = url.searchParams.get("state");
-			const oauthError = url.searchParams.get("error");
-			const errorDescription = url.searchParams.get("error_description");
+			// Read URL parameters
+			const code = searchParams.get("code");
+			const state = searchParams.get("state");
+			const oauthError = searchParams.get("error");
+			const errorDescription = searchParams.get("error_description");
 
-			// Clear URL
-			url.search = "";
-			window.history.replaceState({}, document.title, url.toString());
+			// Clear URL parameters
+			setSearchParams({});
 
 			if (oauthError) {
 				setError(
@@ -44,7 +45,7 @@ export default function AuthCallback() {
 			// Prevent reuse of codes
 			const marker = `oauth_code_used:${code}`;
 			if (sessionStorage.getItem(marker)) {
-				window.location.replace("/");
+				navigate("/", { replace: true });
 				return;
 			}
 
@@ -52,14 +53,14 @@ export default function AuthCallback() {
 				await handleCallback(code, state);
 				// Mark code as used
 				sessionStorage.setItem(marker, "1");
-				window.location.replace("/");
+				navigate("/", { replace: true });
 			} catch (error) {
 				setError(error instanceof Error ? error.message : "Authentication failed");
 			}
 		};
 
 		processCallback();
-	}, [handleCallback]);
+	}, [handleCallback, searchParams, setSearchParams, navigate]);
 
 	return (
 		<Layout>
