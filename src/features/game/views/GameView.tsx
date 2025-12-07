@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
@@ -8,9 +8,11 @@ import { Controls } from "../components/GameActions";
 import { HistoryControls } from "../components/HistoryControls";
 import { MoveList } from "../components/MoveList";
 import { GameModeTabs } from "./GameModeTabs";
+import { GameResultModal } from "../components/GameResultModal";
 
 export default function GameView() {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const [modalDismissed, setModalDismissed] = useState(false);
 
 	const gameId = searchParams.get("game");
 
@@ -27,9 +29,9 @@ export default function GameView() {
 
 	useEffect(() => {
 		if (gameState.gameEnded) {
-			setSearchParams({});
+			setModalDismissed(false);
 		}
-	}, [gameState.gameEnded, setSearchParams]);
+	}, [gameState.gameEnded]);
 
 	return (
 		<div className="flex flex-col md:flex-row h-full gap-4 min-h-0 w-full">
@@ -152,20 +154,59 @@ export default function GameView() {
 								gameEnded={gameState.gameEnded}
 								moveCount={historyState.totalMoves}
 							/>
+							
+							<div className="flex flex-col gap-3 mt-3">
+								{gameState.gameEnded && (
+									<>
+										<button
+											type="button"
+											onClick={() => setModalDismissed(false)}
+											disabled={!modalDismissed}
+											className={`
+											w-full rounded-lg border border-[rgb(var(--color-primary-500))] 
+											px-4 py-2 text-sm font-medium transition-all
+											${
+												!modalDismissed
+													? "opacity-20"
+													: "opacity-100 cursor-pointer bg-[rgb(var(--color-primary-600)/0.2)] text-[rgb(var(--color-primary-400))] hover:bg-[rgb(var(--color-primary-500)/0.1)]" // Enabled Look
+											}`}
+										>
+											Show Results
+										</button>
 
-							{gameState.gameEnded && (
-								<button
-									type="button"
-									onClick={actions.resetToLobby}
-									className="cursor-pointer mt-3 w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
-								>
-									New Game
-								</button>
-							)}
+										<button
+											type="button"
+											onClick={actions.resetToLobby}
+											className="cursor-pointer w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
+										>
+											New Game
+										</button>
+									</>
+								)}
+							</div>
 						</div>
 					</div>
 				)}
 			</div>
+
+			{/* Game Result Modal */}
+			{gameId && gameState.gameEnded && !modalDismissed && (
+				<GameResultModal
+					winner={gameState.winner}
+					reason={gameState.status}
+					myColor={gameState.myColor}
+					ratingDelta={null}
+					onRematch={() => {
+						// TODO: Implement rematch logic
+						console.log("Rematch requested");
+					}}
+					onNewGame={() => {
+						actions.resetToLobby();
+						setModalDismissed(true);
+					}}
+					onDismiss={() => setModalDismissed(true)}
+				/>
+			)}
 		</div>
 	);
 }
