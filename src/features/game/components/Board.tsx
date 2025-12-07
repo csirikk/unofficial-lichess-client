@@ -324,7 +324,7 @@ export function Board({ viewModel }: BoardProps) {
 										type="button"
 										onClick={() => onPromotionChoice(piece)}
 										onContextMenu={(event) => event.preventDefault()}
-										className="flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
+										className="cursor-pointer flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
 									>
 										{PieceIcon?.()}
 										<span className="sr-only">{PROMOTION_LABELS[piece]}</span>

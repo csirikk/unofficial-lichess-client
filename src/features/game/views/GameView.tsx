@@ -157,7 +157,7 @@ export default function GameView() {
 								<button
 									type="button"
 									onClick={actions.resetToLobby}
-									className="mt-3 w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
+									className="cursor-pointer mt-3 w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
 								>
 									New Game
 								</button>

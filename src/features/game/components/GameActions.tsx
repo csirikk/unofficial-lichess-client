@@ -56,7 +56,7 @@ export function Controls({
 					aria-label={label}
 					title={label}
 					className={`
-						flex-1 inline-flex items-center justify-center gap-2 p-3 
+						cursor-pointer flex-1 inline-flex items-center justify-center gap-2 p-3 
 						rounded-lg transition-colors border border-transparent
 						text-sm font-medium
 						disabled:opacity-40 disabled:cursor-not-allowed 

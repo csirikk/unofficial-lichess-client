@@ -126,7 +126,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 											key={level.level}
 											type="button"
 											onClick={() => handleLevelChange(String(level.level))}
-											className={`flex flex-col items-center gap-1 focus-visible:outline-none ${
+											className={`cursor-pointer flex flex-col items-center gap-1 focus-visible:outline-none ${
 												isActive ? "text-[rgb(var(--color-primary-500))]" : ""
 											}`}
 										>
@@ -185,7 +185,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 					type="button"
 					onClick={handleStart}
 					disabled={isCreating}
-					className="w-full rounded-lg bg-[rgb(var(--color-primary-500))] px-6 py-3 text-sm font-semibold text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:cursor-not-allowed disabled:opacity-50"
+					className="cursor-pointer w-full rounded-lg bg-[rgb(var(--color-primary-500))] px-6 py-3 text-sm font-semibold text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					{isCreating ? "Starting…" : "Start Game"}
 				</button>

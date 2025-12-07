@@ -12,7 +12,7 @@ export default function Navbar() {
 			<nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2">
 				{/* Left: logo + brand */}
 				<div className="flex items-center gap-2">
-					<Link to="/" className="text-lg font-semibold text-primary-500">
+					<Link to="/" className="cursor-pointer text-lg font-semibold text-primary-500">
 						Chess
 					</Link>
 				</div>
@@ -21,10 +21,16 @@ export default function Navbar() {
 				<div className="flex items-center gap-4 sm:gap-6">
 					{/* Nav links */}
 					<div className="flex items-center gap-4 text-sm">
-						<Link to="/" className="font-medium text-primary-400 hover:text-primary-300">
+						<Link
+							to="/"
+							className="cursor-pointer font-medium text-primary-400 hover:text-primary-300"
+						>
 							Play
 						</Link>
-						<Link to="/" className="font-medium text-fg-secondary hover:text-fg-primary">
+						<Link
+							to="/"
+							className="cursor-pointer font-medium text-fg-secondary hover:text-fg-primary"
+						>
 							History
 						</Link>
 					</div>
@@ -38,7 +44,7 @@ export default function Navbar() {
 							<button
 								type="button"
 								onClick={login}
-								className="inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
+								className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
 							>
 								<span>Sign up</span>
 							</button>
@@ -51,7 +57,7 @@ export default function Navbar() {
 							<button
 								type="button"
 								onClick={logout}
-								className="inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
+								className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
 							>
 								<span>Sign out</span>
 							</button>
@@ -61,7 +67,7 @@ export default function Navbar() {
 					{/* Settings icon */}
 					<button
 						type="button"
-						className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-secondary transition-colors hover:text-fg-primary hover:bg-[rgb(var(--color-neutral-200)/0.5)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
+						className="cursor-pointer ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-secondary transition-colors hover:text-fg-primary hover:bg-[rgb(var(--color-neutral-200)/0.5)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
 						aria-label="Settings"
 					>
 						<Settings />

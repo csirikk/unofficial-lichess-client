@@ -29,8 +29,8 @@ export function SegmentedControl<T extends string>({
 			{options.map((opt) => {
 				const isActive = opt.value === value;
 				const buttonClasses = isActive
-					? "px-3 py-1 rounded-full transition-colors bg-[rgb(var(--color-primary-500))] text-[rgb(var(--color-fg-on-primary))]"
-					: "px-3 py-1 rounded-full transition-colors text-[rgb(var(--color-fg-secondary))] hover:bg-[rgb(var(--color-surface-border)/0.7)]";
+					? "cursor-pointer px-3 py-1 rounded-full transition-colors bg-[rgb(var(--color-primary-500))] text-[rgb(var(--color-fg-on-primary))]"
+					: "cursor-pointer px-3 py-1 rounded-full transition-colors text-[rgb(var(--color-fg-secondary))] hover:bg-[rgb(var(--color-surface-border)/0.7)]";
 
 				return (
 					<button
