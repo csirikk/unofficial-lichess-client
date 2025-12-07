@@ -127,3 +127,7 @@
 		opacity: 0;
 	}
 }
+
+.game-view {
+	--board-size: min(calc(95vh - 4rem), calc(95vw - 30rem));
+}

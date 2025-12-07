@@ -7,10 +7,10 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
 	return (
-		<div className="h-screen bg-[rgb(var(--color-surface-base))] text-[rgb(var(--color-fg-primary))] flex flex-col overflow-hidden cursor-default">
+		<div className="flex h-screen flex-col overflow-hidden cursor-default bg-[rgb(var(--color-surface-base))] text-[rgb(var(--color-fg-primary))]">
 			<Navbar />
-			<main className="container mx-auto w-full text-[rgb(var(--color-fg-primary))]">
-				{children}
+			<main className="flex flex-1 items-stretch justify-center px-4 py-2">
+				<div className="flex h-full min-h-0">{children}</div>
 			</main>
 		</div>
 	);

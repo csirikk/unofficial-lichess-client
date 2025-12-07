@@ -85,21 +85,21 @@ export function MoveList({
 			${isActive ? "text-[rgb(var(--color-primary-500))]" : ""}
 			${isClickable && !isActive ? "cursor-pointer hover:bg-[rgb(var(--color-surface-card)/0.7)]" : ""}
 			${isClickable ? "cursor-pointer" : ""}
-		`;
+			`;
 	};
 
 	return (
-		<aside className="w-full md:w-64 shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-xs text-[rgb(var(--color-fg-secondary))] md:flex max-h-[70vh]">
-			<div className="mb-2 text-xl font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))] cursor-default">
+		<aside className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-xs text-[rgb(var(--color-fg-secondary))]">
+			<div className="mb-2 cursor-default text-xl font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))]">
 				Moves
 			</div>
-			<div className="flex items-center justify-between text-sm font-mono py-1 px-0.5 uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] cursor-default">
+			<div className="flex cursor-default items-center justify-between px-0.5 py-1 text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]">
 				<span className="w-8 opacity-50">#</span>
 				<span className="flex-1 text-lg">White</span>
 				<span className="flex-1 text-lg">Black</span>
 			</div>
 			<ol
-				className="mt-1 flex-1 space-y-px overflow-y-auto pr-1 text-[14px] scroll-smooth cursor-default"
+				className="mt-1 flex-1 cursor-default space-y-px overflow-y-auto pr-1 text-[14px] scroll-smooth"
 				ref={moveListRef}
 			>
 				{moveRows.map((row) => (
@@ -107,7 +107,7 @@ export function MoveList({
 						<span className="w-6 text-[rgb(var(--color-fg-secondary))]">{row.moveNumber}.</span>
 						<button
 							type="button"
-							className={`flex-1 truncate text-left text-[rgb(var(--color-fg-primary))] bg-transparent border-none ${getMoveClassName(row.whiteIndex)}`}
+							className={`flex-1 truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
 							onClick={() => onMoveClick?.(row.whiteIndex)}
 							disabled={!onMoveClick}
 						>
@@ -116,7 +116,7 @@ export function MoveList({
 						{row.blackIndex !== null ? (
 							<button
 								type="button"
-								className={`flex-1 truncate text-left text-[rgb(var(--color-fg-primary))] bg-transparent border-none ${getMoveClassName(row.blackIndex)}`}
+								className={`flex-1 truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
 								onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
 								disabled={!onMoveClick}
 							>

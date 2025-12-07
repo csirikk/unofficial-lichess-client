@@ -34,26 +34,144 @@ export default function GameView() {
 		}
 	}, [gameState.gameEnded]);
 
+	const hasGame = !!gameId;
+
 	return (
-		<div className="flex flex-col md:flex-row h-full gap-4 min-h-0 w-full">
-			{/* Left Column: Move List + Chessboard */}
-			<div
-				className={`flex-1 flex flex-row min-w-0 h-full transition-opacity gap-4 ${
-					!gameId ? "opacity-80" : ""
-				}`}
-			>
-				{/* Move List */}
+		<div className="flex h-full w-full flex-col game-view ">
+			<div className="flex h-full min-h-0 w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-center">
+				{/* RIGHT PANEL */}
+				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-[var(--board-size)] lg:w-80 lg:min-h-0">
+					{!hasGame ? (
+						<GameModeTabs
+							isCreating={gameState.isCreatingGame}
+							error={gameState.error}
+							onStartBotGame={actions.startBotGame}
+						/>
+					) : (
+						<div className="flex flex-col lg:h-full lg:min-h-0">
+							{/* Status */}
+							<div className="mb-2 shrink-0 p-2">
+								<div className="text-xl font-semibold text-[rgb(var(--color-fg-secondary))]">
+									{gameState.status && (
+										<span className="uppercase tracking-wide">{gameState.status}</span>
+									)}
+								</div>
+
+								<div className="font-medium">
+									{boardViewModel.displayState.checkSquare && !gameState.gameEnded && (
+										<span className="text-[rgb(var(--color-warning))]">Check!</span>
+									)}
+									{gameState.winner && (
+										<span className="ml-2 text-[rgb(var(--color-success))]">
+											Winner: {gameState.winner}
+										</span>
+									)}
+								</div>
+								<span className="text-sm font-mono text-[rgb(var(--color-fg-secondary))] opacity-50">
+									#{gameId}
+								</span>
+								<div className="text-sm font-medium">
+									{gameState.gameEnded ? (
+										<span className="text-[rgb(var(--color-fg-secondary))]">Game Over</span>
+									) : gameState.isConnected ? (
+										<span className="text-[rgb(var(--color-success))]" title="Connected">
+											Connected
+										</span>
+									) : gameState.isReconnecting ? (
+										<span className="text-[rgb(var(--color-warning))]" title="Reconnecting">
+											Reconnecting...
+										</span>
+									) : gameState.isOffline ? (
+										<span className="text-[rgb(var(--color-error))]" title="Connection lost">
+											{gameState.streamNotFound ? "Game Not Found" : "Offline"}
+										</span>
+									) : gameState.isConnecting ? (
+										<span className="text-[rgb(var(--color-warning))]" title="Connecting">
+											Connecting...
+										</span>
+									) : null}
+								</div>
+								{gameState.error && (
+									<div className="mt-2 text-sm text-[rgb(var(--color-error))]">
+										Error: {gameState.error}
+									</div>
+								)}
+							</div>
+
+							{/* Clocks*/}
+							<div className="px-2 pb-2 lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-center">
+								<ClockPanel
+									gameFull={gameState.gameFull}
+									whiteMs={clockState.whiteMs}
+									blackMs={clockState.blackMs}
+									activeColor={clockState.activeColor}
+									timerOrder={gameState.timerOrder}
+									captured={capturedState.captured}
+									whiteDiff={capturedState.whiteDiff}
+									blackDiff={capturedState.blackDiff}
+								/>
+							</div>
+
+							{/* Controls */}
+							<div className="shrink-0 p-1">
+								<Controls
+									onOfferDraw={actions.offerDraw}
+									onResign={actions.resign}
+									onAbort={actions.abort}
+									isConnected={gameState.isConnected}
+									gameEnded={gameState.gameEnded}
+									moveCount={historyState.totalMoves}
+								/>
+
+								<div className="mt-3 flex flex-col gap-3">
+									{gameState.gameEnded && (
+										<>
+											<Button
+												variant="outline"
+												fullWidth
+												onClick={() => setModalDismissed(false)}
+												disabled={!modalDismissed}
+											>
+												Show Results
+											</Button>
+
+											<Button variant="secondary" fullWidth onClick={actions.resetToLobby}>
+												New Game
+											</Button>
+										</>
+									)}
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* CENTER PANEL*/}
 				<div
-					className={`${
-						!gameId ? "invisible pointer-events-none" : ""
-					} transition-opacity shrink-0 flex flex-col h-full overflow-hidden`}
+					className={`order-2 flex w-full justify-center lg:order-2 lg:h-[var(--board-size)] lg:flex-1 lg:min-w-0 ${
+						!hasGame ? "opacity-80" : ""
+					}`}
 				>
-					<MoveList
-						moves={historyState.moveHistory}
-						visible={true}
-						viewingMoveIndex={historyState.viewingMoveIndex}
-						onMoveClick={historyState.goToMove}
-					/>
+					<div className="relative aspect-square w-full max-h-[calc(95vh-4rem)] max-w-full shrink-0 lg:h-[var(--board-size)] lg:w-[var(--board-size)]">
+						<Board viewModel={boardViewModel} />
+					</div>
+				</div>
+
+				{/* LEFT PANEL*/}
+				<div
+					className={`order-3 w-full shrink-0 flex flex-col lg:overflow-hidden lg:order-1 lg:h-[var(--board-size)] lg:w-60 lg:min-h-0 ${
+						!hasGame ? "invisible pointer-events-none" : ""
+					}`}
+				>
+					<div className="flex-1 min-h-0 overflow-auto">
+						<MoveList
+							moves={historyState.moveHistory}
+							visible={true}
+							viewingMoveIndex={historyState.viewingMoveIndex}
+							onMoveClick={historyState.goToMove}
+						/>
+					</div>
+
 					<HistoryControls
 						onGoToStart={historyState.goToStart}
 						onGoBack={historyState.goBack}
@@ -64,123 +182,9 @@ export default function GameView() {
 						totalMoves={historyState.totalMoves}
 					/>
 				</div>
-				{/* Chessboard */}
-				<div className="flex-1 min-w-0 h-full flex items-center justify-center">
-					<div className="aspect-square max-h-full shrink-0 max-w-full w-full relative">
-						<Board viewModel={boardViewModel} />
-					</div>
-				</div>
 			</div>
 
-			{/* Right Column: Info + Clocks + Controls */}
-			<div className="w-full md:w-1/3 md:max-w-lg shrink-0 flex flex-col h-full min-h-0">
-				{!gameId ? (
-					<GameModeTabs
-						isCreating={gameState.isCreatingGame}
-						error={gameState.error}
-						onStartBotGame={actions.startBotGame}
-					/>
-				) : (
-					<div className="flex flex-col h-full justify-between relative min-h-0">
-						{/* Status Header */}
-						<div className="p-2 mb-4">
-							<div className="font-semibold text-xl text-[rgb(var(--color-fg-secondary))]">
-								{gameState.status && (
-									<span className="uppercase tracking-wide">{gameState.status}</span>
-								)}
-							</div>
-
-							<div className="font-medium">
-								{boardViewModel.displayState.checkSquare && !gameState.gameEnded && (
-									<span className="text-[rgb(var(--color-warning))]">Check!</span>
-								)}
-								{gameState.winner && (
-									<span className="ml-2 text-[rgb(var(--color-success))]">
-										Winner: {gameState.winner}
-									</span>
-								)}
-							</div>
-							<span className="text-sm font-mono text-[rgb(var(--color-fg-secondary))] opacity-50">
-								#{gameId}
-							</span>
-							<div className="text-sm font-medium">
-								{gameState.gameEnded ? (
-									<span className="text-[rgb(var(--color-fg-secondary))]">Game Over</span>
-								) : gameState.isConnected ? (
-									<span className="text-[rgb(var(--color-success))]" title="Connected">
-										Connected
-									</span>
-								) : gameState.isReconnecting ? (
-									<span className="text-[rgb(var(--color-warning))]" title="Reconnecting">
-										Reconnecting...
-									</span>
-								) : gameState.isOffline ? (
-									<span className="text-[rgb(var(--color-error))]" title="Connection lost">
-										{gameState.streamNotFound ? "Game Not Found" : "Offline"}
-									</span>
-								) : gameState.isConnecting ? (
-									<span className="text-[rgb(var(--color-warning))]" title="Connecting">
-										Connecting...
-									</span>
-								) : null}
-							</div>
-							{gameState.error && (
-								<div className="mt-2 text-sm text-[rgb(var(--color-error))]">
-									Error: {gameState.error}
-								</div>
-							)}
-						</div>
-
-						{/* Clocks */}
-						<div className="absolute top-1/2 w-full -translate-y-1/2">
-							<ClockPanel
-								gameFull={gameState.gameFull}
-								whiteMs={clockState.whiteMs}
-								blackMs={clockState.blackMs}
-								activeColor={clockState.activeColor}
-								timerOrder={gameState.timerOrder}
-								captured={capturedState.captured}
-								whiteDiff={capturedState.whiteDiff}
-								blackDiff={capturedState.blackDiff}
-							/>
-						</div>
-
-						{/* Game Actions */}
-						<div className="p-2">
-							<Controls
-								onOfferDraw={actions.offerDraw}
-								onResign={actions.resign}
-								onAbort={actions.abort}
-								isConnected={gameState.isConnected}
-								gameEnded={gameState.gameEnded}
-								moveCount={historyState.totalMoves}
-							/>
-
-							<div className="flex flex-col gap-3 mt-3">
-								{gameState.gameEnded && (
-									<>
-										<Button
-											variant="outline"
-											fullWidth
-											onClick={() => setModalDismissed(false)}
-											disabled={!modalDismissed}
-										>
-											Show Results
-										</Button>
-
-										<Button variant="secondary" fullWidth onClick={actions.resetToLobby}>
-											New Game
-										</Button>
-									</>
-								)}
-							</div>
-						</div>
-					</div>
-				)}
-			</div>
-
-			{/* Game Result Modal */}
-			{gameId && gameState.gameEnded && !modalDismissed && (
+			{hasGame && gameState.gameEnded && !modalDismissed && (
 				<GameResultModal
 					winner={gameState.winner}
 					reason={gameState.status}

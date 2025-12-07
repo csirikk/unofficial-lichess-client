@@ -38,13 +38,16 @@ export function Clock({
 	const timeString = formatClockTime(timeMs);
 	const [minutes, seconds] = timeString.split(":");
 
-	const timerClasses = `flex justify-center items-baseline font-mono font-bold tracking-wider leading-none text-7xl ${
-		isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"
-	} ${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
+	const timerClasses = `flex justify-center items-baseline font-mono font-bold tracking-wider leading-none 
+		text-4xl sm:text-5xl md:text-6xl lg:text-7xl
+		${isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"}
+		${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
-	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)] bg-[rgb(var(--color-surface-card))] px-6 py-4 text-center transition-opacity ${
-		isActive ? "" : "opacity-40"
-	}`;
+	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)]
+		bg-[rgb(var(--color-surface-card))]
+		px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4
+		text-center transition-opacity
+		${isActive ? "" : "opacity-40"}`;
 
 	const nameRating = (
 		<div className="flex text-[rgb(var(--color-fg-primary))]">
@@ -55,8 +58,8 @@ export function Clock({
 						: "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-b-lg"
 				}
 			>
-				<div className="text-xl font-bold truncate">{player.name}</div>
-				<div className="ml-1 text-sm">{player.rating || ""}</div>
+				<div className="truncate text-base sm:text-lg md:text-xl font-bold">{player.name}</div>
+				<div className="ml-1 text-xs sm:text-sm">{player.rating || ""}</div>
 			</div>
 		</div>
 	);
@@ -70,7 +73,7 @@ export function Clock({
 	}, [capturedPieces]);
 
 	const infoRow = (
-		<div className="flex items-center px-2 h-3 text-[rgb(var(--color-fg-secondary))]">
+		<div className="flex h-3 items-center px-2 text-[rgb(var(--color-fg-secondary))]">
 			{/* Captured Pieces */}
 			<div className="-space-x-1 text-lg">
 				{capturedPieces.map((p, i) => (
@@ -81,7 +84,7 @@ export function Clock({
 			</div>
 			{/* Material Difference */}
 			{materialDiff != null && materialDiff > 0 && (
-				<span className="ml-2 text-sm font-semibold text-[rgb(var(--color-fg-secondary))]">
+				<span className="ml-2 text-xs sm:text-sm font-semibold text-[rgb(var(--color-fg-secondary))]">
 					+{materialDiff}
 				</span>
 			)}
@@ -153,7 +156,7 @@ export function ClockPanel({
 	};
 
 	return (
-		<div className="flex-1 space-y-3">
+		<div className="mx-auto w-full max-w-xs space-y-2">
 			{timerOrder.map((color, index) => {
 				const isWhite = color === "white";
 				let ms = isWhite ? whiteMs : blackMs;
