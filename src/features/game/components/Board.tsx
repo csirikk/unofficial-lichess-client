@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Move as ChessMove, Square } from "chess.js";
+import type { Square } from "chess.js";
 import {
 	Chessboard,
 	type ChessboardOptions,
@@ -9,8 +9,9 @@ import {
 	type PieceDropHandlerArgs,
 	type PieceRenderObject,
 } from "react-chessboard";
-import type { UiGhostPiece, UiPremove, UiPromotionPiece, UiPromotionRequest } from "../logic/chess";
+import type { UiPromotionPiece } from "../logic/chess";
 import { pieceToKey } from "../logic/chess";
+import type { BoardViewModel } from "../hooks/useBoard";
 
 // Promotion order and labels
 const PROMOTION_ORDER: UiPromotionPiece[] = ["q", "r", "b", "n"];
@@ -22,48 +23,34 @@ const PROMOTION_LABELS: Record<UiPromotionPiece, string> = {
 };
 
 export type BoardProps = {
-	position: Record<string, { pieceType: string }>;
-	boardOrientation: "white" | "black";
-	ghostPieces: UiGhostPiece[];
-	selectedSquare: Square | null;
-	lastMoveSquares: { from: Square | null; to: Square | null };
-	checkSquare: Square | null;
-	legalMoves: ChessMove[];
-	premoveQueue: UiPremove[];
-	promotionRequest: UiPromotionRequest;
-	showAnimations: boolean;
-	onSquareClick: (square: string) => void;
-	onPieceClick: (square: string) => void;
-	onPieceDrag: (square: string) => void;
-	canDragPiece: (square: string) => boolean;
-	onPieceDrop: (sourceSquare: string, targetSquare: string | null) => boolean;
-	onPromotionChoice: (piece: UiPromotionPiece) => void;
-	onCancelPromotion: () => void;
-	rightClickedSquares: Record<string, boolean>;
-	onRightClick: (square: string) => void;
+	viewModel: BoardViewModel;
 };
 
-export function Board({
-	position,
-	boardOrientation,
-	ghostPieces,
-	selectedSquare,
-	lastMoveSquares,
-	checkSquare,
-	legalMoves,
-	premoveQueue,
-	promotionRequest,
-	showAnimations,
-	onSquareClick,
-	onPieceClick,
-	onPieceDrag,
-	canDragPiece,
-	onPieceDrop,
-	onPromotionChoice,
-	onCancelPromotion,
-	rightClickedSquares,
-	onRightClick,
-}: BoardProps) {
+export function Board({ viewModel }: BoardProps) {
+	const { displayState, handlers } = viewModel;
+	const {
+		position,
+		boardOrientation,
+		ghostPieces,
+		selectedSquare,
+		lastMoveSquares,
+		checkSquare,
+		legalMoves,
+		premoveQueue,
+		promotionRequest,
+		showAnimations,
+		rightClickedSquares,
+	} = displayState;
+	const {
+		onSquareClick,
+		onPieceClick,
+		onPieceDrag,
+		canDragPiece,
+		onPieceDrop,
+		onPromotionChoice,
+		onCancelPromotion,
+		onRightClick,
+	} = handlers;
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
 

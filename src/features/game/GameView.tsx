@@ -4,7 +4,6 @@
  * Main entry point for the game feature.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Square } from "chess.js";
 import { GameColor } from "../../generated/types/gameColor";
 import { useAuth } from "../auth/hooks/useAuth";
 import { getGameIdFromURL, setGameIdInURL } from "../../lib/url";
@@ -12,10 +11,12 @@ import type { SetupBotLevel, SetupColorChoice } from "./logic/setup";
 
 import { useGameStream } from "./hooks/useGameStream";
 import { useGameClock } from "./hooks/useGameClock";
-import { useMoveLogic } from "./hooks/useMoveLogic";
+import { useGameEngine } from "./hooks/useGameEngine";
+import { useBoardInteraction } from "./hooks/useBoardInteraction";
 import { useHistoryViewing } from "./hooks/useHistoryViewing";
 import { useHistoryKeyboard } from "./hooks/useHistoryKeyboard";
 import { useCapturedPieces } from "./hooks/useCapturedPieces";
+import { useBoard } from "./hooks/useBoard";
 
 import { Board } from "./components/Board";
 import { ClockPanel } from "./components/Clock";
@@ -49,9 +50,8 @@ export default function GameContainer() {
 		makeMove,
 	} = useGameStream(gameId);
 
-	// Move logic
-	const { boardState, handlers, gameInfo, pendingUci } = useMoveLogic({
-		gameId,
+	// Game Engine
+	const engineResult = useGameEngine({
 		gameFull,
 		serverFen,
 		serverTurn,
@@ -61,7 +61,23 @@ export default function GameContainer() {
 		makeMove,
 	});
 
-	const { myColor, boardOrientation, gameEnded, status, winner } = gameInfo;
+	const { state: engineState, handlers: engineHandlers, gameInfo } = engineResult;
+	const pendingUci = engineState.pendingUci;
+
+	const interactionResult = useBoardInteraction({
+		engineState,
+		engineHandlers,
+		gameInfo,
+	});
+
+	const { state: interactionState, handlers: interactionHandlers } = interactionResult;
+
+	const boardState = {
+		...engineState,
+		...interactionState,
+	};
+
+	const { myColor, gameEnded, status, winner } = gameInfo;
 
 	// Clock state
 	const { whiteMs, blackMs, activeColor } = useGameClock({
@@ -125,7 +141,7 @@ export default function GameContainer() {
 		setError(null);
 		try {
 			const { gameId: newGameId } = await startBotGame(config.level, config.clock, config.color);
-			handlers.resetBoard();
+			interactionHandlers.resetBoard();
 			setGameId(newGameId);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to create game");
@@ -165,15 +181,29 @@ export default function GameContainer() {
 
 	const resetToLobby = useCallback(() => {
 		setGameId(null);
-		handlers.resetBoard();
-	}, [handlers]);
+		interactionHandlers.resetBoard();
+	}, [interactionHandlers]);
 
 	const moveCount = boardState.moveHistory.length;
 
-	const boardPosition = isViewingHistory ? displayPosition : boardState.position;
-	const lastMoveSquares = isViewingHistory ? viewedLastMove : boardState.lastMoveSquares;
+	const onInteract = useCallback(() => {
+		if (isViewingHistory) {
+			goToLive();
+		}
+	}, [isViewingHistory, goToLive]);
 
-	// Captured pieces and material difference (ViewModel)
+	const boardViewModel = useBoard({
+		engineState,
+		interactionState,
+		interactionHandlers,
+		gameInfo,
+		isViewingHistory,
+		displayPosition,
+		viewedLastMove,
+		onInteract,
+	});
+
+	// Captured pieces and material difference
 	const { captured, whiteDiff, blackDiff } = useCapturedPieces({
 		serverHistory,
 		serverFen,
@@ -182,13 +212,6 @@ export default function GameContainer() {
 		chess: boardState.chess,
 		isViewingHistory,
 	});
-
-	// Interaction guard: clicking board while viewing history snaps to live
-	const onInteract = useCallback(() => {
-		if (isViewingHistory) {
-			goToLive();
-		}
-	}, [isViewingHistory, goToLive]);
 
 	// Handle move click in move list
 	const handleMoveClick = useCallback(
@@ -228,30 +251,7 @@ export default function GameContainer() {
 				{/* Board */}
 				<div className="flex-1 min-w-0 h-full flex items-center justify-center">
 					<div className="aspect-square max-h-full shrink-0 max-w-full w-full relative">
-						<Board
-							position={boardPosition}
-							boardOrientation={boardOrientation}
-							ghostPieces={isViewingHistory ? [] : boardState.ghostPieces}
-							selectedSquare={isViewingHistory ? null : boardState.selectedSquare}
-							lastMoveSquares={lastMoveSquares}
-							checkSquare={isViewingHistory ? null : boardState.checkSquare}
-							legalMoves={isViewingHistory ? [] : boardState.legalMoves}
-							premoveQueue={isViewingHistory ? [] : boardState.premoveQueue}
-							promotionRequest={isViewingHistory ? null : boardState.promotionRequest}
-							showAnimations={boardState.showAnimations}
-							onSquareClick={isViewingHistory ? onInteract : handlers.handleBoardClick}
-							onPieceClick={isViewingHistory ? onInteract : handlers.handleBoardClick}
-							onPieceDrag={isViewingHistory ? () => {} : (sq) => handlers.handlePieceDrag(sq)}
-							canDragPiece={isViewingHistory ? () => false : (sq) => handlers.canDragPiece(sq)}
-							onPieceDrop={
-								isViewingHistory ? () => false : (src, tgt) => handlers.onPieceDrop(src, tgt)
-							}
-							onPromotionChoice={handlers.handlePromotionChoice}
-							onCancelPromotion={() => handlers.handleSelectSquare(null)}
-							// Right-click highlights disabled in history mode
-							rightClickedSquares={isViewingHistory ? {} : boardState.rightClickedSquares}
-							onRightClick={(sq) => !isViewingHistory && handlers.handleRightClick(sq as Square)}
-						/>
+						<Board viewModel={boardViewModel} />
 					</div>
 				</div>
 			</div>

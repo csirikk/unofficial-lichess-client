@@ -1,5 +1,5 @@
 import { useAuth } from "../features/auth/hooks/useAuth";
-import GameContainer from "../features/game/GameContainer";
+import GameContainer from "../features/game/GameView";
 import Layout from "./Layout";
 
 export default function HomePage() {
