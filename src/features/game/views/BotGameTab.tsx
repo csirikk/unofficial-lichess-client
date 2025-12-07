@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
 import { SectionLabel } from "../../../components/SectionLabel";
 import { SegmentedControl, type SegmentedOption } from "../../../components/SegmentedControl";
@@ -181,14 +182,9 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 				)}
 
 				{/* Start Button */}
-				<button
-					type="button"
-					onClick={handleStart}
-					disabled={isCreating}
-					className="cursor-pointer w-full rounded-lg bg-[rgb(var(--color-primary-500))] px-6 py-3 text-sm font-semibold text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))] disabled:cursor-not-allowed disabled:opacity-50"
-				>
+				<Button variant="primary" size="lg" fullWidth onClick={handleStart} disabled={isCreating}>
 					{isCreating ? "Starting…" : "Start Game"}
-				</button>
+				</Button>
 			</div>
 		</Card>
 	);

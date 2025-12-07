@@ -1,5 +1,7 @@
 import { Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "../components/Button";
+import { IconButton } from "../components/IconButton";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
 export default function Navbar() {
@@ -41,37 +43,25 @@ export default function Navbar() {
 					{/* Auth buttons */}
 					{!isLoggedIn ? (
 						<div className="flex items-center gap-2 sm:gap-3">
-							<button
-								type="button"
-								onClick={login}
-								className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
-							>
+							<Button variant="outline" size="sm" onClick={login} className="rounded-2xl">
 								<span>Sign up</span>
-							</button>
+							</Button>
 						</div>
 					) : (
 						<div className="flex items-center gap-3">
 							<span className="hidden text-sm font-normal text-fg-primary sm:inline">
 								{user.username}
 							</span>
-							<button
-								type="button"
-								onClick={logout}
-								className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-primary-400 px-3 py-1.5 text-sm font-semibold text-primary-400 transition-colors hover:bg-[rgb(var(--color-primary-400)/0.08)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
-							>
+							<Button variant="outline" size="sm" onClick={logout} className="rounded-2xl">
 								<span>Sign out</span>
-							</button>
+							</Button>
 						</div>
 					)}
 
 					{/* Settings icon */}
-					<button
-						type="button"
-						className="cursor-pointer ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-secondary transition-colors hover:text-fg-primary hover:bg-[rgb(var(--color-neutral-200)/0.5)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-400/70"
-						aria-label="Settings"
-					>
+					<IconButton variant="ghost" size="md" aria-label="Settings" className="ml-1">
 						<Settings />
-					</button>
+					</IconButton>
 				</div>
 			</nav>
 		</header>

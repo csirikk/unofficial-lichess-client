@@ -1,4 +1,5 @@
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from "lucide-react";
+import { IconButton } from "../../../components/IconButton";
 
 export type HistoryControlsProps = {
 	onGoToStart: () => void;
@@ -11,76 +12,66 @@ export type HistoryControlsProps = {
 };
 
 export function HistoryControls({
-	onGoToStart,
-	onGoBack,
-	onGoForward,
-	onGoToLive,
-	isViewingHistory,
-	viewingMoveIndex,
-	totalMoves,
+onGoToStart,
+onGoBack,
+onGoForward,
+onGoToLive,
+isViewingHistory,
+viewingMoveIndex,
+totalMoves,
 }: HistoryControlsProps) {
 	const atStart = viewingMoveIndex === -1 || (viewingMoveIndex === null && totalMoves === 0);
 	const atLive = viewingMoveIndex === null;
 	const canGoBack = totalMoves > 0 && !atStart;
 	const canGoForward = totalMoves > 0 && !atLive;
 
-	const buttonClass = `
-		inline-flex items-center justify-center p-2 rounded
-		text-[rgb(var(--color-fg-secondary))]
-		hover:bg-[rgb(var(--color-surface-border)/0.5)]
-		hover:text-[rgb(var(--color-fg-primary))]
-		disabled:opacity-30 disabled:cursor-not-allowed
-		disabled:hover:bg-transparent disabled:hover:text-[rgb(var(--color-fg-secondary))]
-		transition-colors
-		cursor-pointer
-	`;
-
 	return (
-		<div className="flex flex-col items-center justify-center gap-1 py-2">
+<div className="flex flex-col items-center justify-center gap-1 py-2">
 			<div className="flex items-center justify-center gap-1">
-				<button
-					type="button"
+				<IconButton
+					variant="ghost"
+					size="md"
 					onClick={onGoToStart}
 					disabled={atStart}
-					className={buttonClass}
 					title="First move"
 					aria-label="First move"
 				>
-					<ChevronFirst className="h-5 w-5" />
-				</button>
+					<ChevronFirst />
+				</IconButton>
 
-				<button
-					type="button"
+				<IconButton
+					variant="ghost"
+					size="md"
 					onClick={onGoBack}
 					disabled={!canGoBack}
-					className={buttonClass}
 					title="Previous move"
 					aria-label="Previous move"
 				>
-					<ChevronLeft className="h-5 w-5" />
-				</button>
+					<ChevronLeft />
+				</IconButton>
 
-				<button
-					type="button"
+				<IconButton
+					variant="ghost"
+					size="md"
 					onClick={onGoForward}
 					disabled={!canGoForward}
-					className={buttonClass}
 					title="Next move"
 					aria-label="Next move"
 				>
-					<ChevronRight className="h-5 w-5" />
-				</button>
+					<ChevronRight />
+				</IconButton>
 
-				<button
-					type="button"
+				<IconButton
+					variant="ghost"
+					size="md"
 					onClick={onGoToLive}
 					disabled={atLive}
-					className={`${buttonClass} ${isViewingHistory ? "text-[rgb(var(--color-primary-500))]" : ""}`}
 					title="Last move"
 					aria-label="Last move"
+					className={isViewingHistory ? "text-[rgb(var(--color-primary-500))]" : ""}
 				>
-					<ChevronLast className="h-5 w-5" />
-				</button>
+					<ChevronLast />
+				</IconButton>
 			</div>
 
 			{isViewingHistory && (

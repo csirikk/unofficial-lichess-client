@@ -1,6 +1,8 @@
 import { Play, RotateCcw, Trophy, X } from "lucide-react";
 import { useCallback, useRef } from "react";
+import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
+import { IconButton } from "../../../components/IconButton";
 
 export type GameResultModalProps = {
 	winner: string | null;
@@ -51,13 +53,15 @@ export function GameResultModal({
 				className="absolute inset-0 bg-transparent"
 			/>
 			<div className="relative w-full max-w-sm animate-in fade-in zoom-in duration-200 z-10">
-				<button
-					type="button"
+				<IconButton
+					variant="solid"
+					size="md"
 					onClick={onDismiss}
-					className="cursor-pointer absolute -top-3 -right-3 z-10 p-2 rounded-full bg-[rgb(var(--color-surface-card))] border border-[rgb(var(--color-surface-border))] text-[rgb(var(--color-fg-secondary))] hover:text-white transition-colors"
+					aria-label="Close modal"
+					className="absolute -top-3 -right-3 z-10"
 				>
-					<X className="w-5 h-5" />
-				</button>
+					<X />
+				</IconButton>
 
 				<Card className="shadow-2xl overflow-hidden">
 					{/* Header */}
@@ -122,32 +126,30 @@ export function GameResultModal({
 					{/* Actions */}
 					<div className="space-y-3">
 						<div className="grid grid-cols-2 gap-3">
-							<button
-								type="button"
-								onClick={onRematch}
-								className="cursor-pointer flex flex-row items-center justify-center gap-2 rounded-xl bg-[rgb(var(--color-surface-border)/0.4)] py-3 text-md font-semibold text-[rgb(var(--color-fg-primary))] transition hover:bg-[rgb(var(--color-surface-border))]"
-							>
+							<Button variant="ghost" size="lg" onClick={onRematch} className="rounded-xl">
 								<RotateCcw className="h-5 w-5" />
 								Rematch
-							</button>
+							</Button>
 
-							<button
-								type="button"
+							<Button
+								variant="primary"
+								size="lg"
 								onClick={onNewGame}
-								className="cursor-pointer flex flex-row items-center justify-center gap-2 rounded-xl bg-[rgb(var(--color-primary-500))] py-3 text-md font-semibold text-white shadow-lg shadow-[rgb(var(--color-primary-500)/0.2)] transition hover:bg-[rgb(var(--color-primary-400))]"
+								className="rounded-xl shadow-lg"
 							>
 								<Play className="h-5 w-5 fill-current" />
 								New Game
-							</button>
+							</Button>
 						</div>
 
-						<button
-							type="button"
+						<Button
+							variant="text"
+							fullWidth
 							onClick={onDismiss}
-							className="cursor-pointer w-full rounded-lg py-2 text-sm font-medium uppercase tracking-wider text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-fg-primary))] transition"
+							className="uppercase tracking-wider"
 						>
 							Analyze Board
-						</button>
+						</Button>
 					</div>
 				</Card>
 			</div>

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
 import { Board } from "../components/Board";
+import { Button } from "../../../components/Button";
 import { ClockPanel } from "../components/ClockPanel";
 import { Controls } from "../components/GameActions";
 import { HistoryControls } from "../components/HistoryControls";
@@ -154,33 +155,22 @@ export default function GameView() {
 								gameEnded={gameState.gameEnded}
 								moveCount={historyState.totalMoves}
 							/>
-							
+
 							<div className="flex flex-col gap-3 mt-3">
 								{gameState.gameEnded && (
 									<>
-										<button
-											type="button"
+										<Button
+											variant="outline"
+											fullWidth
 											onClick={() => setModalDismissed(false)}
 											disabled={!modalDismissed}
-											className={`
-											w-full rounded-lg border border-[rgb(var(--color-primary-500))] 
-											px-4 py-2 text-sm font-medium transition-all
-											${
-												!modalDismissed
-													? "opacity-20"
-													: "opacity-100 cursor-pointer bg-[rgb(var(--color-primary-600)/0.2)] text-[rgb(var(--color-primary-400))] hover:bg-[rgb(var(--color-primary-500)/0.1)]" // Enabled Look
-											}`}
 										>
 											Show Results
-										</button>
+										</Button>
 
-										<button
-											type="button"
-											onClick={actions.resetToLobby}
-											className="cursor-pointer w-full rounded-lg bg-[rgb(var(--color-secondary-500))] px-4 py-2 text-sm font-medium text-[rgb(var(--color-fg-on-primary))] transition hover:bg-[rgb(var(--color-secondary-600))]"
-										>
+										<Button variant="secondary" fullWidth onClick={actions.resetToLobby}>
 											New Game
-										</button>
+										</Button>
 									</>
 								)}
 							</div>
