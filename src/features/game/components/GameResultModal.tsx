@@ -1,5 +1,5 @@
 import { Play, RotateCcw, Trophy, X } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
 import { IconButton } from "../../../components/IconButton";
@@ -26,37 +26,46 @@ export function GameResultModal({
 	const isWin = myColor && winner === myColor;
 	const isDraw = winner === null || winner === "";
 	const isLoss = myColor && winner && winner !== myColor;
-	const dismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const [isExiting, setIsExiting] = useState(false);
+
+	const handleDismiss = useCallback(() => {
+		setIsExiting(true);
+		setTimeout(() => {
+			onDismiss();
+		}, 100);
+	}, [onDismiss]);
 
 	const handleBackdropClick = useCallback(
 		(e: React.MouseEvent<HTMLButtonElement>) => {
 			if (e.target === e.currentTarget) {
-				// Clear any existing timeout
-				if (dismissTimeoutRef.current) {
-					clearTimeout(dismissTimeoutRef.current);
-				}
-				// Set new timeout for debounced dismiss
-				dismissTimeoutRef.current = setTimeout(() => {
-					onDismiss();
-				}, 300);
+				handleDismiss();
 			}
 		},
-		[onDismiss],
+		[handleDismiss],
 	);
 
 	return (
-		<div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-[0.8px] p-4">
-			{/* Invisible backdrop button for click-outside dismissal */}
+		<div
+			className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-[0.8px] p-4 ${
+				isExiting ? "animate-backdrop-exit" : "animate-backdrop-entry"
+			}`}
+		>
+			{/* Backdrop button for click-outside dismissal */}
 			<button
 				type="button"
 				onClick={handleBackdropClick}
-				className="absolute inset-0 bg-transparent"
+				className="absolute inset-0 bg-transparent cursor-default"
+				aria-label="Close modal by clicking outside"
 			/>
-			<div className="relative w-full max-w-sm animate-in fade-in zoom-in duration-200 z-10">
+			<div
+				className={`relative w-full max-w-sm z-10 ${
+					isExiting ? "animate-modal-exit" : "animate-modal-entry"
+				}`}
+			>
 				<IconButton
 					variant="solid"
 					size="md"
-					onClick={onDismiss}
+					onClick={handleDismiss}
 					aria-label="Close modal"
 					className="absolute -top-3 -right-3 z-10"
 				>
@@ -134,7 +143,10 @@ export function GameResultModal({
 							<Button
 								variant="primary"
 								size="lg"
-								onClick={onNewGame}
+								onClick={() => {
+									handleDismiss();
+									onNewGame();
+								}}
 								className="rounded-xl shadow-lg"
 							>
 								<Play className="h-5 w-5 fill-current" />
@@ -145,7 +157,7 @@ export function GameResultModal({
 						<Button
 							variant="text"
 							fullWidth
-							onClick={onDismiss}
+							onClick={handleDismiss}
 							className="uppercase tracking-wider"
 						>
 							Analyze Board
