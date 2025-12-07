@@ -10,7 +10,7 @@ export default function Navbar() {
 	const isLoggedIn = !!user;
 
 	return (
-		<header className="border-b border-surface-border bg-surface-base">
+		<header className="border-b border-surface-border bg-surface-base mb-4">
 			<nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2">
 				{/* Left: logo + brand */}
 				<div className="flex items-center gap-2">

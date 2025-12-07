@@ -45,7 +45,7 @@ export default function GameView() {
 				{/* Move List */}
 				<div
 					className={`${
-						!gameId ? "invisible md:opacity-0 pointer-events-none" : ""
+						!gameId ? "invisible pointer-events-none" : ""
 					} transition-opacity shrink-0 flex flex-col h-full overflow-hidden`}
 				>
 					<MoveList
@@ -73,7 +73,7 @@ export default function GameView() {
 			</div>
 
 			{/* Right Column: Info + Clocks + Controls */}
-			<div className="w-full md:w-[400px] shrink-0 flex flex-col h-full min-h-0">
+			<div className="w-full md:w-1/3 md:max-w-lg shrink-0 flex flex-col h-full min-h-0">
 				{!gameId ? (
 					<GameModeTabs
 						isCreating={gameState.isCreatingGame}
