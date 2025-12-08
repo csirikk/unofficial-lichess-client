@@ -122,7 +122,7 @@ export function MoveList({
 			</div>
 			<div className="flex-1 overflow-y-auto">
 				<table className="min-w-full divide-y divide-[rgb(var(--color-surface-border)/0.5)]">
-					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))]">
+					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none">
 						<tr>
 							<th
 								scope="col"
