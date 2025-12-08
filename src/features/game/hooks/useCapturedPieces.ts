@@ -32,7 +32,6 @@ export type CapturedPiecesReturn = {
 
 export function useCapturedPieces({
 	serverHistory,
-	serverFen,
 	pendingUci,
 	viewingMoveIndex,
 	chess,
@@ -41,9 +40,9 @@ export function useCapturedPieces({
 	return useMemo(() => {
 		const captured = computeCapturedAt(serverHistory, viewingMoveIndex);
 
-		if (viewingMoveIndex === null && pendingUci) {
+		if (viewingMoveIndex === null && pendingUci && !isViewingHistory) {
 			try {
-				const temp = new Chess(serverFen);
+				const temp = new Chess(chess.fen());
 				const move = temp.move(uciToMove(pendingUci));
 
 				if (move?.captured) {
@@ -53,9 +52,7 @@ export function useCapturedPieces({
 						captured.black.push(move.captured);
 					}
 				}
-			} catch (error) {
-				console.error("Error processing pending move:", error);
-			}
+			} catch {}
 		}
 
 		let board: UiBoard;
@@ -84,5 +81,5 @@ export function useCapturedPieces({
 			whiteDiff,
 			blackDiff,
 		};
-	}, [serverHistory, serverFen, pendingUci, viewingMoveIndex, chess, isViewingHistory]);
+	}, [serverHistory, pendingUci, viewingMoveIndex, chess, isViewingHistory]);
 }
