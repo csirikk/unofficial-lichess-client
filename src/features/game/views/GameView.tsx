@@ -47,8 +47,10 @@ export default function GameView() {
 					{!hasGame ? (
 						<GameModeTabs
 							isCreating={gameState.isCreatingGame}
+							waitingForGame={gameState.waitingForGame}
 							error={gameState.error}
 							onStartBotGame={actions.startBotGame}
+							onStartOnlineGame={actions.startOnlineGame}
 						/>
 					) : (
 						<div className="flex flex-col lg:h-full lg:min-h-0">

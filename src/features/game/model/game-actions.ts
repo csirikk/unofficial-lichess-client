@@ -1,4 +1,5 @@
 import {
+	apiBoardSeek,
 	boardGameAbort,
 	boardGameDraw,
 	boardGameResign,
@@ -6,7 +7,8 @@ import {
 } from "../../../generated/client/board";
 import { challengeAi } from "../../../generated/client/challenges";
 import { createAuthHeaders } from "../../../lib/api";
-import type { SetupBotLevel, SetupColorChoice } from "./setup";
+import type { GameSetup, SetupBotLevel, SetupColorChoice } from "./setup";
+import { findTimePreset } from "./setup";
 
 export async function startBotGame(
 	level: SetupBotLevel,
@@ -71,4 +73,25 @@ export async function handleRematch(gameId: string): Promise<{ gameId: string }>
 	// TODO:
 	console.log("Rematch requested for game:", gameId);
 	throw new Error("Rematch not yet implemented");
+}
+
+export async function startOnlineSeek(setup: GameSetup): Promise<void> {
+	const preset = findTimePreset(setup.timePresetId);
+	if (!preset) {
+		throw new Error("Invalid time preset");
+	}
+
+	const body = {
+		time: preset.limitSeconds / 60,
+		increment: preset.incrementSeconds,
+		rated: setup.rated,
+		variant: "standard" as const,
+		color: setup.colorChoice,
+	};
+
+	const response = await apiBoardSeek(body, createAuthHeaders());
+
+	if (response.status !== 200) {
+		throw new Error("Failed to create seek");
+	}
 }
