@@ -86,6 +86,30 @@
 	.animate-backdrop-exit {
 		animation: backdrop-fade-out 0.1s ease-in forwards;
 	}
+
+	.game-outcome-win {
+		color: rgb(var(--color-success));
+	}
+
+	.game-outcome-draw {
+		color: rgb(var(--color-fg-secondary));
+	}
+
+	.game-outcome-loss {
+		color: rgb(var(--color-error));
+	}
+
+	.rating-delta-positive {
+		color: rgb(var(--color-success));
+	}
+
+	.rating-delta-negative {
+		color: rgb(var(--color-error));
+	}
+
+	.rating-delta-neutral {
+		color: rgb(var(--color-fg-secondary));
+	}
 }
 
 @keyframes modal-pop-in {
