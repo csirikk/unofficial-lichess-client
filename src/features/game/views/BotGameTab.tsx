@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
 import { SectionLabel } from "../../../components/SectionLabel";
@@ -64,6 +64,8 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 	const maxLevel = UI_BOT_LEVELS[UI_BOT_LEVELS.length - 1].level;
 	const currentLevel = UI_BOT_LEVELS.find((l) => l.level === setup.botLevel) ?? UI_BOT_LEVELS[0];
 
+	const inputId = useId();
+
 	return (
 		<Card
 			title="Play against Bot"
@@ -77,7 +79,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 					<div className="grid">
 						<div className="space-y-3">
 							<input
-								id="bot-level"
+								id={`bot-level-${inputId}`}
 								type="range"
 								min={minLevel}
 								max={maxLevel}

@@ -12,13 +12,13 @@ export type HistoryControlsProps = {
 };
 
 export function HistoryControls({
-onGoToStart,
-onGoBack,
-onGoForward,
-onGoToLive,
-isViewingHistory,
-viewingMoveIndex,
-totalMoves,
+	onGoToStart,
+	onGoBack,
+	onGoForward,
+	onGoToLive,
+	isViewingHistory,
+	viewingMoveIndex,
+	totalMoves,
 }: HistoryControlsProps) {
 	const atStart = viewingMoveIndex === -1 || (viewingMoveIndex === null && totalMoves === 0);
 	const atLive = viewingMoveIndex === null;
@@ -26,7 +26,7 @@ totalMoves,
 	const canGoForward = totalMoves > 0 && !atLive;
 
 	return (
-<div className="flex flex-col items-center justify-center gap-1 py-2">
+		<div className="flex flex-col items-center justify-center gap-1 py-2">
 			<div className="flex items-center justify-center gap-1">
 				<IconButton
 					variant="ghost"
