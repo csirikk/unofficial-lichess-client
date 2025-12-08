@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Color } from "chess.js";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
-import { gamePgn } from "../../../generated/client/games";
+// import { gamePgn } from "../../../generated/client/games"; TODO: make cors work
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
@@ -170,29 +170,28 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 						if (statusRef.current && statusRef.current !== GameStatusName.started) {
 							streamControl?.close();
 
-							if (gameId) {
-								gamePgn(gameId, {}, createAuthHeaders())
-									.then((response) => {
-										if (
-											response.status === 200 &&
-											typeof response.data === "object" &&
-											"players" in response.data
-										) {
-											const gameJson = response.data;
-											setRatingDelta({
-												white: gameJson.players?.white?.ratingDiff ?? null,
-												black: gameJson.players?.black?.ratingDiff ?? null,
-											});
-										}
-									})
-									.catch((err) => {
-										console.warn("Failed to fetch rating deltas:", err);
-									});
-							}
+							// if (gameId) {
+							// 	gamePgn(gameId, {}, createAuthHeaders())
+							// 		.then((response) => {
+							// 			if (
+							// 				response.status === 200 &&
+							// 				typeof response.data === "object" &&
+							// 				"players" in response.data
+							// 			) {
+							// 				const gameJson = response.data;
+							// 				setRatingDelta({
+							// 					white: gameJson.players?.white?.ratingDiff ?? null,
+							// 					black: gameJson.players?.black?.ratingDiff ?? null,
+							// 				});
+							// 			}
+							// 		})
+							// 		.catch((err) => {
+							// 			console.warn("Failed to fetch rating deltas:", err);
+							// 		});
+							// }
 						}
 					},
 				);
-
 				await streamControl.closePromise;
 			} catch (error) {
 				const isAbort = error instanceof Error && error.name === "AbortError";
