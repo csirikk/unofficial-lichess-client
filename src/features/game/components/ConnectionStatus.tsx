@@ -17,7 +17,7 @@ export function ConnectionStatus({
 }: ConnectionStatusProps) {
 	if (isConnected) {
 		return (
-			<span className={`status-connected ${className}`} title="Connected">
+			<span className={`text-[rgb(var(--color-success))] ${className}`} title="Connected">
 				Connected
 			</span>
 		);
@@ -25,7 +25,7 @@ export function ConnectionStatus({
 
 	if (isReconnecting) {
 		return (
-			<span className={`status-warning ${className}`} title="Reconnecting">
+			<span className={`text-[rgb(var(--color-warning))] ${className}`} title="Reconnecting">
 				Reconnecting...
 			</span>
 		);
@@ -33,7 +33,7 @@ export function ConnectionStatus({
 
 	if (isOffline) {
 		return (
-			<span className={`status-error ${className}`} title="Connection lost">
+			<span className={`text-[rgb(var(--color-error))] ${className}`} title="Connection lost">
 				{streamNotFound ? "Game Not Found" : "Offline"}
 			</span>
 		);
@@ -41,14 +41,14 @@ export function ConnectionStatus({
 
 	if (isConnecting) {
 		return (
-			<span className={`status-warning ${className}`} title="Connecting">
+			<span className={`text-[rgb(var(--color-warning))] ${className}`} title="Connecting">
 				Connecting...
 			</span>
 		);
 	}
 
 	return (
-		<span className={`status-error ${className}`} title="Unknown">
+		<span className={`text-[rgb(var(--color-error))] ${className}`} title="Unknown">
 			Unknown
 		</span>
 	);
