@@ -5,7 +5,6 @@ import { useGameSession } from "../hooks/useGameSession";
 import { Board } from "../components/Board";
 import { ClockPanel } from "../components/ClockPanel";
 import { Controls } from "../components/GameActions";
-import { HistoryControls } from "../components/HistoryControls";
 import { MoveList } from "../components/MoveList";
 import { GameModeTabs } from "./GameModeTabs";
 import { GameResultModal } from "../components/GameResultModal";
@@ -156,23 +155,15 @@ export default function GameView() {
 						!hasGame ? "invisible pointer-events-none" : ""
 					}`}
 				>
-					<div className="flex-1 min-h-0 overflow-auto">
-						<MoveList
-							moves={historyState.moveHistory}
-							visible={true}
-							viewingMoveIndex={historyState.viewingMoveIndex}
-							onMoveClick={historyState.goToMove}
-						/>
-					</div>
-
-					<HistoryControls
+					<MoveList
+						moves={historyState.moveHistory}
+						visible={true}
+						viewingMoveIndex={historyState.viewingMoveIndex}
+						onMoveClick={historyState.goToMove}
 						onGoToStart={historyState.goToStart}
 						onGoBack={historyState.goBack}
 						onGoForward={historyState.goForward}
 						onGoToLive={historyState.goToLive}
-						isViewingHistory={historyState.isViewingHistory}
-						viewingMoveIndex={historyState.viewingMoveIndex}
-						totalMoves={historyState.totalMoves}
 					/>
 				</div>
 			</div>

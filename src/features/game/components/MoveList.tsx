@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from "lucide-react";
+import { IconButton } from "../../../components/IconButton";
 
 export type MoveRow = {
 	moveNumber: number;
@@ -13,6 +15,10 @@ export type MoveListProps = {
 	visible?: boolean;
 	viewingMoveIndex?: number | null;
 	onMoveClick?: (moveIndex: number) => void;
+	onGoToStart?: () => void;
+	onGoBack?: () => void;
+	onGoForward?: () => void;
+	onGoToLive?: () => void;
 };
 
 export function MoveList({
@@ -20,8 +26,12 @@ export function MoveList({
 	visible = true,
 	viewingMoveIndex = null,
 	onMoveClick,
+	onGoToStart,
+	onGoBack,
+	onGoForward,
+	onGoToLive,
 }: MoveListProps) {
-	const moveListRef = useRef<HTMLOListElement>(null);
+	const moveListRef = useRef<HTMLTableSectionElement>(null);
 	const prevMoveCountRef = useRef(0);
 
 	// Convert flat moves array to rows + indexes
@@ -54,7 +64,10 @@ export function MoveList({
 			if (moveListRef.current) {
 				setTimeout(() => {
 					if (moveListRef.current) {
-						moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
+						const lastRow = moveListRef.current.lastElementChild as HTMLElement | null;
+						if (lastRow) {
+							lastRow.scrollIntoView({ behavior: "smooth", block: "end" });
+						}
 					}
 				}, 0);
 			}
@@ -81,55 +94,149 @@ export function MoveList({
 		const isClickable = onMoveClick !== undefined;
 
 		return `
-			rounded px-1 -mx-1
+			rounded px-3 -mx-2
 			${isActive ? "text-[rgb(var(--color-primary-500))]" : ""}
 			${isClickable && !isActive ? "cursor-pointer hover:bg-[rgb(var(--color-surface-card)/0.7)]" : ""}
 			${isClickable ? "cursor-pointer" : ""}
 			`;
 	};
 
+	const isViewingHistory = viewingMoveIndex !== null;
+	const totalMoves = moves.length;
+	const atStart = viewingMoveIndex === -1 || (viewingMoveIndex === null && totalMoves === 0);
+	const atLive = viewingMoveIndex === null;
+	const canGoBack = totalMoves > 0 && !atStart;
+	const canGoForward = totalMoves > 0 && !atLive;
+
 	return (
-		<aside className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-xs text-[rgb(var(--color-fg-secondary))]">
-			<div className="mb-2 cursor-default text-xl font-semibold uppercase tracking-[0.25em] text-[rgb(var(--color-fg-secondary))]">
-				Moves
+		<aside className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]">
+			<div className="mb-2 flex items-center justify-between">
+				<div
+					className={`cursor-default text-xl font-semibold uppercase tracking-[0.25em] ${isViewingHistory ? "text-[rgb(var(--color-primary-500))] opacity-80" : "text-[rgb(var(--color-fg-secondary))]"}`}
+				>
+					Moves
+				</div>
+				{isViewingHistory && (
+					<span className="text-sm text-[rgb(var(--color-primary-500))]">Viewing history</span>
+				)}
 			</div>
-			<div className="flex cursor-default items-center justify-between px-0.5 py-1 text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]">
-				<span className="w-8 opacity-50">#</span>
-				<span className="flex-1 text-lg">White</span>
-				<span className="flex-1 text-lg">Black</span>
-			</div>
-			<ol
-				className="mt-1 flex-1 cursor-default space-y-px overflow-y-auto pr-1 text-[14px] scroll-smooth"
-				ref={moveListRef}
-			>
-				{moveRows.map((row) => (
-					<li key={row.moveNumber} className="flex items-center justify-between gap-2 px-1 py-0.5">
-						<span className="w-6 text-[rgb(var(--color-fg-secondary))]">{row.moveNumber}.</span>
-						<button
-							type="button"
-							className={`flex-1 truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
-							onClick={() => onMoveClick?.(row.whiteIndex)}
-							disabled={!onMoveClick}
-						>
-							{row.white}
-						</button>
-						{row.blackIndex !== null ? (
-							<button
-								type="button"
-								className={`flex-1 truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
-								onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
-								disabled={!onMoveClick}
+			<div className="flex-1 overflow-y-auto">
+				<table className="min-w-full divide-y divide-[rgb(var(--color-surface-border)/0.5)]">
+					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))]">
+						<tr>
+							<th
+								scope="col"
+								className="px-2 py-2 text-left text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] opacity-50"
 							>
-								{row.black}
-							</button>
-						) : (
-							<span className="flex-1 truncate text-left text-[rgb(var(--color-fg-primary))]">
-								{row.black}
-							</span>
-						)}
-					</li>
-				))}
-			</ol>
+								#
+							</th>
+							<th
+								scope="col"
+								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]"
+							>
+								White
+							</th>
+							<th
+								scope="col"
+								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]"
+							>
+								Black
+							</th>
+						</tr>
+					</thead>
+					<tbody ref={moveListRef}>
+						{moveRows.map((row, index) => (
+							<tr
+								key={row.moveNumber}
+								className={
+									index % 2 === 0
+										? "bg-[rgb(var(--color-surface-base))]"
+										: "bg-[rgb(var(--color-surface-card)/0.3)]"
+								}
+							>
+								<td className="whitespace-nowrap px-2 py-1.5 text-sm text-[rgb(var(--color-fg-secondary))]">
+									{row.moveNumber}.
+								</td>
+								<td className="whitespace-nowrap px-2 py-1.5 text-md">
+									<button
+										type="button"
+										className={`truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
+										onClick={() => onMoveClick?.(row.whiteIndex)}
+										disabled={!onMoveClick}
+									>
+										{row.white}
+									</button>
+								</td>
+								<td className="whitespace-nowrap px-2 py-1.5 text-md">
+									{row.blackIndex !== null ? (
+										<button
+											type="button"
+											className={`truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
+											onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
+											disabled={!onMoveClick}
+										>
+											{row.black}
+										</button>
+									) : (
+										<span className="truncate text-left text-[rgb(var(--color-fg-primary))]">
+											{row.black}
+										</span>
+									)}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+
+			{onGoToStart && onGoBack && onGoForward && onGoToLive && (
+				<div className="mt-2 flex items-center justify-center gap-1 border-t border-[rgb(var(--color-surface-border)/0.5)] pt-2">
+					<IconButton
+						variant="ghost"
+						size="sm"
+						onClick={onGoToStart}
+						disabled={atStart}
+						title="First move"
+						aria-label="First move"
+					>
+						<ChevronFirst className="size-4" />
+					</IconButton>
+
+					<IconButton
+						variant="ghost"
+						size="sm"
+						onClick={onGoBack}
+						disabled={!canGoBack}
+						title="Previous move"
+						aria-label="Previous move"
+					>
+						<ChevronLeft className="size-4" />
+					</IconButton>
+
+					<IconButton
+						variant="ghost"
+						size="sm"
+						onClick={onGoForward}
+						disabled={!canGoForward}
+						title="Next move"
+						aria-label="Next move"
+					>
+						<ChevronRight className="size-4" />
+					</IconButton>
+
+					<IconButton
+						variant="ghost"
+						size="sm"
+						onClick={onGoToLive}
+						disabled={atLive}
+						title="Last move"
+						aria-label="Last move"
+						className={isViewingHistory ? "text-[rgb(var(--color-primary-500))]" : ""}
+					>
+						<ChevronLast className="size-4" />
+					</IconButton>
+				</div>
+			)}
 		</aside>
 	);
 }
