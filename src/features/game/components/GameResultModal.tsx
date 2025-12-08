@@ -96,7 +96,7 @@ export function GameResultModal({
 						<div className="flex items-start gap-4">
 							{/* Trophy */}
 							<div
-								className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg shadow-black/40
+								className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br shadow-lg shadow-black/40
 									 ${getOutcomeGradient(outcome)} ${getOutcomeColorClass(outcome)}`}
 							>
 								<Trophy className="h-8 w-8" />

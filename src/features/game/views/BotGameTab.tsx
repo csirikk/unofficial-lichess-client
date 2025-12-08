@@ -98,7 +98,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 								[&::-webkit-slider-thumb]:border
 								[&::-webkit-slider-thumb]:border-[rgb(var(--color-surface-card))]
 								[&::-webkit-slider-thumb]:shadow-sm
-								[&::-webkit-slider-thumb]:-mt-[10px]
+								[&::-webkit-slider-thumb]:-mt-2.5
 
 								[&::-moz-range-thumb]:size-4
 								[&::-moz-range-thumb]:rounded-full

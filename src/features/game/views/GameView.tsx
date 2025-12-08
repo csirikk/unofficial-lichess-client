@@ -43,7 +43,7 @@ export default function GameView() {
 		<div className="flex h-full w-full flex-col game-view ">
 			<div className="flex h-full min-h-0 w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-center">
 				{/* RIGHT PANEL */}
-				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-[var(--board-size)] lg:w-90 lg:min-h-0">
+				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-(--board-size) lg:w-90 lg:min-h-0">
 					{!hasGame ? (
 						<GameModeTabs
 							isCreating={gameState.isCreatingGame}
@@ -68,7 +68,7 @@ export default function GameView() {
 								/>
 							</div>
 							{/* Clocks*/}
-							<div className="shrink-0 min-h-[8rem]" />
+							<div className="shrink-0 min-h-32" />
 							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
 								<ClockPanel
 									gameFull={gameState.gameFull}
@@ -85,7 +85,7 @@ export default function GameView() {
 								/>
 							</div>
 							{/* Controls */}
-							<div className="shrink-0 min-h-[14rem] lg:flex lg:items-end lg:justify-left">
+							<div className="shrink-0 min-h-56 lg:flex lg:items-end lg:justify-left">
 								<Controls
 									onOfferDraw={actions.offerDraw}
 									onResign={actions.resign}
@@ -112,18 +112,18 @@ export default function GameView() {
 
 				{/* CENTER PANEL*/}
 				<div
-					className={`order-2 flex w-full justify-center lg:order-2 lg:h-[var(--board-size)] lg:flex-1 lg:min-w-0 ${
+					className={`order-2 flex w-full justify-center lg:order-2 lg:h-(--board-size) lg:flex-1 lg:min-w-0 ${
 						!hasGame ? "opacity-80" : ""
 					}`}
 				>
-					<div className="relative aspect-square w-full max-h-[calc(95vh-4rem)] max-w-full shrink-0 lg:h-[var(--board-size)] lg:w-[var(--board-size)]">
+					<div className="relative aspect-square w-full max-h-[calc(95vh-4rem)] max-w-full shrink-0 lg:h-(--board-size) lg:w-(--board-size)">
 						<Board viewModel={boardViewModel} />
 					</div>
 				</div>
 
 				{/* LEFT PANEL*/}
 				<div
-					className={`order-3 w-full shrink-0 flex flex-col lg:overflow-hidden lg:order-1 lg:h-[var(--board-size)] lg:w-60 lg:min-h-0 ${
+					className={`order-3 w-full shrink-0 flex flex-col lg:overflow-hidden lg:order-1 lg:h-(--board-size) lg:w-60 lg:min-h-0 ${
 						!hasGame ? "invisible pointer-events-none" : ""
 					}`}
 				>
