@@ -62,7 +62,6 @@ export function useBoard({
 	displayPosition,
 	viewedLastMove,
 	takebackSquares,
-	onInteract,
 }: BoardViewModelConfig): BoardViewModel {
 	const displayState = useMemo<BoardDisplayState>(
 		() => ({
@@ -80,7 +79,7 @@ export function useBoard({
 			premoveQueue: isViewingHistory ? [] : engineState.premoveQueue,
 			promotionRequest: isViewingHistory ? null : engineState.promotionRequest,
 			showAnimations: engineState.showAnimations,
-			rightClickedSquares: isViewingHistory ? {} : interactionState.rightClickedSquares,
+			rightClickedSquares: interactionState.rightClickedSquares,
 			takebackSquares: takebackSquares.map((square) => ({
 				from: square.from as Square,
 				to: square.to as Square,
@@ -107,17 +106,16 @@ export function useBoard({
 
 	const handlers = useMemo<BoardHandlers>(
 		() => ({
-			onSquareClick: isViewingHistory ? onInteract : interactionHandlers.handleBoardClick,
-			onPieceClick: isViewingHistory ? onInteract : interactionHandlers.handleBoardClick,
+			onSquareClick: interactionHandlers.handleBoardClick,
+			onPieceClick: interactionHandlers.handleBoardClick,
 			onPieceDrag: isViewingHistory ? () => {} : interactionHandlers.handlePieceDrag,
 			canDragPiece: isViewingHistory ? () => false : interactionHandlers.canDragPiece,
 			onPieceDrop: isViewingHistory ? () => false : interactionHandlers.onPieceDrop,
 			onPromotionChoice: interactionHandlers.handlePromotionChoice,
 			onCancelPromotion: () => interactionHandlers.cancelPromotion(),
-			onRightClick: (sq: string) =>
-				!isViewingHistory && interactionHandlers.handleRightClick(sq as Square),
+			onRightClick: (sq: string) => interactionHandlers.handleRightClick(sq as Square),
 		}),
-		[isViewingHistory, onInteract, interactionHandlers],
+		[isViewingHistory, interactionHandlers],
 	);
 
 	const mode = useMemo<"live" | "history">(

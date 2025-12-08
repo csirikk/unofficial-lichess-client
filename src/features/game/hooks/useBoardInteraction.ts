@@ -169,6 +169,8 @@ export function useBoardInteraction({
 	const handleBoardClick = useCallback(
 		(square: string | null | undefined) => {
 			if (!square) return;
+			setRightClickedSquares({});
+
 			if (!isMyGame || gameEnded) return;
 
 			const targetSquare = square as Square;
