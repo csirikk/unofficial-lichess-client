@@ -50,6 +50,7 @@ export async function abortGame(gameId: string) {
 }
 
 export async function offerDraw(gameId: string, accept: boolean = false) {
+	// todo: change "yes" : "yes"
 	const response = await boardGameDraw(gameId, accept ? "yes" : "yes", createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Draw action failed");
@@ -58,6 +59,7 @@ export async function offerDraw(gameId: string, accept: boolean = false) {
 }
 
 export async function requestTakeback(gameId: string, accept: boolean = false) {
+	// todo: change "yes" : "yes"
 	const response = await boardGameTakeback(gameId, accept ? "yes" : "yes", createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Takeback action failed");
