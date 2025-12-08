@@ -125,12 +125,11 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		if (!gameId || !isConnected) return;
 		try {
 			await abortGame(gameId);
-			setGameId(null);
 		} catch (e) {
 			console.error("Abort failed:", e);
 		}
-	}, [gameId, isConnected, setGameId]);
-
+	}, [gameId, isConnected]);
+	
 	const handleOfferDraw = useCallback(async () => {
 		if (!gameId || !isConnected || gameEnded) return;
 		try {
