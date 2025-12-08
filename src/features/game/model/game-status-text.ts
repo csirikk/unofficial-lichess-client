@@ -77,25 +77,25 @@ export function getGameStatusShort(status: string | null): string {
 		case GameStatusName.aborted:
 			return "Aborted";
 		case GameStatusName.mate:
-			return "Checkmate";
+			return "By Checkmate";
 		case GameStatusName.resign:
-			return "Resignation";
+			return "By Resignation";
 		case GameStatusName.stalemate:
-			return "Stalemate";
+			return "By Stalemate";
 		case GameStatusName.timeout:
-			return "Timeout";
+			return "By Timeout";
 		case GameStatusName.draw:
 			return "Draw";
 		case GameStatusName.outoftime:
-			return "Time Forfeit";
+			return "By Time Forfeit";
 		case GameStatusName.cheat:
-			return "Cheat Detected";
+			return "By Cheat Detected";
 		case GameStatusName.noStart:
 			return "Not Started";
 		case GameStatusName.unknownFinish:
 			return "Unknown Finish";
 		case GameStatusName.insufficientMaterialClaim:
-			return "Insufficient Material";
+			return "By Insufficient Material";
 		case GameStatusName.variantEnd:
 			return "Variant End";
 		default:

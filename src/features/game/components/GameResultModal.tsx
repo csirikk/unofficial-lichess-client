@@ -106,7 +106,7 @@ export function GameResultModal({
 									{getOutcomeLabel(outcome)}
 								</h2>{" "}
 								<p className="text-xs font-medium uppercase tracking-[0.24em] text-[rgb(var(--color-fg-secondary))]/75">
-									by {getGameStatusShort(reason)}
+									{getGameStatusShort(reason)}
 								</p>
 							</div>
 						</div>
