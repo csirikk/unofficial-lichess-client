@@ -160,7 +160,7 @@ export function MoveList({
 								<td className="whitespace-nowrap px-2 py-1.5 text-md">
 									<button
 										type="button"
-										className={`truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
+										className={`truncate bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
 										onClick={() => onMoveClick?.(row.whiteIndex)}
 										disabled={!onMoveClick}
 									>
@@ -171,7 +171,7 @@ export function MoveList({
 									{row.blackIndex !== null ? (
 										<button
 											type="button"
-											className={`truncate border-none bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
+											className={`truncate bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
 											onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
 											disabled={!onMoveClick}
 										>
@@ -190,50 +190,50 @@ export function MoveList({
 			</div>
 
 			{onGoToStart && onGoBack && onGoForward && onGoToLive && (
-				<div className="mt-2 flex items-center justify-center gap-1 border-t border-[rgb(var(--color-surface-border)/0.5)] pt-2">
+				<div className="flex items-center justify-center gap-1 border-t border-[rgb(var(--color-surface-border)/0.5)] pt-2">
 					<IconButton
 						variant="ghost"
-						size="sm"
+						size="lg"
 						onClick={onGoToStart}
 						disabled={atStart}
 						title="First move"
 						aria-label="First move"
 					>
-						<ChevronFirst className="size-4" />
+						<ChevronFirst />
 					</IconButton>
 
 					<IconButton
 						variant="ghost"
-						size="sm"
+						size="lg"
 						onClick={onGoBack}
 						disabled={!canGoBack}
 						title="Previous move"
 						aria-label="Previous move"
 					>
-						<ChevronLeft className="size-4" />
+						<ChevronLeft />
 					</IconButton>
 
 					<IconButton
 						variant="ghost"
-						size="sm"
+						size="lg"
 						onClick={onGoForward}
 						disabled={!canGoForward}
 						title="Next move"
 						aria-label="Next move"
 					>
-						<ChevronRight className="size-4" />
+						<ChevronRight />
 					</IconButton>
 
 					<IconButton
 						variant="ghost"
-						size="sm"
+						size="lg"
 						onClick={onGoToLive}
 						disabled={atLive}
 						title="Last move"
 						aria-label="Last move"
 						className={isViewingHistory ? "text-[rgb(var(--color-primary-500))]" : ""}
 					>
-						<ChevronLast className="size-4" />
+						<ChevronLast />
 					</IconButton>
 				</div>
 			)}
