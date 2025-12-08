@@ -1,4 +1,9 @@
-import { boardGameAbort, boardGameDraw, boardGameResign } from "../../../generated/client/board";
+import {
+	boardGameAbort,
+	boardGameDraw,
+	boardGameResign,
+	boardGameTakeback,
+} from "../../../generated/client/board";
 import { challengeAi } from "../../../generated/client/challenges";
 import { createAuthHeaders } from "../../../lib/api";
 import type { SetupBotLevel, SetupColorChoice } from "./setup";
@@ -25,14 +30,12 @@ export async function startBotGame(
 	if (response.status === 201 && "id" in response.data && response.data.id) {
 		return { gameId: String(response.data.id) };
 	}
-	alert("Failed to create game");
 	throw new Error("Failed to create game");
 }
 
 export async function resignGame(gameId: string) {
 	const response = await boardGameResign(gameId, createAuthHeaders());
 	if (response.status !== 200) {
-		alert("Resign failed");
 		throw new Error("Resign failed");
 	}
 	return response.data;
@@ -41,17 +44,29 @@ export async function resignGame(gameId: string) {
 export async function abortGame(gameId: string) {
 	const response = await boardGameAbort(gameId, createAuthHeaders());
 	if (response.status !== 200) {
-		alert("Abort failed");
 		throw new Error("Abort failed");
 	}
 	return response.data;
 }
 
-export async function offerDraw(gameId: string) {
-	const response = await boardGameDraw(gameId, "yes", createAuthHeaders());
+export async function offerDraw(gameId: string, accept: boolean = false) {
+	const response = await boardGameDraw(gameId, accept ? "yes" : "yes", createAuthHeaders());
 	if (response.status !== 200) {
-		alert("Draw offer failed");
-		throw new Error("Draw offer failed");
+		throw new Error("Draw action failed");
 	}
 	return response.data;
+}
+
+export async function requestTakeback(gameId: string, accept: boolean = false) {
+	const response = await boardGameTakeback(gameId, accept ? "yes" : "yes", createAuthHeaders());
+	if (response.status !== 200) {
+		throw new Error("Takeback action failed");
+	}
+	return response.data;
+}
+
+export async function handleRematch(gameId: string): Promise<{ gameId: string }> {
+	// TODO:
+	console.log("Rematch requested for game:", gameId);
+	throw new Error("Rematch not yet implemented");
 }

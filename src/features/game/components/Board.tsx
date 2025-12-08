@@ -40,7 +40,9 @@ export function Board({ viewModel }: BoardProps) {
 		promotionRequest,
 		showAnimations,
 		rightClickedSquares,
+		takebackSquares,
 	} = displayState;
+
 	const {
 		onSquareClick,
 		onPieceClick,
@@ -198,8 +200,22 @@ export function Board({ viewModel }: BoardProps) {
 			tintSquare(step.to, "rgb(var(--color-chess-move-premove) / 0.4)");
 		}
 
+		// Takeback highlights
+		for (const arrow of takebackSquares) {
+			tintSquare(arrow.from as Square, "rgb(var(--color-chess-move-last) / 0.37)");
+			tintSquare(arrow.to as Square, "rgb(var(--color-chess-move-last) / 0.37)");
+		}
+
 		return styles;
-	}, [checkSquare, lastMoveSquares, legalMoves, selectedSquare, premoveQueue, rightClickedSquares]);
+	}, [
+		checkSquare,
+		lastMoveSquares,
+		legalMoves,
+		selectedSquare,
+		premoveQueue,
+		rightClickedSquares,
+		takebackSquares,
+	]);
 
 	// Handlers for react-chessboard
 	const handleSquareClick: ChessboardOptions["onSquareClick"] = ({ square }) => {

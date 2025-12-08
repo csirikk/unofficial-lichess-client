@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
 import { Board } from "../components/Board";
-import { Button } from "../../../components/Button";
 import { ClockPanel } from "../components/ClockPanel";
 import { Controls } from "../components/GameActions";
 import { HistoryControls } from "../components/HistoryControls";
@@ -99,6 +98,7 @@ export default function GameView() {
 							</div>
 
 							{/* Clocks*/}
+							<div className="shrink-0 min-h-[8rem]" />
 							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
 								<ClockPanel
 									gameFull={gameState.gameFull}
@@ -112,37 +112,27 @@ export default function GameView() {
 								/>
 							</div>
 
-							{/* Controls */}
-							<div className="shrink-0">
-								<div className="mt-3 min-h-[4rem] flex flex-col gap-3">
-									{gameState.gameEnded ? (
-										<>
-											<Button>Rematch</Button>
-											<Button
-												variant="outline"
-												fullWidth
-												onClick={() => setModalDismissed(false)}
-												disabled={!modalDismissed}
-											>
-												Show Results
-											</Button>
-
-											<Button variant="secondary" fullWidth onClick={actions.resetToLobby}>
-												New Game
-											</Button>
-										</>
-									) : (
-										<div className="">
-											<Controls
-												onOfferDraw={actions.offerDraw}
-												onResign={actions.resign}
-												onAbort={actions.abort}
-												isConnected={gameState.isConnected}
-												gameEnded={gameState.gameEnded}
-												moveCount={historyState.totalMoves}
-											/>
-										</div>
-									)}
+							{/* Controls - Fixed height container */}
+							<div className="shrink-0 min-h-[14rem] lg:flex lg:items-end lg:justify-left">
+								<div className="flex flex-col gap-3">
+									<Controls
+										onOfferDraw={actions.offerDraw}
+										onResign={actions.resign}
+										onAbort={actions.abort}
+										onTakeback={actions.takeback}
+										onRematch={actions.rematch}
+										onNewGame={actions.resetToLobby}
+										isConnected={gameState.isConnected}
+										gameEnded={gameState.gameEnded}
+										moveCount={historyState.totalMoves}
+										modalDismissed={modalDismissed}
+										drawOfferedByMe={gameState.drawOfferedByMe}
+										drawOfferedByOpponent={gameState.drawOfferedByOpponent}
+										takebackOfferedByMe={gameState.takebackOfferedByMe}
+										takebackOfferedByOpponent={gameState.takebackOfferedByOpponent}
+										rematchPending={gameState.rematchPending}
+										isBotGame={gameState.isBotGame}
+									/>
 								</div>
 							</div>
 						</div>

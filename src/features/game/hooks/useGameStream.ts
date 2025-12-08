@@ -28,6 +28,7 @@ export type GameStreamState = {
 	isConnecting: boolean;
 	isReconnecting: boolean;
 	isOffline: boolean;
+	takebackSquares: Array<{ from: string; to: string }>;
 };
 
 export type GameStreamReturn = GameStreamState & {
@@ -42,6 +43,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [serverHistory, setServerHistory] = useState<UiMove[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
+	const [takebackSquares, setTakebackSquares] = useState<Array<{ from: string; to: string }>>([]);
 
 	const [connectionStatus, setConnectionStatus] = useState<
 		"connecting" | "connected" | "reconnecting" | "offline"
@@ -51,6 +53,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const activeGameIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 	const initialFenRef = useRef<string>("start");
+	const previousHistoryRef = useRef<UiMove[]>([]);
 
 	const updateStateFromMoves = useCallback((movesStr: string, initialFen = "start") => {
 		const { history, fen, turn } = buildGameHistory(movesStr, initialFen);
@@ -58,6 +61,26 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		setServerTurn(turn);
 		setServerHistory(history);
 	}, []);
+
+	// Detect takebacks
+	useEffect(() => {
+		if (serverHistory.length > 0 && previousHistoryRef.current.length > serverHistory.length) {
+			const squares: Array<{ from: string; to: string }> = [];
+			for (let i = serverHistory.length; i < previousHistoryRef.current.length; i++) {
+				const takenBackMove = previousHistoryRef.current[i];
+				if (takenBackMove) {
+					squares.push({ from: takenBackMove.to, to: takenBackMove.from });
+				}
+			}
+			if (squares.length > 0) {
+				setTakebackSquares(squares);
+			}
+		} else if (serverHistory.length > previousHistoryRef.current.length) {
+			// New move
+			setTakebackSquares([]);
+		}
+		previousHistoryRef.current = serverHistory;
+	}, [serverHistory]);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -202,6 +225,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		serverFen,
 		serverTurn,
 		serverHistory,
+		takebackSquares,
 		error,
 		streamNotFound,
 		makeMove,

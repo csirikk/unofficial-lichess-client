@@ -17,6 +17,7 @@ export type BoardViewModelConfig = {
 	isViewingHistory: boolean;
 	displayPosition: Record<string, { pieceType: string }>;
 	viewedLastMove: { from: Square | null; to: Square | null };
+	takebackSquares: Array<{ from: string; to: string }>;
 	onInteract: () => void;
 };
 
@@ -32,6 +33,7 @@ export type BoardDisplayState = {
 	promotionRequest: UiPromotionRequest;
 	showAnimations: boolean;
 	rightClickedSquares: Record<string, boolean>;
+	takebackSquares: Array<{ from: Square; to: Square }>;
 };
 
 export type BoardHandlers = {
@@ -59,6 +61,7 @@ export function useBoard({
 	isViewingHistory,
 	displayPosition,
 	viewedLastMove,
+	takebackSquares,
 	onInteract,
 }: BoardViewModelConfig): BoardViewModel {
 	const displayState = useMemo<BoardDisplayState>(
@@ -67,13 +70,21 @@ export function useBoard({
 			boardOrientation: gameInfo.boardOrientation,
 			ghostPieces: isViewingHistory ? [] : engineState.ghostPieces,
 			selectedSquare: isViewingHistory ? null : interactionState.selectedSquare,
-			lastMoveSquares: isViewingHistory ? viewedLastMove : engineState.lastMoveSquares,
+			lastMoveSquares: isViewingHistory
+				? viewedLastMove
+				: takebackSquares.length > 0
+					? { from: null, to: null }
+					: engineState.lastMoveSquares,
 			checkSquare: isViewingHistory ? null : engineState.checkSquare,
 			legalMoves: isViewingHistory ? [] : interactionState.legalMoves,
 			premoveQueue: isViewingHistory ? [] : engineState.premoveQueue,
 			promotionRequest: isViewingHistory ? null : engineState.promotionRequest,
 			showAnimations: engineState.showAnimations,
 			rightClickedSquares: isViewingHistory ? {} : interactionState.rightClickedSquares,
+			takebackSquares: takebackSquares.map((square) => ({
+				from: square.from as Square,
+				to: square.to as Square,
+			})),
 		}),
 		[
 			isViewingHistory,
@@ -90,6 +101,7 @@ export function useBoard({
 			interactionState.rightClickedSquares,
 			gameInfo.boardOrientation,
 			viewedLastMove,
+			takebackSquares,
 		],
 	);
 

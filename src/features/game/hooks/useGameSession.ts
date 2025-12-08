@@ -1,7 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { abortGame, offerDraw, resignGame, startBotGame } from "../model/game-actions";
+import {
+	abortGame,
+	handleRematch,
+	offerDraw,
+	requestTakeback,
+	resignGame,
+	startBotGame,
+} from "../model/game-actions";
 import type { SetupBotLevel, SetupColorChoice } from "../model/setup";
 
 import { useBoard } from "./useBoard";
@@ -17,6 +24,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const { user } = useAuth();
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [rematchPending, setRematchPending] = useState(false);
 
 	const stream = useGameStream(gameId);
 	const {
@@ -25,6 +33,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		serverFen,
 		serverTurn,
 		serverHistory,
+		takebackSquares,
 		isConnected,
 		isConnecting,
 		isReconnecting,
@@ -91,6 +100,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		isViewingHistory: history.isViewingHistory,
 		displayPosition: history.displayPosition,
 		viewedLastMove: history.viewedLastMove,
+		takebackSquares,
 		onInteract: history.goToLive,
 	});
 
@@ -132,24 +142,72 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 	const handleOfferDraw = useCallback(async () => {
 		if (!gameId || !isConnected || gameEnded) return;
+		const isAccepting = myColor === GameColor.white ? gameState?.bdraw : gameState?.wdraw;
 		try {
-			await offerDraw(gameId);
+			await offerDraw(gameId, Boolean(isAccepting));
 		} catch (e) {
-			console.error("Draw offer failed:", e);
+			console.error("Draw action failed:", e);
 		}
-	}, [gameId, isConnected, gameEnded]);
+	}, [gameId, isConnected, gameEnded, gameState, myColor]);
+
+	const handleTakeback = useCallback(async () => {
+		if (!gameId || !isConnected || gameEnded) return;
+		const isAccepting = myColor === GameColor.white ? gameState?.btakeback : gameState?.wtakeback;
+		try {
+			await requestTakeback(gameId, Boolean(isAccepting));
+		} catch (e) {
+			console.error("Takeback action failed:", e);
+		}
+	}, [gameId, isConnected, gameEnded, gameState, myColor]);
+
+	const handleRematchRequest = useCallback(async () => {
+		if (!gameId || rematchPending) return;
+		setRematchPending(true);
+		try {
+			await handleRematch(gameId);
+			// The API would return a new game ID when implemented
+		} catch (e) {
+			console.error("Rematch failed:", e);
+			setRematchPending(false);
+		}
+	}, [gameId, rematchPending]);
 
 	const resetToLobby = useCallback(() => {
 		setGameId(null);
 		interactionHandlers.resetBoard();
+		setRematchPending(false);
 	}, [interactionHandlers, setGameId]);
 
-	// Timer order helpers
+	const isBotGame = useMemo(() => {
+		if (!gameFull) return false;
+		return Boolean(gameFull.white.aiLevel || gameFull.black.aiLevel);
+	}, [gameFull]);
+
 	const timerOrder = useMemo(() => {
 		return (myColor === GameColor.white ? ["black", "white"] : ["white", "black"]) as Array<
 			"white" | "black"
 		>;
 	}, [myColor]);
+
+	const drawOfferedByMe = useMemo(() => {
+		if (!gameState) return false;
+		return myColor === GameColor.white ? gameState.wdraw : gameState.bdraw;
+	}, [gameState, myColor]);
+
+	const drawOfferedByOpponent = useMemo(() => {
+		if (!gameState) return false;
+		return myColor === GameColor.white ? gameState.bdraw : gameState.wdraw;
+	}, [gameState, myColor]);
+
+	const takebackOfferedByMe = useMemo(() => {
+		if (!gameState) return false;
+		return myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback;
+	}, [gameState, myColor]);
+
+	const takebackOfferedByOpponent = useMemo(() => {
+		if (!gameState) return false;
+		return myColor === GameColor.white ? gameState.btakeback : gameState.wtakeback;
+	}, [gameState, myColor]);
 
 	return {
 		boardViewModel,
@@ -175,6 +233,12 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			isReconnecting,
 			isOffline,
 			streamNotFound,
+			drawOfferedByMe,
+			drawOfferedByOpponent,
+			takebackOfferedByMe,
+			takebackOfferedByOpponent,
+			rematchPending,
+			isBotGame,
 		},
 
 		actions: {
@@ -182,6 +246,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			resign: handleResign,
 			abort: handleAbort,
 			offerDraw: handleOfferDraw,
+			takeback: handleTakeback,
+			rematch: handleRematchRequest,
 			resetToLobby,
 		},
 	};
