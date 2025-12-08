@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Color } from "chess.js";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
+import { gamePgn } from "../../../generated/client/games";
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
@@ -29,6 +30,7 @@ export type GameStreamState = {
 	isReconnecting: boolean;
 	isOffline: boolean;
 	takebackSquares: Array<{ from: string; to: string }>;
+	ratingDelta: { white: number | null; black: number | null } | null;
 };
 
 export type GameStreamReturn = GameStreamState & {
@@ -44,6 +46,10 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
 	const [takebackSquares, setTakebackSquares] = useState<Array<{ from: string; to: string }>>([]);
+	const [ratingDelta, setRatingDelta] = useState<{
+		white: number | null;
+		black: number | null;
+	} | null>(null);
 
 	const [connectionStatus, setConnectionStatus] = useState<
 		"connecting" | "connected" | "reconnecting" | "offline"
@@ -105,6 +111,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			setError(null);
 			setStreamNotFound(false);
 			setConnectionStatus("connecting");
+			setRatingDelta(null);
 			statusRef.current = null;
 			initialFenRef.current = "start";
 		}
@@ -162,18 +169,38 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 
 						if (statusRef.current && statusRef.current !== GameStatusName.started) {
 							streamControl?.close();
+
+							if (gameId) {
+								gamePgn(gameId, {}, createAuthHeaders())
+									.then((response) => {
+										if (
+											response.status === 200 &&
+											typeof response.data === "object" &&
+											"players" in response.data
+										) {
+											const gameJson = response.data;
+											setRatingDelta({
+												white: gameJson.players?.white?.ratingDiff ?? null,
+												black: gameJson.players?.black?.ratingDiff ?? null,
+											});
+										}
+									})
+									.catch((err) => {
+										console.warn("Failed to fetch rating deltas:", err);
+									});
+							}
 						}
 					},
 				);
 
 				await streamControl.closePromise;
-			} catch (err) {
-				const isAbort = err instanceof Error && err.name === "AbortError";
+			} catch (error) {
+				const isAbort = error instanceof Error && error.name === "AbortError";
 				if (isAbort || !mountedRef.current) return;
 
 				console.warn(
 					`[Stream] Disconnected (attempt ${attempt + 1}/${RECONNECT_DELAYS.length})`,
-					err,
+					error,
 				);
 
 				if (attempt < RECONNECT_DELAYS.length) {
@@ -211,8 +238,8 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 
 				console.warn("Lichess rejected move:", response.status);
 				return false;
-			} catch (e) {
-				console.error("Network error sending move:", e);
+			} catch (error) {
+				console.error("Network error sending move:", error);
 				return false;
 			}
 		},
@@ -226,6 +253,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		serverTurn,
 		serverHistory,
 		takebackSquares,
+		ratingDelta,
 		error,
 		streamNotFound,
 		makeMove,

@@ -1,4 +1,4 @@
-import { CircleX, Flag, Handshake, RotateCcw, Undo2, type LucideIcon } from "lucide-react";
+import { CircleX, Flag, Handshake, RotateCcw, Undo2, Play, type LucideIcon } from "lucide-react";
 import { Button } from "../../../components/Button";
 
 export type GameAction = {
@@ -52,16 +52,23 @@ export function Controls({
 	if (gameEnded) {
 		return (
 			<div className="flex flex-col gap-3">
-				<Button fullWidth onClick={onRematch} disabled={rematchPending} aria-label="Rematch">
-					<RotateCcw className="h-5 w-5" aria-hidden />
-					{rematchPending ? "Rematch Sent..." : "Rematch"}
-				</Button>
-				{onShowResults && (
-					<Button variant="outline" fullWidth onClick={onShowResults} disabled={!modalDismissed}>
+				{onShowResults && modalDismissed && (
+					<Button variant="text" size="lg" fullWidth onClick={onShowResults}>
 						Show Results
 					</Button>
 				)}
-				<Button variant="outline" fullWidth onClick={onNewGame}>
+				<Button
+					fullWidth
+					size="lg"
+					onClick={onRematch}
+					disabled={rematchPending}
+					aria-label="Rematch"
+				>
+					<RotateCcw className="h-5 w-5" aria-hidden />
+					{rematchPending ? "Rematch Sent..." : "Rematch"}
+				</Button>
+				<Button variant="outline" size="lg" fullWidth onClick={onNewGame}>
+					<Play className="h-5 w-5 fill-current" />
 					New Game
 				</Button>
 			</div>

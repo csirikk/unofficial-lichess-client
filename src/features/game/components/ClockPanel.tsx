@@ -1,11 +1,13 @@
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { PieceSymbol } from "chess.js";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";
+import { formatRatingDelta, getRatingDeltaClass } from "../model/game-outcome";
 import { useMemo } from "react";
 
 export type PlayerInfo = {
 	name: string;
 	rating: string;
+	ratingDelta?: number | null;
 };
 
 export type ClockProps = {
@@ -58,8 +60,15 @@ export function Clock({
 						: "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-b-lg"
 				}
 			>
-				<div className="truncate text-base sm:text-lg md:text-xl font-bold">{player.name}</div>
-				<div className="ml-1 text-xs sm:text-sm">{player.rating || ""}</div>
+				<div className="truncate text-base sm:text-lg md:text-xl font-bold flex">{player.name}</div>
+				<div className="ml-1 text-sm">{player.rating || ""}</div>
+				{player.ratingDelta != null && (
+					<div
+						className={`ml-2 text-xs sm:text-sm font-semibold ${getRatingDeltaClass(player.ratingDelta)}`}
+					>
+						{formatRatingDelta(player.ratingDelta)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -117,6 +126,9 @@ export type ClockPanelProps = {
 	captured: { white: PieceSymbol[]; black: PieceSymbol[] };
 	whiteDiff: number;
 	blackDiff: number;
+	gameEnded?: boolean;
+	winner?: string | null;
+	myColor?: "white" | "black" | null;
 };
 
 /**
@@ -134,6 +146,7 @@ export function ClockPanel({
 }: ClockPanelProps) {
 	const isUnlimited = !gameFull?.clock;
 
+	// Calculate rating differences for rated games
 	const playerPanels = {
 		white: {
 			name: gameFull?.white?.name ?? "Bot",
@@ -141,7 +154,7 @@ export function ClockPanel({
 				gameFull?.white?.rating != null
 					? `(${gameFull.white.rating})`
 					: gameFull?.white?.aiLevel != null
-						? `(difficulty ${gameFull.white.aiLevel})`
+						? `(Level ${gameFull.white.aiLevel})`
 						: "",
 		},
 		black: {
@@ -150,7 +163,7 @@ export function ClockPanel({
 				gameFull?.black?.rating != null
 					? `(${gameFull.black.rating})`
 					: gameFull?.black?.aiLevel != null
-						? `(difficulty ${gameFull.black.aiLevel})`
+						? `(Level ${gameFull.black.aiLevel})`
 						: "",
 		},
 	};

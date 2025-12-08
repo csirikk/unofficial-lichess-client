@@ -8,12 +8,17 @@ import { Controls } from "../components/GameActions";
 import { MoveList } from "../components/MoveList";
 import { GameModeTabs } from "./GameModeTabs";
 import { GameResultModal } from "../components/GameResultModal";
+import { GameStatus } from "../components/GameStatus";
 
 export default function GameView() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [modalDismissed, setModalDismissed] = useState(false);
 
 	const gameId = searchParams.get("game");
+
+	const showResultsModal = () => {
+		setModalDismissed(false);
+	};
 
 	const updateGameId = (newId: string | null) => {
 		if (newId) {
@@ -49,53 +54,19 @@ export default function GameView() {
 						<div className="flex flex-col lg:h-full lg:min-h-0">
 							{/* Status */}
 							<div className="mb-2 shrink-0 p-2">
-								<div className="text-xl font-semibold text-[rgb(var(--color-fg-secondary))]">
-									{gameState.status && (
-										<span className="uppercase tracking-wide">{gameState.status}</span>
-									)}
-								</div>
-
-								<div className="font-medium">
-									{boardViewModel.displayState.checkSquare && !gameState.gameEnded && (
-										<span className="text-[rgb(var(--color-warning))]">Check!</span>
-									)}
-									{gameState.winner && (
-										<span className="ml-2 text-[rgb(var(--color-success))]">
-											Winner: {gameState.winner}
-										</span>
-									)}
-								</div>
-								<span className="text-sm font-mono text-[rgb(var(--color-fg-secondary))] opacity-50">
-									#{gameId}
-								</span>
-								<div className="text-sm font-medium">
-									{gameState.gameEnded ? (
-										<span className="text-[rgb(var(--color-fg-secondary))]">Game Over</span>
-									) : gameState.isConnected ? (
-										<span className="text-[rgb(var(--color-success))]" title="Connected">
-											Connected
-										</span>
-									) : gameState.isReconnecting ? (
-										<span className="text-[rgb(var(--color-warning))]" title="Reconnecting">
-											Reconnecting...
-										</span>
-									) : gameState.isOffline ? (
-										<span className="text-[rgb(var(--color-error))]" title="Connection lost">
-											{gameState.streamNotFound ? "Game Not Found" : "Offline"}
-										</span>
-									) : gameState.isConnecting ? (
-										<span className="text-[rgb(var(--color-warning))]" title="Connecting">
-											Connecting...
-										</span>
-									) : null}
-								</div>
-								{gameState.error && (
-									<div className="mt-2 text-sm text-[rgb(var(--color-error))]">
-										Error: {gameState.error}
-									</div>
-								)}
+								<GameStatus
+									gameEnded={gameState.gameEnded}
+									winner={gameState.winner}
+									status={gameState.status}
+									myColor={gameState.myColor}
+									isConnected={gameState.isConnected}
+									isReconnecting={gameState.isReconnecting}
+									isOffline={gameState.isOffline}
+									isConnecting={gameState.isConnecting}
+									streamNotFound={gameState.streamNotFound}
+									error={gameState.error}
+								/>
 							</div>
-
 							{/* Clocks*/}
 							<div className="shrink-0 min-h-[8rem]" />
 							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
@@ -108,31 +79,32 @@ export default function GameView() {
 									captured={capturedState.captured}
 									whiteDiff={capturedState.whiteDiff}
 									blackDiff={capturedState.blackDiff}
+									gameEnded={gameState.gameEnded}
+									winner={gameState.winner}
+									myColor={gameState.myColor}
 								/>
 							</div>
-
-							{/* Controls - Fixed height container */}
+							{/* Controls */}
 							<div className="shrink-0 min-h-[14rem] lg:flex lg:items-end lg:justify-left">
-								<div className="flex flex-col gap-3">
-									<Controls
-										onOfferDraw={actions.offerDraw}
-										onResign={actions.resign}
-										onAbort={actions.abort}
-										onTakeback={actions.takeback}
-										onRematch={actions.rematch}
-										onNewGame={actions.resetToLobby}
-										isConnected={gameState.isConnected}
-										gameEnded={gameState.gameEnded}
-										moveCount={historyState.totalMoves}
-										modalDismissed={modalDismissed}
-										drawOfferedByMe={gameState.drawOfferedByMe}
-										drawOfferedByOpponent={gameState.drawOfferedByOpponent}
-										takebackOfferedByMe={gameState.takebackOfferedByMe}
-										takebackOfferedByOpponent={gameState.takebackOfferedByOpponent}
-										rematchPending={gameState.rematchPending}
-										isBotGame={gameState.isBotGame}
-									/>
-								</div>
+								<Controls
+									onOfferDraw={actions.offerDraw}
+									onResign={actions.resign}
+									onAbort={actions.abort}
+									onTakeback={actions.takeback}
+									onRematch={actions.rematch}
+									onNewGame={actions.resetToLobby}
+									onShowResults={showResultsModal}
+									isConnected={gameState.isConnected}
+									gameEnded={gameState.gameEnded}
+									moveCount={historyState.totalMoves}
+									modalDismissed={modalDismissed}
+									drawOfferedByMe={gameState.drawOfferedByMe}
+									drawOfferedByOpponent={gameState.drawOfferedByOpponent}
+									takebackOfferedByMe={gameState.takebackOfferedByMe}
+									takebackOfferedByOpponent={gameState.takebackOfferedByOpponent}
+									rematchPending={gameState.rematchPending}
+									isBotGame={gameState.isBotGame}
+								/>
 							</div>
 						</div>
 					)}
@@ -173,7 +145,8 @@ export default function GameView() {
 					winner={gameState.winner}
 					reason={gameState.status}
 					myColor={gameState.myColor}
-					ratingDelta={null}
+					gameFull={gameState.gameFull}
+					ratingDelta={gameState.ratingDelta}
 					onRematch={() => {
 						// TODO: Implement rematch logic
 						console.log("Rematch requested");

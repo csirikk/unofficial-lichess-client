@@ -34,6 +34,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		serverTurn,
 		serverHistory,
 		takebackSquares,
+		ratingDelta,
 		isConnected,
 		isConnecting,
 		isReconnecting,
@@ -115,8 +116,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			const { gameId: newGameId } = await startBotGame(config.level, config.clock, config.color);
 			interactionHandlers.resetBoard();
 			setGameId(newGameId);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to create game");
+		} catch (error) {
+			setError(error instanceof Error ? error.message : "Failed to create game");
 		} finally {
 			setIsCreatingGame(false);
 		}
@@ -126,8 +127,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		if (!gameId || !isConnected) return;
 		try {
 			await resignGame(gameId);
-		} catch (e) {
-			console.error("Resign failed:", e);
+		} catch (error) {
+			console.error("Resign failed:", error);
 		}
 	}, [gameId, isConnected]);
 
@@ -135,8 +136,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		if (!gameId || !isConnected) return;
 		try {
 			await abortGame(gameId);
-		} catch (e) {
-			console.error("Abort failed:", e);
+		} catch (error) {
+			console.error("Abort failed:", error);
 		}
 	}, [gameId, isConnected]);
 
@@ -145,8 +146,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		const isAccepting = myColor === GameColor.white ? gameState?.bdraw : gameState?.wdraw;
 		try {
 			await offerDraw(gameId, Boolean(isAccepting));
-		} catch (e) {
-			console.error("Draw action failed:", e);
+		} catch (error) {
+			console.error("Draw action failed:", error);
 		}
 	}, [gameId, isConnected, gameEnded, gameState, myColor]);
 
@@ -155,8 +156,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		const isAccepting = myColor === GameColor.white ? gameState?.btakeback : gameState?.wtakeback;
 		try {
 			await requestTakeback(gameId, Boolean(isAccepting));
-		} catch (e) {
-			console.error("Takeback action failed:", e);
+		} catch (error) {
+			console.error("Takeback action failed:", error);
 		}
 	}, [gameId, isConnected, gameEnded, gameState, myColor]);
 
@@ -165,9 +166,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		setRematchPending(true);
 		try {
 			await handleRematch(gameId);
-			// The API would return a new game ID when implemented
-		} catch (e) {
-			console.error("Rematch failed:", e);
+		} catch (error) {
+			console.error("Rematch failed:", error);
 			setRematchPending(false);
 		}
 	}, [gameId, rematchPending]);
@@ -209,6 +209,13 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		return myColor === GameColor.white ? gameState.btakeback : gameState.wtakeback;
 	}, [gameState, myColor]);
 
+	const playerOpponentRatingDelta = useMemo(() => {
+		if (!ratingDelta || !myColor) return null;
+		const myDelta = myColor === GameColor.white ? ratingDelta.white : ratingDelta.black;
+		const oppDelta = myColor === GameColor.white ? ratingDelta.black : ratingDelta.white;
+		return { player: myDelta, opponent: oppDelta };
+	}, [ratingDelta, myColor]);
+
 	return {
 		boardViewModel,
 		clockState,
@@ -239,6 +246,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			takebackOfferedByOpponent,
 			rematchPending,
 			isBotGame,
+			ratingDelta: playerOpponentRatingDelta,
 		},
 
 		actions: {
