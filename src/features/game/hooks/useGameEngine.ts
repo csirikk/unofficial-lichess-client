@@ -144,8 +144,8 @@ export function useGameEngine({
 			setPendingIsPremove(isPremove);
 			try {
 				await makeMove(uci);
-			} catch (err) {
-				console.error("Failed to send move:", err);
+			} catch (error) {
+				console.error("Failed to send move:", error);
 				rollbackToServer();
 			}
 		},

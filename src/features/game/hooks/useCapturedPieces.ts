@@ -53,7 +53,9 @@ export function useCapturedPieces({
 						captured.black.push(move.captured);
 					}
 				}
-			} catch {}
+			} catch (error) {
+				console.error("Error processing pending move:", error);
+			}
 		}
 
 		let board: UiBoard;

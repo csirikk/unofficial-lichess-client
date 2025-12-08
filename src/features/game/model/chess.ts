@@ -128,8 +128,8 @@ export function buildGameHistory(
 					captured: result.captured,
 				});
 			}
-		} catch (e) {
-			console.error(`Failed to process move ${uci}`, e);
+		} catch (error) {
+			console.error(`Failed to process move ${uci}`, error);
 		}
 	}
 
