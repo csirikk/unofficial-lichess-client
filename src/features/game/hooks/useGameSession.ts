@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
+import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
 	abortGame,
@@ -8,12 +9,14 @@ import {
 	requestTakeback,
 	resignGame,
 	startBotGame,
+	startOnlineSeek,
 } from "../model/game-actions";
-import type { SetupBotLevel, SetupColorChoice } from "../model/setup";
+import type { GameSetup, SetupBotLevel, SetupColorChoice } from "../model/setup";
 
 import { useBoard } from "./useBoard";
 import { useBoardInteraction } from "./useBoardInteraction";
 import { useCapturedPieces } from "./useCapturedPieces";
+import { useEventStream } from "./useEventStream";
 import { useGameClock } from "./useGameClock";
 import { useGameEngine } from "./useGameEngine";
 import { useGameStream } from "./useGameStream";
@@ -25,6 +28,30 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [rematchPending, setRematchPending] = useState(false);
+	const [waitingForGame, setWaitingForGame] = useState(false);
+
+	const onGameStartHandler = useCallback(
+		(event: GameStartEvent) => {
+			if (!event.game) return;
+
+			const eventGameId = event.game.id;
+			if (!eventGameId) return;
+
+			if (eventGameId === gameId) return;
+
+			if (waitingForGame || !gameId) {
+				setGameId(eventGameId);
+				setWaitingForGame(false);
+			}
+		},
+		[waitingForGame, gameId, setGameId],
+	);
+
+	// Global event stream
+	useEventStream({
+		enabled: waitingForGame || gameId != null,
+		onGameStart: onGameStartHandler,
+	});
 
 	const stream = useGameStream(gameId);
 	const {
@@ -122,6 +149,22 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			setIsCreatingGame(false);
 		}
 	};
+
+	const handleStartOnlineGame = useCallback(async (setup: GameSetup) => {
+		setError(null);
+		setIsCreatingGame(true);
+		setWaitingForGame(true);
+		try {
+			await startOnlineSeek(setup);
+			// Wait for /api/stream/event
+		} catch (error) {
+			console.error(error);
+			setError(error instanceof Error ? error.message : "Failed to create online game");
+			setWaitingForGame(false);
+		} finally {
+			setIsCreatingGame(false);
+		}
+	}, []);
 
 	const handleResign = useCallback(async () => {
 		if (!gameId || !isConnected) return;
@@ -234,6 +277,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			myColor,
 			timerOrder,
 			isCreatingGame,
+			waitingForGame,
 			error: error || stream.error,
 			isConnected,
 			isConnecting,
@@ -251,6 +295,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 		actions: {
 			startBotGame: handleStartBotGame,
+			startOnlineGame: handleStartOnlineGame,
 			resign: handleResign,
 			abort: handleAbort,
 			offerDraw: handleOfferDraw,
