@@ -40,7 +40,7 @@ export default function GameView() {
 		<div className="flex h-full w-full flex-col game-view ">
 			<div className="flex h-full min-h-0 w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-center">
 				{/* RIGHT PANEL */}
-				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-[var(--board-size)] lg:w-80 lg:min-h-0">
+				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-[var(--board-size)] lg:w-90 lg:min-h-0">
 					{!hasGame ? (
 						<GameModeTabs
 							isCreating={gameState.isCreatingGame}
@@ -99,7 +99,7 @@ export default function GameView() {
 							</div>
 
 							{/* Clocks*/}
-							<div className="px-2 pb-2 lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-center">
+							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
 								<ClockPanel
 									gameFull={gameState.gameFull}
 									whiteMs={clockState.whiteMs}
@@ -113,19 +113,11 @@ export default function GameView() {
 							</div>
 
 							{/* Controls */}
-							<div className="shrink-0 p-1">
-								<Controls
-									onOfferDraw={actions.offerDraw}
-									onResign={actions.resign}
-									onAbort={actions.abort}
-									isConnected={gameState.isConnected}
-									gameEnded={gameState.gameEnded}
-									moveCount={historyState.totalMoves}
-								/>
-
-								<div className="mt-3 flex flex-col gap-3">
-									{gameState.gameEnded && (
+							<div className="shrink-0">
+								<div className="mt-3 min-h-[4rem] flex flex-col gap-3">
+									{gameState.gameEnded ? (
 										<>
+											<Button>Rematch</Button>
 											<Button
 												variant="outline"
 												fullWidth
@@ -139,6 +131,17 @@ export default function GameView() {
 												New Game
 											</Button>
 										</>
+									) : (
+										<div className="">
+											<Controls
+												onOfferDraw={actions.offerDraw}
+												onResign={actions.resign}
+												onAbort={actions.abort}
+												isConnected={gameState.isConnected}
+												gameEnded={gameState.gameEnded}
+												moveCount={historyState.totalMoves}
+											/>
+										</div>
 									)}
 								</div>
 							</div>

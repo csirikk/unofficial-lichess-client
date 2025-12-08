@@ -47,7 +47,7 @@ export function Controls({
 	];
 
 	return (
-		<div className="flex flex-row items-center justify-center gap-2 w-full mt-2">
+		<div className="flex flex-col items-start justify-center gap-1 w-fit mt-2">
 			{gameActions.map(({ label, icon: Icon, onClick, disabled }) => (
 				<Button
 					key={label}

@@ -18,7 +18,7 @@ export function SelectableCardGrid<T extends string>({
 	onChange,
 }: SelectableCardGridProps<T>) {
 	return (
-		<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+		<div className="grid gap-2 grid-cols-3">
 			{items.map((item) => {
 				const isActive = item.id === value;
 				const buttonClasses = isActive

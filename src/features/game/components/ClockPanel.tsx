@@ -38,15 +38,15 @@ export function Clock({
 	const timeString = formatClockTime(timeMs);
 	const [minutes, seconds] = timeString.split(":");
 
-	const timerClasses = `flex justify-center items-baseline font-mono font-bold tracking-wider leading-none 
+	const timerClasses = `flex justify-start items-baseline font-mono font-bold tracking-wider leading-none 
 		text-4xl sm:text-5xl md:text-6xl lg:text-7xl
 		${isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"}
 		${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
 	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)]
 		bg-[rgb(var(--color-surface-card))]
-		px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4
-		text-center transition-opacity
+		px-3 py-2 md:px-5 md:py-4
+		text-left transition-opacity
 		${isActive ? "" : "opacity-40"}`;
 
 	const nameRating = (
@@ -156,7 +156,7 @@ export function ClockPanel({
 	};
 
 	return (
-		<div className="mx-auto w-full max-w-xs space-y-2">
+		<div className="w-fit space-y-2">
 			{timerOrder.map((color, index) => {
 				const isWhite = color === "white";
 				let ms = isWhite ? whiteMs : blackMs;

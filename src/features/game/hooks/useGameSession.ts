@@ -129,7 +129,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			console.error("Abort failed:", e);
 		}
 	}, [gameId, isConnected]);
-	
+
 	const handleOfferDraw = useCallback(async () => {
 		if (!gameId || !isConnected || gameEnded) return;
 		try {
