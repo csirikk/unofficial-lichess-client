@@ -14,7 +14,6 @@ type UseEventStreamConfig = {
 
 export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventStreamConfig) {
 	const streamRef = useRef<StreamControl | null>(null);
-	const abortRef = useRef<AbortController | null>(null);
 
 	const onGameStartRef = useRef(onGameStart);
 	const onGameFinishRef = useRef(onGameFinish);
@@ -30,7 +29,6 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 		if (!enabled || streamRef.current) return;
 
 		const controller = new AbortController();
-		abortRef.current = controller;
 
 		const connect = async () => {
 			try {
@@ -44,7 +42,7 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 					return;
 				}
 
-				streamRef.current = readNdjsonStream<ApiStreamEvent200>(
+				const control = readNdjsonStream<ApiStreamEvent200>(
 					"event-stream",
 					response.stream,
 					(event) => {
@@ -55,10 +53,19 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 						}
 					},
 				);
+
+				streamRef.current = control;
 				try {
-					await streamRef.current.closePromise;
+					await control.closePromise;
 				} catch (error) {
-					if ((error as Error).name !== "AbortError") throw error;
+					if (
+						error instanceof DOMException
+							? error.name === "AbortError"
+							: (error as Error | undefined)?.name === "AbortError"
+					) {
+						return;
+					}
+					console.error("Event stream error", error);
 				}
 			} catch (error) {
 				if ((error as Error).name === "AbortError") return;
@@ -74,7 +81,6 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 			try {
 				controller.abort();
 			} catch {}
-			abortRef.current = null;
 			streamRef.current?.close();
 			streamRef.current = null;
 		};
