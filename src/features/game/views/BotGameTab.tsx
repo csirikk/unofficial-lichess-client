@@ -74,8 +74,9 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 			<div className="space-y-5">
 				{/* Bot Level */}
 				<div>
-					<SectionLabel hint={`${currentLevel.label}`}>Bot strength</SectionLabel>
-
+					<SectionLabel hint={`${currentLevel.label}`}>
+						<label htmlFor={`bot-level-${inputId}`}>Bot strength</label>
+					</SectionLabel>
 					<div className="grid">
 						<div className="space-y-3">
 							<input
