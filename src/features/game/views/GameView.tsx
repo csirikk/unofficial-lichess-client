@@ -53,7 +53,7 @@ export default function GameView() {
 					) : (
 						<div className="flex flex-col lg:h-full lg:min-h-0">
 							{/* Status */}
-							<div className="mb-2 shrink-0 p-2">
+							<div className="mb-2 shrink-0">
 								<GameStatus
 									gameEnded={gameState.gameEnded}
 									winner={gameState.winner}
