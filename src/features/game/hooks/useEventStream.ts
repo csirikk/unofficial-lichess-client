@@ -75,7 +75,9 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 			}
 		};
 
-		void connect();
+		void connect().catch((err) => {
+			console.error("Unhandled error in event stream connect:", err);
+		});
 
 		return () => {
 			try {
