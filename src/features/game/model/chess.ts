@@ -387,5 +387,5 @@ export function formatClockTime(ms: number | null): string {
 	const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
 	const minutes = Math.floor(totalSeconds / 60);
 	const seconds = totalSeconds % 60;
-	return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
