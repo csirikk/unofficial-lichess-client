@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
+import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
@@ -29,12 +30,16 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [error, setError] = useState<string | null>(null);
 	const [rematchPending, setRematchPending] = useState(false);
 	const [waitingForGame, setWaitingForGame] = useState(false);
+	const [ratingDelta, setRatingDelta] = useState<{
+		white: number | null;
+		black: number | null;
+	} | null>(null);
 
 	const onGameStartHandler = useCallback(
 		(event: GameStartEvent) => {
 			if (!event.game) return;
 
-			const eventGameId = event.game.id;
+			const eventGameId = event.game.gameId || event.game.id;
 			if (!eventGameId) return;
 
 			if (eventGameId === gameId) return;
@@ -47,10 +52,21 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		[waitingForGame, gameId, setGameId],
 	);
 
+	const onGameFinishHandler = useCallback(
+		(event: GameFinishEvent, delta: { white: number | null; black: number | null }) => {
+			const eventGameId = event.game?.gameId || event.game?.id;
+			if (eventGameId === gameId) {
+				setRatingDelta(delta);
+			}
+		},
+		[gameId],
+	);
+
 	// Global event stream
 	useEventStream({
 		enabled: waitingForGame || gameId != null,
 		onGameStart: onGameStartHandler,
+		onGameFinish: onGameFinishHandler,
 	});
 
 	const stream = useGameStream(gameId);
@@ -60,7 +76,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		serverFen,
 		serverTurn,
 		serverHistory,
-		ratingDelta,
 		isConnected,
 		isConnecting,
 		isReconnecting,

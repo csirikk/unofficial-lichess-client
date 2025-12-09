@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Color } from "chess.js";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
-import { fetchGamePgnOrJson, parseRatingDiffsFromPgn } from "../../../lib/games";
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
@@ -29,7 +28,6 @@ export type GameStreamState = {
 	isConnecting: boolean;
 	isReconnecting: boolean;
 	isOffline: boolean;
-	ratingDelta: { white: number | null; black: number | null } | null;
 };
 
 export type GameStreamReturn = GameStreamState & {
@@ -44,11 +42,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [serverHistory, setServerHistory] = useState<UiMove[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
-	// takebackSquares are now handled in useBoardInteraction
-	const [ratingDelta, setRatingDelta] = useState<{
-		white: number | null;
-		black: number | null;
-	} | null>(null);
 
 	const [connectionStatus, setConnectionStatus] = useState<
 		"connecting" | "connected" | "reconnecting" | "offline"
@@ -89,7 +82,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			setError(null);
 			setStreamNotFound(false);
 			setConnectionStatus("connecting");
-			setRatingDelta(null);
 			statusRef.current = null;
 			initialFenRef.current = "start";
 		}
@@ -147,39 +139,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 
 						if (statusRef.current && statusRef.current !== GameStatusName.started) {
 							streamControl?.close();
-
-							if (gameId) {
-								void (async () => {
-									try {
-										const response = await fetchGamePgnOrJson(gameId, {}, createAuthHeaders());
-
-										if (
-											response.status === 200 &&
-											response.data &&
-											typeof response.data === "object" &&
-											"players" in (response.data as Record<string, unknown>)
-										) {
-											const gameJson = response.data as any;
-											setRatingDelta({
-												white: gameJson.players?.white?.ratingDiff ?? null,
-												black: gameJson.players?.black?.ratingDiff ?? null,
-											});
-										} else if (response.text) {
-											// PGN text returned (proxy or server). Try parsing rating diffs from PGN tags.
-											const diffs = parseRatingDiffsFromPgn(response.text);
-											if (diffs) {
-												setRatingDelta({ white: diffs.white, black: diffs.black });
-											} else {
-												// No rating diff tags present; ignore
-											}
-										} else {
-											// Unexpected format: no JSON and no text
-										}
-									} catch (err) {
-										console.warn("Failed to fetch rating deltas:", err);
-									}
-								})();
-							}
 						}
 					},
 				);
@@ -244,7 +203,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		serverFen,
 		serverTurn,
 		serverHistory,
-		ratingDelta,
 		error,
 		streamNotFound,
 		makeMove,
