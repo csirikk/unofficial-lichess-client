@@ -8,8 +8,8 @@
  * - Promotion modal
  */
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { type UiPromotionPiece, isFeasiblePremove, moveToUci } from "../model/chess";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type UiPromotionPiece, isFeasiblePremove, moveToUci, type UiMove } from "../model/chess";
 import type { GameEngineHandlers, GameEngineInfo, GameEngineState } from "./useGameEngine";
 
 export type BoardInteractionConfig = {
@@ -22,6 +22,7 @@ export type BoardInteractionState = {
 	selectedSquare: Square | null;
 	legalMoves: ChessMove[];
 	rightClickedSquares: Record<string, boolean>;
+	takebackSquares: Array<{ from: string; to: string }>;
 };
 
 export type BoardInteractionHandlers = {
@@ -49,6 +50,9 @@ export function useBoardInteraction({
 }: BoardInteractionConfig): BoardInteractionReturn {
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, boolean>>({});
+	const [takebackSquares, setTakebackSquares] = useState<Array<{ from: string; to: string }>>([]);
+
+	const previousHistoryRef = useRef<UiMove[] | null>(null);
 
 	const { chess, premoveQueue, promotionRequest, pendingUci } = engineState;
 
@@ -217,13 +221,16 @@ export function useBoardInteraction({
 	const onPieceDrop = useCallback(
 		(sourceSquare: string, targetSquare: string | null): boolean => {
 			if (!targetSquare) return false;
-			return handleMoveIntent(sourceSquare as Square, targetSquare as Square);
+			const returnValue = handleMoveIntent(sourceSquare as Square, targetSquare as Square);
+			if (returnValue) setTakebackSquares([]);
+			return returnValue;
 		},
 		[handleMoveIntent],
 	);
 
 	const resetBoard = useCallback(() => {
 		setSelectedSquare(null);
+		setTakebackSquares([]);
 		setRightClickedSquares({});
 	}, []);
 
@@ -261,6 +268,33 @@ export function useBoardInteraction({
 		setRightClickedSquares({});
 	}, [chess, playerColor, selectedSquare]);
 
+	// Detect takebacks
+	useEffect(() => {
+		const serverHistory = engineState.serverHistory ?? [];
+
+		if (
+			serverHistory.length > 0 &&
+			previousHistoryRef.current &&
+			previousHistoryRef.current.length > serverHistory.length
+		) {
+			const squares: Array<{ from: string; to: string }> = [];
+			for (let i = serverHistory.length; i < previousHistoryRef.current.length; i++) {
+				const takenBackMove = previousHistoryRef.current[i];
+				if (takenBackMove) {
+					squares.push({ from: takenBackMove.from as string, to: takenBackMove.to as string });
+				}
+			}
+			if (squares.length > 0) {
+				setTakebackSquares(squares);
+			}
+		} else if (serverHistory.length > (previousHistoryRef.current?.length ?? 0)) {
+			// Clear takebacks on new move
+			setTakebackSquares([]);
+		}
+
+		previousHistoryRef.current = serverHistory;
+	}, [engineState.serverHistory]);
+
 	// Clean up on game end
 	useEffect(() => {
 		if (!gameEnded) return;
@@ -287,6 +321,7 @@ export function useBoardInteraction({
 			selectedSquare,
 			legalMoves,
 			rightClickedSquares,
+			takebackSquares,
 		},
 		handlers: {
 			handleMoveIntent,

@@ -52,6 +52,7 @@ export type GameEngineState = {
 	showAnimations: boolean;
 	moveHistory: string[];
 	pendingUci: string | null;
+	serverHistory: UiMove[];
 };
 
 export type GameEngineHandlers = {
@@ -349,6 +350,7 @@ export function useGameEngine({
 			showAnimations,
 			moveHistory,
 			pendingUci,
+			serverHistory,
 		},
 		handlers: {
 			executeMove,

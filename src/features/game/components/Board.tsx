@@ -201,9 +201,9 @@ export function Board({ viewModel }: BoardProps) {
 		}
 
 		// Takeback highlights
-		for (const arrow of takebackSquares) {
-			tintSquare(arrow.from as Square, "rgb(var(--color-chess-move-last) / 0.37)");
-			tintSquare(arrow.to as Square, "rgb(var(--color-chess-move-last) / 0.37)");
+		for (const takebackSquare of takebackSquares) {
+			tintSquare(takebackSquare.from as Square, "rgb(var(--color-chess-move-last) / 0.37)");
+			tintSquare(takebackSquare.to as Square, "rgb(var(--color-chess-move-last) / 0.37)");
 		}
 
 		return styles;

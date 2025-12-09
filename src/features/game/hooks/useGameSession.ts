@@ -60,7 +60,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		serverFen,
 		serverTurn,
 		serverHistory,
-		takebackSquares,
 		ratingDelta,
 		isConnected,
 		isConnecting,
@@ -128,7 +127,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		isViewingHistory: history.isViewingHistory,
 		displayPosition: history.displayPosition,
 		viewedLastMove: history.viewedLastMove,
-		takebackSquares,
+		takebackSquares: interactionState.takebackSquares,
 		onInteract: history.goToLive,
 	});
 

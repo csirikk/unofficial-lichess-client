@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Color } from "chess.js";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
-// import { gamePgn } from "../../../generated/client/games"; TODO: make cors work
+import { fetchGamePgnOrJson, parseRatingDiffsFromPgn } from "../../../lib/games";
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
@@ -29,7 +29,6 @@ export type GameStreamState = {
 	isConnecting: boolean;
 	isReconnecting: boolean;
 	isOffline: boolean;
-	takebackSquares: Array<{ from: string; to: string }>;
 	ratingDelta: { white: number | null; black: number | null } | null;
 };
 
@@ -45,7 +44,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [serverHistory, setServerHistory] = useState<UiMove[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
-	const [takebackSquares, setTakebackSquares] = useState<Array<{ from: string; to: string }>>([]);
+	// takebackSquares are now handled in useBoardInteraction
 	const [ratingDelta, setRatingDelta] = useState<{
 		white: number | null;
 		black: number | null;
@@ -59,7 +58,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const activeGameIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 	const initialFenRef = useRef<string>("start");
-	const previousHistoryRef = useRef<UiMove[]>([]);
 
 	const updateStateFromMoves = useCallback((movesStr: string, initialFen = "start") => {
 		const { history, fen, turn } = buildGameHistory(movesStr, initialFen);
@@ -67,26 +65,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		setServerTurn(turn);
 		setServerHistory(history);
 	}, []);
-
-	// Detect takebacks
-	useEffect(() => {
-		if (serverHistory.length > 0 && previousHistoryRef.current.length > serverHistory.length) {
-			const squares: Array<{ from: string; to: string }> = [];
-			for (let i = serverHistory.length; i < previousHistoryRef.current.length; i++) {
-				const takenBackMove = previousHistoryRef.current[i];
-				if (takenBackMove) {
-					squares.push({ from: takenBackMove.to, to: takenBackMove.from });
-				}
-			}
-			if (squares.length > 0) {
-				setTakebackSquares(squares);
-			}
-		} else if (serverHistory.length > previousHistoryRef.current.length) {
-			// New move
-			setTakebackSquares([]);
-		}
-		previousHistoryRef.current = serverHistory;
-	}, [serverHistory]);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -170,25 +148,38 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 						if (statusRef.current && statusRef.current !== GameStatusName.started) {
 							streamControl?.close();
 
-							// if (gameId) {
-							// 	gamePgn(gameId, {}, createAuthHeaders())
-							// 		.then((response) => {
-							// 			if (
-							// 				response.status === 200 &&
-							// 				typeof response.data === "object" &&
-							// 				"players" in response.data
-							// 			) {
-							// 				const gameJson = response.data;
-							// 				setRatingDelta({
-							// 					white: gameJson.players?.white?.ratingDiff ?? null,
-							// 					black: gameJson.players?.black?.ratingDiff ?? null,
-							// 				});
-							// 			}
-							// 		})
-							// 		.catch((err) => {
-							// 			console.warn("Failed to fetch rating deltas:", err);
-							// 		});
-							// }
+							if (gameId) {
+								void (async () => {
+									try {
+										const response = await fetchGamePgnOrJson(gameId, {}, createAuthHeaders());
+
+										if (
+											response.status === 200 &&
+											response.data &&
+											typeof response.data === "object" &&
+											"players" in (response.data as Record<string, unknown>)
+										) {
+											const gameJson = response.data as any;
+											setRatingDelta({
+												white: gameJson.players?.white?.ratingDiff ?? null,
+												black: gameJson.players?.black?.ratingDiff ?? null,
+											});
+										} else if (response.text) {
+											// PGN text returned (proxy or server). Try parsing rating diffs from PGN tags.
+											const diffs = parseRatingDiffsFromPgn(response.text);
+											if (diffs) {
+												setRatingDelta({ white: diffs.white, black: diffs.black });
+											} else {
+												// No rating diff tags present; ignore
+											}
+										} else {
+											// Unexpected format: no JSON and no text
+										}
+									} catch (err) {
+										console.warn("Failed to fetch rating deltas:", err);
+									}
+								})();
+							}
 						}
 					},
 				);
@@ -213,7 +204,9 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			}
 		};
 
-		connect(0);
+		void connect(0).catch((err) => {
+			console.error("Unhandled error in game stream connect:", err);
+		});
 
 		return () => {
 			abortController.abort();
@@ -251,7 +244,6 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 		serverFen,
 		serverTurn,
 		serverHistory,
-		takebackSquares,
 		ratingDelta,
 		error,
 		streamNotFound,
