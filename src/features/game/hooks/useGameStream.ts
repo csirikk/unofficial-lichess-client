@@ -96,6 +96,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			setConnectionStatus(attempt === 0 ? "connecting" : "reconnecting");
 
 			try {
+				// API: GET https://lichess.org/api/board/game/stream/{gameId} - Stream game state
 				const response = await boardGameStream(gameId, {
 					...createStreamHeaders(),
 					signal: abortController.signal,
@@ -181,8 +182,8 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 				return false;
 			}
 			try {
+				// API: POST https://lichess.org/api/board/game/{gameId}/move/{move} - Make a move
 				const response = await boardGameMove(gameId, uci, undefined, createAuthHeaders());
-
 				if (response.status === 200) {
 					return true;
 				}

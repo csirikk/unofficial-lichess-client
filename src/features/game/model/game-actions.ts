@@ -27,6 +27,7 @@ export async function startBotGame(
 		body["clock.increment"] = clock.increment;
 	}
 
+	// API: POST https://lichess.org/api/challenge/ai - Challenge AI to a game
 	const response = await challengeAi(body, createAuthHeaders());
 
 	if (response.status === 201 && "id" in response.data && response.data.id) {
@@ -36,6 +37,7 @@ export async function startBotGame(
 }
 
 export async function resignGame(gameId: string) {
+	// API: POST https://lichess.org/api/board/game/{gameId}/resign
 	const response = await boardGameResign(gameId, createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Resign failed");
@@ -44,6 +46,7 @@ export async function resignGame(gameId: string) {
 }
 
 export async function abortGame(gameId: string) {
+	// API: POST https://lichess.org/api/board/game/{gameId}/abort
 	const response = await boardGameAbort(gameId, createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Abort failed");
@@ -53,6 +56,7 @@ export async function abortGame(gameId: string) {
 
 export async function offerDraw(gameId: string, accept: boolean = false) {
 	// todo: change "yes" : "yes"
+	// API: POST https://lichess.org/api/board/game/{gameId}/draw/{accept} - Create/accept/decline draw offers
 	const response = await boardGameDraw(gameId, accept ? "yes" : "yes", createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Draw action failed");
@@ -62,6 +66,7 @@ export async function offerDraw(gameId: string, accept: boolean = false) {
 
 export async function requestTakeback(gameId: string, accept: boolean = false) {
 	// todo: change "yes" : "yes"
+	// API: POST https://lichess.org/api/board/game/{gameId}/takeback/{accept} - Create/accept/decline takeback offers
 	const response = await boardGameTakeback(gameId, accept ? "yes" : "yes", createAuthHeaders());
 	if (response.status !== 200) {
 		throw new Error("Takeback action failed");
@@ -89,6 +94,7 @@ export async function startOnlineSeek(setup: GameSetup): Promise<void> {
 		color: setup.colorChoice,
 	};
 
+	// API: POST https://lichess.org/api/board/seek - Create a public seek to start a game with a random player
 	const response = await apiBoardSeek(body, createAuthHeaders());
 
 	if (response.status !== 200) {

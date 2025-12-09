@@ -24,6 +24,7 @@ export function useAuthSession() {
 			try {
 				const token = getAccessToken();
 				if (token) {
+					// API: GET https://lichess.org/api/account - Get my profile
 					const response = await accountMe(createAuthHeaders());
 					setUser(response.data);
 				}
@@ -50,6 +51,7 @@ export function useAuthSession() {
 			const codeVerifier = getCodeVerifier();
 			if (!codeVerifier) throw new Error("Code verifier not found");
 
+			// API: POST https://lichess.org/api/token - OAuth2 token endpoint
 			const reponse = await apiToken({
 				grant_type: "authorization_code",
 				code,
@@ -66,6 +68,7 @@ export function useAuthSession() {
 			storeAccessToken(token);
 			clearPKCEData();
 
+			// API: GET https://lichess.org/api/account - Get my profile
 			const response = await accountMe(createAuthHeaders());
 			setUser(response.data);
 		} catch (error) {
@@ -80,6 +83,7 @@ export function useAuthSession() {
 		setIsLoading(true);
 		try {
 			const token = getAccessToken();
+			// API: DELETE https://lichess.org/api/token - Revoke access token
 			if (token) await apiTokenDelete(createAuthHeaders());
 		} catch (error) {
 			console.error("Failed to revoke token:", error);
