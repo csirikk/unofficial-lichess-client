@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
 import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
+import type { GameEventInfo } from "../../../generated/types/gameEventInfo";
+import type { GameJson } from "../../../generated/types/gameJson";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
 	abortGame,
@@ -34,6 +36,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		white: number | null;
 		black: number | null;
 	} | null>(null);
+	const [gameEventInfo, setGameEventInfo] = useState<GameEventInfo | null>(null);
+	const [gameJson, setGameJson] = useState<GameJson | null>(null);
 
 	const onGameStartHandler = useCallback(
 		(event: GameStartEvent) => {
@@ -47,16 +51,26 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			if (waitingForGame || !gameId) {
 				setGameId(eventGameId);
 				setWaitingForGame(false);
+				setGameEventInfo(event.game);
+				setGameJson(null);
+				setRatingDelta(null);
 			}
 		},
 		[waitingForGame, gameId, setGameId],
 	);
 
 	const onGameFinishHandler = useCallback(
-		(event: GameFinishEvent, delta: { white: number | null; black: number | null }) => {
+		(
+			event: GameFinishEvent,
+			delta: { white: number | null; black: number | null },
+			json?: GameJson | null,
+		) => {
 			const eventGameId = event.game?.gameId || event.game?.id;
 			if (eventGameId === gameId) {
 				setRatingDelta(delta);
+				if (json) {
+					setGameJson(json);
+				}
 			}
 		},
 		[gameId],
@@ -156,6 +170,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		try {
 			const { gameId: newGameId } = await startBotGame(config.level, config.clock, config.color);
 			interactionHandlers.resetBoard();
+			// Clear previous game state when starting a new game
+			setGameEventInfo(null);
+			setGameJson(null);
+			setRatingDelta(null);
 			setGameId(newGameId);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Failed to create game");
@@ -168,6 +186,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		setError(null);
 		setIsCreatingGame(true);
 		setWaitingForGame(true);
+		// Clear previous game state when starting a new game
+		setGameEventInfo(null);
+		setGameJson(null);
+		setRatingDelta(null);
 		try {
 			await startOnlineSeek(setup);
 			// Wait for /api/stream/event
@@ -305,6 +327,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			rematchPending,
 			isBotGame,
 			ratingDelta: playerOpponentRatingDelta,
+			gameEventInfo,
+			gameJson,
 		},
 
 		actions: {

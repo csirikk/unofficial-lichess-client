@@ -1,4 +1,4 @@
-import { formatRatingDelta, getRatingDeltaClass } from "../model/game-outcome";
+import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 
 export type PlayerInfoProps = {
 	name: string;

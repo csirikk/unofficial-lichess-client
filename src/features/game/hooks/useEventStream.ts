@@ -14,6 +14,7 @@ type UseEventStreamConfig = {
 	onGameFinish?: (
 		event: GameFinishEvent,
 		ratingDelta: { white: number | null; black: number | null },
+		gameJson?: GameJson | null,
 	) => void;
 };
 
@@ -60,7 +61,17 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 									try {
 										const response = await gamePgn(
 											gameId,
-											{ pgnInJson: true },
+											{
+												pgnInJson: true,
+												tags: true,
+												clocks: false,
+												moves: false,
+												evals: false,
+												opening: true,
+												accuracy: false,
+												division: false,
+												literate: false,
+											},
 											{ headers: { Accept: "application/json" } },
 										);
 
@@ -72,17 +83,17 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 												white: gameJson.players?.white?.ratingDiff ?? null,
 												black: gameJson.players?.black?.ratingDiff ?? null,
 											};
-											onGameFinishRef.current?.(event, ratingDelta);
+											onGameFinishRef.current?.(event, ratingDelta, gameJson);
 										} else {
-											onGameFinishRef.current?.(event, { white: null, black: null });
+											onGameFinishRef.current?.(event, { white: null, black: null }, null);
 										}
 									} catch (error) {
 										console.error("Failed to fetch rating delta:", error);
-										onGameFinishRef.current?.(event, { white: null, black: null });
+										onGameFinishRef.current?.(event, { white: null, black: null }, null);
 									}
 								})();
 							} else {
-								onGameFinishRef.current?.(event, { white: null, black: null });
+								onGameFinishRef.current?.(event, { white: null, black: null }, null);
 							}
 						}
 					},

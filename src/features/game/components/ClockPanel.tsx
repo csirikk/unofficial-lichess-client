@@ -1,7 +1,7 @@
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { PieceSymbol } from "chess.js";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";
-import { formatRatingDelta, getRatingDeltaClass } from "../model/game-outcome";
+import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 import { useMemo } from "react";
 
 export type PlayerInfo = {

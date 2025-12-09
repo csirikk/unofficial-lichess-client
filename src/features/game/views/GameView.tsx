@@ -67,10 +67,13 @@ export default function GameView() {
 									isConnecting={gameState.isConnecting}
 									streamNotFound={gameState.streamNotFound}
 									error={gameState.error}
+									gameEventInfo={gameState.gameEventInfo}
+									gameJson={gameState.gameJson}
+									gameFull={gameState.gameFull}
 								/>
 							</div>
 							{/* Clocks*/}
-							<div className="shrink-0 min-h-32" />
+							<div className="shrink-0 min-h-4" />
 							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
 								<ClockPanel
 									gameFull={gameState.gameFull}
@@ -148,6 +151,8 @@ export default function GameView() {
 					reason={gameState.status}
 					myColor={gameState.myColor}
 					gameFull={gameState.gameFull}
+					gameEventInfo={gameState.gameEventInfo}
+					gameJson={gameState.gameJson}
 					ratingDelta={gameState.ratingDelta}
 					onRematch={() => {
 						// TODO: Implement rematch logic

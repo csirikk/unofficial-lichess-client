@@ -3,21 +3,28 @@ import { useCallback, useState } from "react";
 import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
 import { IconButton } from "../../../components/IconButton";
-import { getGameStatusLong, getGameStatusShort } from "../model/game-status-text";
 import {
+	getGameStatusShort,
 	getGameOutcome,
 	getOutcomeColorClass,
 	getOutcomeGradient,
 	getOutcomeLabel,
-} from "../model/game-outcome";
+	getGameModeLabel,
+	formatTimeControl,
+	normalizeClockToSeconds,
+} from "../model/game-info-helpers";
 import { PlayerInfo } from "./PlayerInfo";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
+import type { GameEventInfo } from "../../../generated/types/gameEventInfo";
+import type { GameJson } from "../../../generated/types/gameJson";
 
 export type GameResultModalProps = {
 	winner: string | null;
 	reason: string | null;
 	myColor: "white" | "black" | null;
 	gameFull: GameFullEvent | null;
+	gameEventInfo?: GameEventInfo | null;
+	gameJson?: GameJson | null;
 	ratingDelta?: {
 		player: number | null;
 		opponent: number | null;
@@ -32,6 +39,8 @@ export function GameResultModal({
 	reason,
 	myColor,
 	gameFull,
+	gameEventInfo,
+	gameJson,
 	ratingDelta,
 	onRematch,
 	onNewGame,
@@ -62,6 +71,21 @@ export function GameResultModal({
 	const opponentDelta = ratingDelta?.opponent ?? null;
 	const showRatings = gameFull?.rated && myPlayer?.rating != null && opponentPlayer?.rating != null;
 
+	// Extract game mode and time control info
+	const speed = gameJson?.speed || gameEventInfo?.speed || gameFull?.speed;
+	const rated = gameJson?.rated ?? gameEventInfo?.rated ?? gameFull?.rated;
+	const rawClock = gameJson?.clock || gameFull?.clock;
+	const clock = normalizeClockToSeconds(rawClock);
+	const gameMode = getGameModeLabel(speed, rated);
+	const timeControl = formatTimeControl(clock);
+
+	// Calculate dynamic width based on name lengths
+	const myNameLength = myPlayer?.name?.length || 0;
+	const opponentNameLength = opponentPlayer?.name?.length || 0;
+	const maxNameLength = Math.max(myNameLength, opponentNameLength);
+	const modalWidthClass =
+		maxNameLength > 20 ? "max-w-2xl" : maxNameLength > 15 ? "max-w-xl" : "max-w-md";
+
 	return (
 		<div
 			className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] p-4
@@ -76,7 +100,7 @@ export function GameResultModal({
 			/>
 
 			<div
-				className={`w-full max-w-md
+				className={`w-full ${modalWidthClass}
           ${isExiting ? "animate-modal-exit" : "animate-modal-entry"}`}
 			>
 				{/* Close button */}
@@ -109,12 +133,12 @@ export function GameResultModal({
 									{getGameStatusShort(reason)}
 								</p>
 							</div>
+							{/* Game mode and time control */}
+							<div className="flex gap-2 text-xl text-[rgb(var(--color-fg-secondary))]">
+								{gameMode && <span>{gameMode}</span>}
+								{timeControl && <span>{timeControl}</span>}
+							</div>
 						</div>
-
-						{/* Long description */}
-						<p className="mt-3 text-sm leading-relaxed text-[rgb(var(--color-fg-secondary))]">
-							{getGameStatusLong(reason, winner, myColor)}
-						</p>
 					</div>
 					{/* Rating delta */}
 					{(showRatings || myPlayer?.aiLevel != null || opponentPlayer?.aiLevel != null) && (
