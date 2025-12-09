@@ -1,12 +1,21 @@
 import { CircleX, Flag, Handshake, RotateCcw, Undo2, Play, type LucideIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "../../../components/Button";
 
 export type GameAction = {
 	label: string;
 	icon: LucideIcon;
-	onClick: () => void;
+	onClick: (e?: React.MouseEvent) => void;
 	disabled: boolean;
-	variant?: "ghost" | "default" | "outline" | "secondary";
+	variant?:
+		| "primary"
+		| "secondary"
+		| "ghost"
+		| "outline"
+		| "danger"
+		| "dangerr"
+		| "text"
+		| "uppercase";
 	badge?: string;
 };
 
@@ -49,6 +58,57 @@ export function Controls({
 	rematchPending = false,
 	isBotGame = false,
 }: ControlsProps) {
+	const [resignConfirming, setResignConfirming] = useState(false);
+
+	// Reset resign confirmation when game ends or on any other action
+	useEffect(() => {
+		if (gameEnded) {
+			setResignConfirming(false);
+		}
+	}, [gameEnded]);
+
+	// Reset resign confirmation on any click outside
+	useEffect(() => {
+		if (!resignConfirming) return;
+
+		const handleClickOutside = (e: MouseEvent) => {
+			// Check if the click is on the resign button itself
+			const target = e.target as HTMLElement;
+			const resignButton = target.closest('button[aria-label*="Resign"]');
+			if (!resignButton) {
+				setResignConfirming(false);
+			}
+		};
+
+		// Use a small delay to avoid immediate reset on the same click that set it
+		const timeoutId = setTimeout(() => {
+			document.addEventListener("click", handleClickOutside, { capture: true });
+		}, 0);
+
+		return () => {
+			clearTimeout(timeoutId);
+			document.removeEventListener("click", handleClickOutside, { capture: true });
+		};
+	}, [resignConfirming]);
+
+	const handleResignClick = (e?: React.MouseEvent) => {
+		e?.stopPropagation();
+		if (resignConfirming) {
+			onResign();
+			setResignConfirming(false);
+		} else {
+			setResignConfirming(true);
+		}
+	};
+
+	const handleOtherAction = (action: () => void) => {
+		return (e?: React.MouseEvent) => {
+			e?.stopPropagation();
+			setResignConfirming(false);
+			action();
+		};
+	};
+
 	if (gameEnded) {
 		return (
 			<div className="flex flex-col gap-3">
@@ -85,7 +145,7 @@ export function Controls({
 								? "Draw Offered"
 								: "Offer Draw",
 						icon: Handshake,
-						onClick: onOfferDraw,
+						onClick: handleOtherAction(onOfferDraw),
 						disabled: !isConnected || drawOfferedByMe,
 						badge: drawOfferedByOpponent ? "!" : undefined,
 					},
@@ -100,30 +160,31 @@ export function Controls({
 						? "Takeback"
 						: "Request Takeback",
 			icon: Undo2,
-			onClick: onTakeback,
+			onClick: handleOtherAction(onTakeback),
 			disabled: !isConnected || takebackOfferedByMe || moveCount < 1,
 			badge: takebackOfferedByOpponent ? "!" : undefined,
 		},
 		{
-			label: "Resign",
+			label: resignConfirming ? "Confirm Resign?" : "Resign",
 			icon: Flag,
-			onClick: onResign,
+			onClick: handleResignClick,
 			disabled: !isConnected || moveCount < 2,
+			variant: resignConfirming ? "dangerr" : undefined,
 		},
 		{
 			label: "Abort",
 			icon: CircleX,
-			onClick: onAbort,
+			onClick: handleOtherAction(onAbort),
 			disabled: !isConnected || moveCount >= 2,
 		},
 	];
 
 	return (
 		<div className="flex flex-col items-start justify-center gap-1 w-fit mt-2">
-			{gameActions.map(({ label, icon: Icon, onClick, disabled, badge }) => (
+			{gameActions.map(({ label, icon: Icon, onClick, disabled, variant, badge }) => (
 				<Button
 					key={label}
-					variant="ghost"
+					variant={variant || "ghost"}
 					onClick={onClick}
 					disabled={disabled}
 					aria-label={label}
