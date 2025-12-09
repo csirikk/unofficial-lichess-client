@@ -32,6 +32,7 @@ export type GameResultModalProps = {
 	onRematch: () => void;
 	onNewGame: () => void;
 	onDismiss: () => void;
+	rematchPending?: boolean;
 };
 
 export function GameResultModal({
@@ -45,6 +46,7 @@ export function GameResultModal({
 	onRematch,
 	onNewGame,
 	onDismiss,
+	rematchPending = false,
 }: GameResultModalProps) {
 	const outcome = getGameOutcome(winner, myColor);
 	const [isExiting, setIsExiting] = useState(false);
@@ -176,12 +178,26 @@ export function GameResultModal({
 						</div>
 					)}
 					{/* Actions */}
-					<div className="border-t border-[rgb(var(--color-surface-border))] px-2 pt-4 space-y-3">
+					<div className="border-t border-[rgb(var(--color-surface-border))] whitespace-nowrap px-2 pt-4 space-y-3">
 						<div className="grid grid-cols-2 gap-3">
-							<Button variant="primary" size="lg" onClick={onRematch}>
-								<RotateCcw className="h-5 w-5" />
-								Rematch
-							</Button>
+							{gameFull && myColor ? (
+								<Button variant="primary" size="lg" onClick={onRematch} disabled={rematchPending}>
+									<RotateCcw className={`h-5 w-5 ${rematchPending ? "animate-spin" : ""}`} />
+									{rematchPending ? "Rematch Sent..." : "Rematch"}
+								</Button>
+							) : (
+								<Button
+									variant="outline"
+									size="lg"
+									onClick={() => {
+										handleDismiss();
+										onNewGame();
+									}}
+								>
+									<Play className="h-5 w-5 fill-current" />
+									New Game
+								</Button>
+							)}
 
 							<Button
 								variant="outline"

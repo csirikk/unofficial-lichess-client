@@ -154,10 +154,8 @@ export default function GameView() {
 					gameEventInfo={gameState.gameEventInfo}
 					gameJson={gameState.gameJson}
 					ratingDelta={gameState.ratingDelta}
-					onRematch={() => {
-						// TODO: Implement rematch logic
-						console.log("Rematch requested");
-					}}
+					rematchPending={gameState.rematchPending}
+					onRematch={actions.rematch}
 					onNewGame={() => {
 						actions.resetToLobby();
 						setModalDismissed(true);

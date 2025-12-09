@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameColor } from "../../../generated/types/gameColor";
 import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
@@ -39,6 +39,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [gameEventInfo, setGameEventInfo] = useState<GameEventInfo | null>(null);
 	const [gameJson, setGameJson] = useState<GameJson | null>(null);
 
+	const [pendingDrawOffer, setPendingDrawOffer] = useState(false);
+	const [pendingTakebackOffer, setPendingTakebackOffer] = useState(false);
+	const lastMoveCountRef = useRef<number>(0);
+
 	const onGameStartHandler = useCallback(
 		(event: GameStartEvent) => {
 			if (!event.game) return;
@@ -51,6 +55,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			if (waitingForGame || !gameId) {
 				setGameId(eventGameId);
 				setWaitingForGame(false);
+				setRematchPending(false);
 				setGameEventInfo(event.game);
 				setGameJson(null);
 				setRatingDelta(null);
@@ -223,33 +228,59 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const handleOfferDraw = useCallback(async () => {
 		if (!gameId || !isConnected || gameEnded) return;
 		const isAccepting = myColor === GameColor.white ? gameState?.bdraw : gameState?.wdraw;
+
+		if (!isAccepting) {
+			setPendingDrawOffer(true);
+		}
+
 		try {
 			await offerDraw(gameId, Boolean(isAccepting));
 		} catch (error) {
 			console.error("Draw action failed:", error);
+			setPendingDrawOffer(false); // Clear on error
 		}
 	}, [gameId, isConnected, gameEnded, gameState, myColor]);
 
 	const handleTakeback = useCallback(async () => {
 		if (!gameId || !isConnected || gameEnded) return;
 		const isAccepting = myColor === GameColor.white ? gameState?.btakeback : gameState?.wtakeback;
+
+		if (!isAccepting) {
+			setPendingTakebackOffer(true);
+		}
+
 		try {
 			await requestTakeback(gameId, Boolean(isAccepting));
 		} catch (error) {
 			console.error("Takeback action failed:", error);
+			setPendingTakebackOffer(false);
 		}
 	}, [gameId, isConnected, gameEnded, gameState, myColor]);
 
 	const handleRematchRequest = useCallback(async () => {
-		if (!gameId || rematchPending) return;
+		if (!gameId || rematchPending || !gameFull || !myColor) return;
 		setRematchPending(true);
 		try {
-			await handleRematch(gameId);
+			const result = await handleRematch(gameFull, myColor);
+
+			// Clear previous game state
+			setGameEventInfo(null);
+			setGameJson(null);
+			setRatingDelta(null);
+
+			if ("gameId" in result) {
+				// AI game
+				interactionHandlers.resetBoard();
+				setGameId(result.gameId);
+				setRematchPending(false);
+			} else {
+				// Human game
+				setWaitingForGame(true);
+			}
 		} catch (error) {
 			console.error("Rematch failed:", error);
-			setRematchPending(false);
 		}
-	}, [gameId, rematchPending]);
+	}, [gameId, rematchPending, gameFull, myColor, interactionHandlers, setGameId]);
 
 	const resetToLobby = useCallback(() => {
 		setGameId(null);
@@ -268,10 +299,29 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		>;
 	}, [myColor]);
 
+	useEffect(() => {
+		if (!gameState) return;
+
+		const currentMoveCount = gameState.moves.split(" ").filter((m) => m).length;
+
+		if (currentMoveCount !== lastMoveCountRef.current) {
+			setPendingDrawOffer(false);
+			setPendingTakebackOffer(false);
+			lastMoveCountRef.current = currentMoveCount;
+		}
+
+		const serverHasMyDraw = myColor === GameColor.white ? gameState.wdraw : gameState.bdraw;
+		const serverHasMyTakeback =
+			myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback;
+
+		if (serverHasMyDraw) setPendingDrawOffer(false);
+		if (serverHasMyTakeback) setPendingTakebackOffer(false);
+	}, [gameState, myColor]);
+
 	const drawOfferedByMe = useMemo(() => {
 		if (!gameState) return false;
-		return myColor === GameColor.white ? gameState.wdraw : gameState.bdraw;
-	}, [gameState, myColor]);
+		return (myColor === GameColor.white ? gameState.wdraw : gameState.bdraw) || pendingDrawOffer;
+	}, [gameState, myColor, pendingDrawOffer]);
 
 	const drawOfferedByOpponent = useMemo(() => {
 		if (!gameState) return false;
@@ -280,8 +330,11 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 	const takebackOfferedByMe = useMemo(() => {
 		if (!gameState) return false;
-		return myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback;
-	}, [gameState, myColor]);
+		return (
+			(myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback) ||
+			pendingTakebackOffer
+		);
+	}, [gameState, myColor, pendingTakebackOffer]);
 
 	const takebackOfferedByOpponent = useMemo(() => {
 		if (!gameState) return false;
