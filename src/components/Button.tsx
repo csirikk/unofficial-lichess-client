@@ -6,6 +6,7 @@ type ButtonVariant =
 	| "ghost"
 	| "outline"
 	| "danger"
+	| "dangerr"
 	| "text"
 	| "uppercase";
 type ButtonSize = "sm" | "md" | "lg";
@@ -28,6 +29,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 		"text-[rgb(var(--color-fg-secondary))] hover:bg-[rgb(var(--color-surface-border)/0.5)] hover:text-[rgb(var(--color-fg-primary))] border-transparent",
 	danger:
 		"bg-[rgb(var(--color-error)/0.1)] text-[rgb(var(--color-error))] hover:bg-[rgb(var(--color-error)/0.2)] border-transparent",
+	dangerr: // danger but solid
+		"bg-[rgb(var(--color-error))] text-white hover:bg-[rgb(var(--color-error)/0.9)] border-transparent",
 	text: "text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-fg-primary))] border-transparent bg-transparent",
 	uppercase:
 		"border-none uppercase tracking-[0.2em] text-xs text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-fg-primary))]",
