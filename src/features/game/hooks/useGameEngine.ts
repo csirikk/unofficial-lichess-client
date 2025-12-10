@@ -140,6 +140,7 @@ export function useGameEngine({
 		setPendingUci(null);
 		setPendingIsPremove(false);
 		setPremoveQueue([]);
+		setPromotionRequest((prev) => (prev?.mode === "premove" ? null : prev));
 	}, []);
 
 	// Execute a move optimistically, rollback on error
@@ -307,6 +308,9 @@ export function useGameEngine({
 
 		if (!legal) {
 			setPremoveQueue([]);
+			if (promotionRequest?.mode === "premove") {
+				setPromotionRequest(null);
+			}
 			return;
 		}
 
@@ -338,6 +342,7 @@ export function useGameEngine({
 		premoveQueue,
 		pendingUci,
 		playerColor,
+		promotionRequest,
 		executeMove,
 	]);
 

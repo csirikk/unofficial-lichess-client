@@ -274,6 +274,9 @@ export function useBoardInteraction({
 			// Clear premoves if they exist
 			if (premoveQueue.length > 0 || pendingUci) {
 				setPremoveQueue([]);
+				if (promotionRequest?.mode === "premove") {
+					setPromotionRequest(null);
+				}
 				return;
 			}
 
@@ -288,7 +291,7 @@ export function useBoardInteraction({
 				return newStyles;
 			});
 		},
-		[premoveQueue, pendingUci, setPremoveQueue],
+		[premoveQueue, pendingUci, promotionRequest, setPremoveQueue, setPromotionRequest],
 	);
 
 	// Keep ref in sync, and update selection validity

@@ -9,20 +9,11 @@ import {
 	type PieceDropHandlerArgs,
 	type PieceRenderObject,
 } from "react-chessboard";
-import type { PromotionPieceModel } from "../model/chess";
 import { pieceToKey } from "../model/chess";
 import type { BoardViewModel } from "../hooks/useBoard";
 import { useBoardPreferences } from "../hooks/useBoardPreferences";
 import { useBoardTheme } from "../hooks/useBoardTheme";
-
-// Promotion order and labels
-const PROMOTION_ORDER: PromotionPieceModel[] = ["q", "r", "b", "n"];
-const PROMOTION_LABELS: Record<PromotionPieceModel, string> = {
-	q: "Queen",
-	r: "Rook",
-	b: "Bishop",
-	n: "Knight",
-};
+import { PromotionMenu } from "./PromotionMenu";
 
 export type BoardProps = {
 	viewModel: BoardViewModel;
@@ -104,7 +95,7 @@ export function Board({ viewModel }: BoardProps) {
 		const coords = getRelativeCoords(boardOrientation, boardWidth, 8, 8, promotionRequest.to);
 		const anchorLeft = coords.x - squareSize / 2;
 		const anchorTop = coords.y - squareSize / 2;
-		const dropdownHeight = squareSize * PROMOTION_ORDER.length;
+		const dropdownHeight = squareSize * 4; // 4 promotion options
 		const shouldOpenDownwards = anchorTop < boardWidth / 2;
 		const top = shouldOpenDownwards
 			? anchorTop + squareSize
@@ -113,7 +104,7 @@ export function Board({ viewModel }: BoardProps) {
 			left: anchorLeft,
 			top,
 			squareSize,
-			direction: shouldOpenDownwards ? "down" : "up",
+			direction: shouldOpenDownwards ? ("down" as const) : ("up" as const),
 		};
 	}, [boardOrientation, boardWidth, promotionRequest]);
 
@@ -335,45 +326,15 @@ export function Board({ viewModel }: BoardProps) {
 
 				{/* Promotion dialog */}
 				{promotionRequest && promotionDropdown && (
-					<>
-						<button
-							type="button"
-							aria-label="Cancel pawn promotion"
-							onClick={onCancelPromotion}
-							onContextMenu={(event) => {
-								event.preventDefault();
-								onCancelPromotion();
-							}}
-							className="cursor-pointer absolute inset-0 z-30 bg-black/30 p-0"
-						/>
-						<div
-							className="absolute z-40 flex overflow-hidden rounded-md border border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-card))] shadow-lg"
-							style={{
-								left: promotionDropdown.left,
-								top: promotionDropdown.top,
-								width: promotionDropdown.squareSize,
-								flexDirection: promotionDropdown.direction === "down" ? "column" : "column-reverse",
-							}}
-						>
-							{PROMOTION_ORDER.map((piece) => {
-								const colorChar = promotionRequest.color[0]; // "w" or "b"
-								const pieceKey = `${colorChar}${piece.toUpperCase()}` as keyof PieceRenderObject;
-								const PieceIcon = defaultPieces[pieceKey];
-								return (
-									<button
-										key={piece}
-										type="button"
-										onClick={() => onPromotionChoice(piece)}
-										onContextMenu={(event) => event.preventDefault()}
-										className="cursor-pointer flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
-									>
-										{PieceIcon && <PieceIcon />}
-										<span className="sr-only">{PROMOTION_LABELS[piece]}</span>
-									</button>
-								);
-							})}
-						</div>
-					</>
+					<PromotionMenu
+						color={promotionRequest.color}
+						left={promotionDropdown.left}
+						top={promotionDropdown.top}
+						squareSize={promotionDropdown.squareSize}
+						direction={promotionDropdown.direction}
+						onSelect={onPromotionChoice}
+						onCancel={onCancelPromotion}
+					/>
 				)}
 			</div>
 		</div>
