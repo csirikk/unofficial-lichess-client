@@ -1,5 +1,5 @@
 import type { PieceSymbol } from "chess.js";
-import { Infinity } from "lucide-react";
+import { Infinity as LucideInfinity } from "lucide-react";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";
 import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 import { useMemo } from "react";
@@ -109,7 +109,12 @@ export function Clock({
 				<div className={timerClasses}>
 					{isInfinite ? (
 						<div className="flex w-full items-center justify-center">
-							<Infinity
+							<LucideInfinity
+								className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
+								strokeWidth={2}
+							/>
+							:
+							<LucideInfinity
 								className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
 								strokeWidth={2}
 							/>
