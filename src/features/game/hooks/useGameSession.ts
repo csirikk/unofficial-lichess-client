@@ -246,7 +246,9 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		}
 
 		try {
-			await offerDraw(gameId, Boolean(isAccepting));
+			// API: true/"yes" = propose OR accept, false/"no" = decline
+			// Since we call this to either propose or accept, always send true
+			await offerDraw(gameId, true);
 		} catch (error) {
 			console.error("Draw action failed:", error);
 			setPendingDrawOffer(false); // Clear on error
@@ -262,7 +264,9 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		}
 
 		try {
-			await requestTakeback(gameId, Boolean(isAccepting));
+			// API: true/"yes" = propose OR accept, false/"no" = decline
+			// Since we call this to either propose or accept, always send true
+			await requestTakeback(gameId, true);
 		} catch (error) {
 			console.error("Takeback action failed:", error);
 			setPendingTakebackOffer(false);
