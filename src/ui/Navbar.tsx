@@ -1,8 +1,7 @@
-import { Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/Button";
-import { IconButton } from "../components/IconButton";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import { SettingsDropdown } from "./SettingsDropdown";
 
 export default function Navbar() {
 	const { user, login, logout } = useAuth();
@@ -58,10 +57,8 @@ export default function Navbar() {
 						</div>
 					)}
 
-					{/* Settings icon */}
-					<IconButton variant="ghost" size="md" aria-label="Settings" className="ml-1">
-						<Settings />
-					</IconButton>
+					{/* Settings dropdown */}
+					<SettingsDropdown />
 				</div>
 			</nav>
 		</header>
