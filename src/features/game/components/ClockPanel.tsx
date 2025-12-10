@@ -94,7 +94,7 @@ export function Clock({
 			</div>
 			{/* Material Difference */}
 			{materialDiff != null && materialDiff > 0 && (
-				<span className="ml-2 text-xs sm:text-sm font-semibold text-[rgb(var(--color-fg-secondary))]">
+				<span className="ml-1 text-xs sm:text-sm font-semibold text-[rgb(var(--color-fg-secondary))]">
 					+{materialDiff}
 				</span>
 			)}
