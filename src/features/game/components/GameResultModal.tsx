@@ -7,7 +7,6 @@ import { PlayerInfo } from "./PlayerInfo";
 import type { GameModel } from "../model/types";
 
 export type GameResultModalProps = {
-	/** Unified game object - single source of truth */
 	game: GameModel;
 	onRematch: () => void;
 	onNewGame: () => void;
@@ -15,7 +14,6 @@ export type GameResultModalProps = {
 };
 
 export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameResultModalProps) {
-	// All display strings are pre-calculated in the unified model
 	const { status, players, info, ratingChanges, offers } = game;
 	const [isExiting, setIsExiting] = useState(false);
 
@@ -39,13 +37,6 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 	const opponent = players.opponent;
 	const showRatings = info.rated && ratingChanges != null;
 
-	// Calculate dynamic width based on name lengths
-	const myNameLength = me?.username?.length || 0;
-	const opponentNameLength = opponent?.username?.length || 0;
-	const maxNameLength = Math.max(myNameLength, opponentNameLength);
-	const modalWidthClass =
-		maxNameLength > 20 ? "max-w-2xl" : maxNameLength > 15 ? "max-w-xl" : "max-w-md";
-
 	return (
 		<div
 			className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] p-4
@@ -60,7 +51,7 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 			/>
 
 			<div
-				className={`w-full ${modalWidthClass}
+				className={`w-fit min-w-100 max-w-[90vw]
           ${isExiting ? "animate-modal-exit" : "animate-modal-entry"}`}
 			>
 				{/* Close button */}
@@ -77,25 +68,28 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 				<Card className="relative overflow-hidden rounded-2xl border border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-card))]/95 shadow-2xl shadow-black/40">
 					{/* Header */}
 					<div className="px-6 pt-6 pb-4">
-						<div className="flex items-start gap-4">
+						<div className="flex items-center gap-4 whitespace-nowrap">
 							{/* Trophy */}
 							<div
-								className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br shadow-lg shadow-black/40
-									 ${status.outcomeGradient} ${status.outcomeColorClass}`}
+								className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br shadow-lg shadow-black/40
+                                     ${status.outcomeGradient} ${status.outcomeColorClass}`}
 							>
-								<Trophy className="h-8 w-8" />
+								<Trophy className="h-6 w-6" />
 							</div>
-							<div className="flex-1 space-y-1">
-								<h2 className={`text-2xl uppercase tracking-wide ${status.outcomeColorClass}`}>
+							<div className="flex-1 min-w-0 space-y-0.5">
+								<h2
+									className={`text-xl uppercase tracking-wide truncate ${status.outcomeColorClass}`}
+								>
 									{status.outcomeLabel}
 								</h2>
-								<p className="text-xs font-medium uppercase tracking-[0.24em] text-[rgb(var(--color-fg-secondary))]/75">
+								<p className="text-[10px] font-medium uppercase tracking-widest text-[rgb(var(--color-fg-secondary))]/75 truncate">
 									{status.statusShort}
 								</p>
 							</div>
 							{/* Game mode and time control */}
-							<div className="flex gap-2 text-xl text-[rgb(var(--color-fg-secondary))]">
+							<div className="flex shrink-0 gap-1.5 text-sm text-[rgb(var(--color-fg-secondary))]">
 								{info.speed && <span>{info.speed}</span>}
+								{info.timeControlLabel && <span>·</span>}
 								{info.timeControlLabel && <span>{info.timeControlLabel}</span>}
 							</div>
 						</div>
@@ -103,33 +97,37 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 					{/* Rating delta */}
 					{me && opponent && (
 						<div className="px-6 pb-4">
-							<div className="grid grid-cols-3 gap-3">
+							<div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
 								{/* Player rating */}
-								<PlayerInfo
-									player={me}
-									size="lg"
-									layout="vertical"
-									label="You"
-									showDelta={showRatings}
-									showRatingChange={ratingChanges?.[me.color] ?? null}
-								/>
+								<div className="min-w-0">
+									<PlayerInfo
+										player={me}
+										size="lg"
+										layout="vertical"
+										label="You"
+										showDelta={showRatings}
+										showRatingChange={ratingChanges?.[me.color] ?? null}
+									/>
+								</div>
 
 								{/* vs */}
-								<div className="flex items-center justify-center">
-									<span className="text-3xl font-semibold text-[rgb(var(--color-fg-secondary))]">
+								<div className="shrink-0 self-center">
+									<span className="text-2xl font-semibold text-[rgb(var(--color-fg-secondary))]">
 										vs
 									</span>
 								</div>
 
 								{/* Opponent rating */}
-								<PlayerInfo
-									player={opponent}
-									size="lg"
-									layout="vertical"
-									label="Opponent"
-									showDelta={showRatings}
-									showRatingChange={ratingChanges?.[opponent.color] ?? null}
-								/>
+								<div className="min-w-0">
+									<PlayerInfo
+										player={opponent}
+										size="lg"
+										layout="vertical"
+										label="Opponent"
+										showDelta={showRatings}
+										showRatingChange={ratingChanges?.[opponent.color] ?? null}
+									/>
+								</div>
 							</div>
 						</div>
 					)}
