@@ -356,8 +356,8 @@ export function Board({ viewModel }: BoardProps) {
 							}}
 						>
 							{PROMOTION_ORDER.map((piece) => {
-								const pieceKey =
-									`${promotionRequest.color}${piece.toUpperCase()}` as keyof PieceRenderObject;
+								const colorChar = promotionRequest.color[0]; // "w" or "b"
+								const pieceKey = `${colorChar}${piece.toUpperCase()}` as keyof PieceRenderObject;
 								const PieceIcon = defaultPieces[pieceKey];
 								return (
 									<button
@@ -367,7 +367,7 @@ export function Board({ viewModel }: BoardProps) {
 										onContextMenu={(event) => event.preventDefault()}
 										className="cursor-pointer flex aspect-square w-full items-center justify-center bg-transparent p-0 text-lg text-[rgb(var(--color-fg-primary))] hover:bg-[rgb(var(--color-neutral-400)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary-500))]"
 									>
-										{PieceIcon?.()}
+										{PieceIcon && <PieceIcon />}
 										<span className="sr-only">{PROMOTION_LABELS[piece]}</span>
 									</button>
 								);
