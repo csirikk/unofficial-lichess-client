@@ -240,7 +240,7 @@ export function normalizeClockToSeconds(
 export function formatTimeControl(
 	clock: { initial: number; increment: number } | null | undefined,
 ): string {
-	if (!clock || clock.initial == null) return "Unlimited";
+	if (!clock || clock.initial == null || clock.initial === 0) return "Unlimited";
 
 	const minutes = Math.floor(clock.initial / 60);
 	const seconds = Math.floor(clock.initial % 60);
