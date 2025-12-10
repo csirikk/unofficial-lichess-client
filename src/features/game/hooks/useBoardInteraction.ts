@@ -17,6 +17,7 @@ import {
 	chessColorToGameColor,
 } from "../model/chess";
 import { playSound } from "../model/sounds";
+import { isPremoveEnabled, isAutoQueenEnabled } from "../model/preferences";
 import type { GameEngineHandlers, GameEngineInfo, GameEngineState } from "./useGameEngine";
 
 export type BoardInteractionConfig = {
@@ -84,20 +85,24 @@ export function useBoardInteraction({
 
 			const currentTurn = chessColorToGameColor(chess.turn());
 			const isMyTurn = currentTurn === playerColor;
-			const canPremove = !isMyTurn;
+			const canPremove = !isMyTurn && isPremoveEnabled();
 
 			if (isMyTurn) {
 				if (!promotion && isPromotionMove(from, to)) {
-					const piece = chess.get(from);
-					if (!piece) return false;
-					setPromotionRequest({
-						from,
-						to,
-						color: chessColorToGameColor(piece.color),
-						mode: "live",
-					});
-					setSelectedSquare(null);
-					return true;
+					if (isAutoQueenEnabled()) {
+						promotion = "q";
+					} else {
+						const piece = chess.get(from);
+						if (!piece) return false;
+						setPromotionRequest({
+							from,
+							to,
+							color: chessColorToGameColor(piece.color),
+							mode: "live",
+						});
+						setSelectedSquare(null);
+						return true;
+					}
 				}
 
 				try {
@@ -131,14 +136,18 @@ export function useBoardInteraction({
 				if (!isFeasiblePremove(visualPiece, from, to)) return false;
 
 				if (!promotion && isPremovePromotion(visualPiece, to)) {
-					setPromotionRequest({
-						from,
-						to,
-						color: chessColorToGameColor(visualPiece.color),
-						mode: "premove",
-					});
-					setSelectedSquare(null);
-					return true;
+					if (isAutoQueenEnabled()) {
+						promotion = "q";
+					} else {
+						setPromotionRequest({
+							from,
+							to,
+							color: chessColorToGameColor(visualPiece.color),
+							mode: "premove",
+						});
+						setSelectedSquare(null);
+						return true;
+					}
 				}
 
 				const uci = moveToUci({ from, to, promotion });

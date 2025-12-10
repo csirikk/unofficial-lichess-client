@@ -12,6 +12,8 @@ import {
 import type { PromotionPieceModel } from "../model/chess";
 import { pieceToKey } from "../model/chess";
 import type { BoardViewModel } from "../hooks/useBoard";
+import { useBoardPreferences } from "../hooks/useBoardPreferences";
+import { useBoardTheme } from "../hooks/useBoardTheme";
 
 // Promotion order and labels
 const PROMOTION_ORDER: PromotionPieceModel[] = ["q", "r", "b", "n"];
@@ -53,6 +55,10 @@ export function Board({ viewModel }: BoardProps) {
 		onCancelPromotion,
 		onRightClick,
 	} = handlers;
+
+	const preferences = useBoardPreferences();
+	const themeViewModel = useBoardTheme(preferences.theme);
+
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
 
@@ -88,6 +94,8 @@ export function Board({ viewModel }: BoardProps) {
 		},
 		[],
 	);
+
+	const { colors: boardColors } = themeViewModel;
 
 	// Calculate promotion dropdown position
 	const promotionDropdown = useMemo(() => {
@@ -131,13 +139,18 @@ export function Board({ viewModel }: BoardProps) {
 		}
 
 		// Last move
-		tintSquare(lastMoveSquares.from, "rgb(var(--color-chess-move-last) / 0.37)");
-		tintSquare(lastMoveSquares.to, "rgb(var(--color-chess-move-last) / 0.37)");
+		tintSquare(lastMoveSquares.from, boardColors.lastMoveHighlight);
+		tintSquare(lastMoveSquares.to, boardColors.lastMoveHighlight);
 
 		// Selected square
 		if (selectedSquare) {
-			tintSquare(selectedSquare, "rgb(var(--color-primary-400) / 0.22)");
-			appendShadow(selectedSquare, "inset 0 0 0 2px rgb(var(--color-primary-500) / 0.9)");
+			tintSquare(selectedSquare, boardColors.selectedHighlight);
+			appendShadow(
+				selectedSquare,
+				preferences.theme === "classic"
+					? "inset 0 0 0 2px rgba(20, 85, 30, 0.9)"
+					: "inset 0 0 0 2px rgb(var(--color-primary-500) / 0.9)",
+			);
 		}
 
 		// Legal moves for currently selected piece
@@ -147,8 +160,7 @@ export function Board({ viewModel }: BoardProps) {
 			if (move.isCapture()) {
 				styles[target] = {
 					...styles[target],
-					backgroundImage:
-						"radial-gradient(circle, rgb(var(--color-chess-move-draw) / 0.8) 0, rgb(var(--color-chess-move-draw) / 0.8) 65%, transparent 70%)",
+					backgroundImage: `radial-gradient(circle, ${boardColors.captureHighlight} 0, ${boardColors.captureHighlight} 65%, transparent 70%)`,
 					backgroundRepeat: "no-repeat",
 					backgroundPosition: "center",
 					backgroundSize: "100% 100%",
@@ -158,52 +170,53 @@ export function Board({ viewModel }: BoardProps) {
 				const rankIndex = parseInt(target[1], 10) - 1;
 				const isLightSquare = (fileIndex + rankIndex) % 2 === 1;
 
-				if (isLightSquare) {
-					styles[target] = {
-						...styles[target],
-						backgroundImage: `
-							radial-gradient(circle,
-								rgb(var(--color-primary-900) / 0.8) 0,
-								rgb(var(--color-primary-900) / 0.8) 30%,
-								transparent 35%
-							)`,
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center",
-						backgroundSize: "40% 40%",
-					};
-				} else {
-					styles[target] = {
-						...styles[target],
-						backgroundImage: `
-							radial-gradient(circle,
-								rgb(var(--color-chess-move-legal-dot) / 0.5) 0,
-								rgb(var(--color-chess-move-legal-dot) / 0.5) 30%,
-								transparent 35%
-							)`,
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center",
-						backgroundSize: "40% 40%",
-					};
-				}
+				const dotColor = isLightSquare ? boardColors.legalDotLight : boardColors.legalDotDark;
+				styles[target] = {
+					...styles[target],
+					backgroundImage: `radial-gradient(circle, ${dotColor} 0, ${dotColor} 30%, transparent 35%)`,
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center",
+					backgroundSize: "40% 40%",
+				};
 			}
 		}
 
 		// King in check
 		if (checkSquare) {
-			tintSquare(checkSquare, "rgb(var(--color-chess-in-check) / 0.18)");
-			appendShadow(checkSquare, "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)");
+			tintSquare(
+				checkSquare,
+				preferences.theme === "classic"
+					? "rgba(255, 0, 0, 0.18)"
+					: "rgb(var(--color-chess-in-check) / 0.18)",
+			);
+			appendShadow(
+				checkSquare,
+				preferences.theme === "classic"
+					? "inset 0 0 0 2px rgba(255, 0, 0, 0.89)"
+					: "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)",
+			);
 		}
 
 		// Premove highlight
 		for (const step of premoveQueue) {
-			tintSquare(step.from, "rgb(var(--color-chess-move-premove) / 0.2)");
-			tintSquare(step.to, "rgb(var(--color-chess-move-premove) / 0.4)");
+			tintSquare(
+				step.from,
+				preferences.theme === "classic"
+					? "rgba(155, 199, 0, 0.2)"
+					: "rgb(var(--color-chess-move-premove) / 0.2)",
+			);
+			tintSquare(
+				step.to,
+				preferences.theme === "classic"
+					? "rgba(155, 199, 0, 0.4)"
+					: "rgb(var(--color-chess-move-premove) / 0.4)",
+			);
 		}
 
 		// Takeback highlights
 		for (const takebackSquare of takebackSquares) {
-			tintSquare(takebackSquare.from as Square, "rgb(var(--color-chess-move-last) / 0.37)");
-			tintSquare(takebackSquare.to as Square, "rgb(var(--color-chess-move-last) / 0.37)");
+			tintSquare(takebackSquare.from as Square, boardColors.lastMoveHighlight);
+			tintSquare(takebackSquare.to as Square, boardColors.lastMoveHighlight);
 		}
 
 		return styles;
@@ -215,6 +228,8 @@ export function Board({ viewModel }: BoardProps) {
 		premoveQueue,
 		rightClickedSquares,
 		takebackSquares,
+		boardColors,
+		preferences.theme,
 	]);
 
 	// Handlers for react-chessboard
@@ -253,6 +268,7 @@ export function Board({ viewModel }: BoardProps) {
 		<div className="aspect-square w-full max-w-full border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] p-2">
 			<div className="size-full relative" ref={boardContainerRef}>
 				<Chessboard
+					key={preferences.preferencesVersion}
 					options={{
 						position,
 						boardOrientation,
@@ -264,25 +280,28 @@ export function Board({ viewModel }: BoardProps) {
 						onSquareRightClick: handleSquareRightClick,
 						squareStyles,
 						showAnimations,
+						showNotation: preferences.showCoordinates,
 						animationDurationInMs: 150,
-						arrowOptions: {
-							color: "rgb(var(--color-chess-move-premove) / 0.9)",
-							secondaryColor: "rgb(var(--color-chess-move-last) / 0.9)",
-							tertiaryColor: "rgb(var(--color-chess-move-last) / 0.9)",
-							arrowLengthReducerDenominator: 3,
-							sameTargetArrowLengthReducerDenominator: 4,
-							arrowWidthDenominator: 6,
-							activeArrowWidthMultiplier: 0.9,
-							opacity: 0.6,
-							activeOpacity: 0.5,
-						},
-						lightSquareStyle: { backgroundColor: "rgb(var(--color-chess-light-square))" },
-						darkSquareStyle: { backgroundColor: "rgb(var(--color-chess-dark-square))" },
+						arrowOptions: themeViewModel.useCustomArrows
+							? {
+									color: boardColors.premoveHighlight,
+									secondaryColor: boardColors.lastMoveHighlight,
+									tertiaryColor: boardColors.lastMoveHighlight,
+									arrowLengthReducerDenominator: 3,
+									sameTargetArrowLengthReducerDenominator: 4,
+									arrowWidthDenominator: 6,
+									activeArrowWidthMultiplier: 0.9,
+									opacity: 0.6,
+									activeOpacity: 0.5,
+								}
+							: undefined,
+						lightSquareStyle: { backgroundColor: boardColors.lightSquare },
+						darkSquareStyle: { backgroundColor: boardColors.darkSquare },
 						darkSquareNotationStyle: {
-							color: "rgb(var(--color-chess-light-square))",
+							color: boardColors.coordinateLight,
 						},
 						lightSquareNotationStyle: {
-							color: "rgb(var(--color-chess-dark-square))",
+							color: boardColors.coordinateDark,
 						},
 					}}
 				/>

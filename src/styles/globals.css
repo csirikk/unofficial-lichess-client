@@ -43,17 +43,29 @@
 	--color-fg-active: 172 166 255; /* #ACA6FF - active / accent (Primary/400) */
 	--color-fg-on-primary: 242 244 255; /* #F2F4FF - text on primary surfaces */
 
+	/* Default Theme */
 	--color-chess-light-square: 206 203 247; /* #CECBF7 (Primary/300) */
 	--color-chess-dark-square: 62 58 120; /* #3E3A78 (Primary/800) */
 	--color-chess-in-check: 239 68 68; /* #EF4444 (Semantic/Error) */
 	--color-chess-light-selected: 172 166 255; /* #ACA6FF (Primary/400) */
 	--color-chess-dark-selected: 85 82 129; /* #555281 */
-
 	--color-chess-move-last: 179 120 179; /* #B378B3 @ 37% */
 	--color-chess-move-legal-dot: 242 244 255; /* #F2F4FF @ 20% */
 	--color-chess-move-premove: 209 64 117; /* #D14075 @ 80% */
 	--color-chess-move-draw: 179 120 179; /* #B378B3 @ 80% */
 
+	/* Classic Theme */
+	--color-chess-classic-light-square: 240 217 181; /* #f0d9b5 */
+	--color-chess-classic-dark-square: 181 136 99; /* #b58863 */
+	--color-chess-classic-premove: 155 199 0; /* #9bc700 @ 41% */
+	--color-chess-classic-last-move: 155 199 0; /* #9bc700 @ 41% */
+	--color-chess-classic-check: 255 0 0; /* #ff0000 @ 89% */
+	--color-chess-classic-selected: 20 85 30; /* #14551e @ 50% */
+	--color-chess-classic-legal-dot-light: 20 85 30; /* #14551e @ 50% */
+	--color-chess-classic-legal-dot-dark: 20 85 30; /* #14551e @ 75% */
+	--color-chess-classic-capture: 155 199 0; /* #9bc700 @ 80% */
+
+	/* Chess Clock */
 	--color-chess-clock-bg-active: 133 124 255; /* #857CFF @ 20% (Primary/500) */
 	--color-chess-clock-bg-inactive: 30 31 41; /* #1E1F29 (Neutral/200) */
 	--color-chess-clock-text: 242 244 255; /* #F2F4FF (Neutral/900) */
