@@ -12,6 +12,7 @@ import {
 	computeCapturedAt,
 	getMaterialScore,
 	uciToMove,
+	sortCapturedPieces,
 } from "../model/chess";
 
 export type CapturedPiecesConfig = {
@@ -38,22 +39,7 @@ export function useCapturedPieces({
 	isViewingHistory,
 }: CapturedPiecesConfig): CapturedPiecesReturn {
 	return useMemo(() => {
-		const captured = computeCapturedAt(serverHistory, viewingMoveIndex);
-
-		if (viewingMoveIndex === null && pendingUci && !isViewingHistory) {
-			try {
-				const temp = new Chess(chess.fen());
-				const move = temp.move(uciToMove(pendingUci));
-
-				if (move?.captured) {
-					if (move.color === "w") {
-						captured.white.push(move.captured);
-					} else {
-						captured.black.push(move.captured);
-					}
-				}
-			} catch {}
-		}
+		let captured = computeCapturedAt(serverHistory, viewingMoveIndex);
 
 		let board: PieceMap;
 
@@ -69,6 +55,30 @@ export function useCapturedPieces({
 		} else {
 			// Live mode - use the current chess instance (includes pending moves)
 			board = pieceMapFromChess(chess);
+
+			if (pendingUci) {
+				try {
+					const lastServerMove = serverHistory[serverHistory.length - 1];
+					const beforePendingFen = lastServerMove?.fen || undefined;
+					const temp = new Chess(beforePendingFen);
+					const move = temp.move(uciToMove(pendingUci));
+
+					if (move?.captured) {
+						captured = {
+							white: [...captured.white],
+							black: [...captured.black],
+						};
+
+						if (move.color === "w") {
+							captured.white.push(move.captured);
+							sortCapturedPieces(captured.white);
+						} else {
+							captured.black.push(move.captured);
+							sortCapturedPieces(captured.black);
+						}
+					}
+				} catch {}
+			}
 		}
 
 		const material = getMaterialScore(board);

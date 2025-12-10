@@ -87,6 +87,10 @@ export const PIECES_UNICODE: Record<PieceSymbol, string> = {
 	k: "♚",
 };
 
+export function sortCapturedPieces(pieces: PieceSymbol[]): void {
+	pieces.sort((a, b) => PIECES_VALUES[a] - PIECES_VALUES[b]);
+}
+
 /**
  * Convert chess.js Color ("w" | "b") to GameColor ("white" | "black")
  */
@@ -179,9 +183,8 @@ export function computeCapturedAt(
 	}
 
 	// Sort by value (p -> q)
-	const sortOrder: Record<string, number> = { p: 1, n: 2, b: 3, r: 4, q: 5, k: 0 };
-	white.sort((a, b) => sortOrder[a] - sortOrder[b]);
-	black.sort((a, b) => sortOrder[a] - sortOrder[b]);
+	sortCapturedPieces(white);
+	sortCapturedPieces(black);
 
 	return { white, black };
 }
