@@ -375,7 +375,7 @@ export function deriveGameState(
 		isUnlimited,
 		whiteTime: clockState?.whiteMs ?? 0,
 		blackTime: clockState?.blackMs ?? 0,
-		isActive: !isUnlimited && latestState?.status === GameStatusName.started,
+		isActive: latestState?.status === GameStatusName.started,
 		activeColor: clockState?.activeColor ? chessColorToGameColor(clockState.activeColor) : null,
 	};
 
