@@ -170,10 +170,10 @@ export function computeCapturedAt(
 
 	for (const move of subset) {
 		if (move.captured) {
-			if (move.color === "b") {
-				white.push(move.captured); // If its about to be blacks turn, white captured
+			if (move.color === "w") {
+				white.push(move.captured); // White moved and captured a piece
 			} else {
-				black.push(move.captured);
+				black.push(move.captured); // Black moved and captured a piece
 			}
 		}
 	}
