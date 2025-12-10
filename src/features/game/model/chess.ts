@@ -383,7 +383,7 @@ export function isPlayerInGame(gameFull: GameFullEvent | null, user: UserExtende
  * Format milliseconds as clock display (MM:SS).
  */
 export function formatClockTime(ms: number | null): string {
-	if (ms == null) return "--:--";
+	if (ms == null) return "∞";
 	const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
 	const minutes = Math.floor(totalSeconds / 60);
 	const seconds = totalSeconds % 60;

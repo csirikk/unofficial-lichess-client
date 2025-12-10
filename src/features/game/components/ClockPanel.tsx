@@ -1,4 +1,5 @@
 import type { PieceSymbol } from "chess.js";
+import { Infinity } from "lucide-react";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";
 import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 import { useMemo } from "react";
@@ -37,7 +38,8 @@ export function Clock({
 	const isCritical = typeof timeMs === "number" && timeMs <= 5000; // 5 seconds
 
 	const timeString = formatClockTime(timeMs);
-	const [minutes, seconds] = timeString.split(":");
+	const isInfinite = timeString === "∞";
+	const [minutes, seconds] = isInfinite ? [null, null] : timeString.split(":");
 
 	const timerClasses = `flex justify-start items-baseline font-mono font-bold tracking-wider leading-none 
 		text-4xl sm:text-5xl md:text-6xl lg:text-7xl
@@ -51,12 +53,12 @@ export function Clock({
 		${isActive ? "" : "opacity-40"}`;
 
 	const nameRating = (
-		<div className="flex text-[rgb(var(--color-fg-primary))]">
+		<div className="flex max-w-100 w-fit text-[rgb(var(--color-fg-primary))]">
 			<div
 				className={
 					position === "top"
-						? "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-t-lg"
-						: "bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-b-lg"
+						? "truncate bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-t-lg"
+						: "truncate bg-[rgb(var(--color-neutral-400)/0.1)] flex items-center px-2 py-1 ml-2 rounded-b-lg"
 				}
 			>
 				<div className="truncate text-base sm:text-lg md:text-xl font-bold flex">{player.name}</div>
@@ -105,9 +107,20 @@ export function Clock({
 			{position === "top" && nameRating}
 			<div key={color} className={containerClasses}>
 				<div className={timerClasses}>
-					<div className="flex-1 select-none text-right tabular-nums">{minutes}</div>
-					<div className="mx-1 select-none">:</div>
-					<div className="flex-1 select-none text-left tabular-nums">{seconds}</div>
+					{isInfinite ? (
+						<div className="flex w-full items-center justify-center">
+							<Infinity
+								className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
+								strokeWidth={2}
+							/>
+						</div>
+					) : minutes && seconds ? (
+						<>
+							<div className="flex-1 select-none text-right tabular-nums">{minutes}</div>
+							<div className="mx-1 select-none">:</div>
+							<div className="flex-1 select-none text-left tabular-nums">{seconds}</div>
+						</>
+					) : null}
 				</div>
 			</div>
 			{position === "bottom" && nameRating}
@@ -117,16 +130,11 @@ export function Clock({
 }
 
 export type ClockPanelProps = {
-	/** Unified clock object - single source of truth for all clock state */
 	clock: ClockModel;
-	/** Players from unified model */
 	whitePlayer: PlayerModel;
 	blackPlayer: PlayerModel;
-	/** Timer display order based on board orientation */
 	timerOrder: Color[];
-	/** Grouped material state - captured pieces and material differences */
 	material: Material;
-	/** Optional rating changes to display */
 	ratingChanges?: RatingDeltas;
 };
 
@@ -146,7 +154,6 @@ export function ClockPanel({
 		whiteDiff: whiteMaterialDiff,
 		blackDiff: blackMaterialDiff,
 	} = material;
-	// Trust the unified model - all display strings are pre-calculated
 	const isUnlimited = clock.isUnlimited;
 
 	const playerPanels = {
