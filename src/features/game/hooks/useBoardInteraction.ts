@@ -69,8 +69,6 @@ export function useBoardInteraction({
 		executeMove,
 		getVisualPieceAt,
 		ownsSquare,
-		canPlayMove,
-		canQueuePremove,
 		isPromotionMove,
 		isPremovePromotion,
 		setPremoveQueue,
@@ -84,8 +82,9 @@ export function useBoardInteraction({
 		(from: Square, to: Square, promotion?: PromotionPieceModel): boolean => {
 			if (!isMyGame || isGameEnded) return false;
 
-			const isMyTurn = canPlayMove();
-			const canPremove = canQueuePremove();
+			const currentTurn = chessColorToGameColor(chess.turn());
+			const isMyTurn = currentTurn === playerColor;
+			const canPremove = !isMyTurn;
 
 			if (isMyTurn) {
 				if (!promotion && isPromotionMove(from, to)) {
@@ -155,8 +154,6 @@ export function useBoardInteraction({
 		[
 			isMyGame,
 			isGameEnded,
-			canPlayMove,
-			canQueuePremove,
 			isPromotionMove,
 			isPremovePromotion,
 			getVisualPieceAt,
