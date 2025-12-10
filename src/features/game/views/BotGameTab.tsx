@@ -6,8 +6,8 @@ import { SegmentedControl, type SegmentedOption } from "../../../components/Segm
 import {
 	type SetupBotLevel,
 	type SetupColorChoice,
-	UI_BOT_LEVELS,
-	UI_TIME_PRESETS,
+	BOT_LEVELS,
+	TIME_PRESETS,
 	createDefaultBotGameSetup,
 	findTimePreset,
 } from "../model/setup";
@@ -60,9 +60,9 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 		});
 	};
 
-	const minLevel = UI_BOT_LEVELS[0].level;
-	const maxLevel = UI_BOT_LEVELS[UI_BOT_LEVELS.length - 1].level;
-	const currentLevel = UI_BOT_LEVELS.find((l) => l.level === setup.botLevel) ?? UI_BOT_LEVELS[0];
+	const minLevel = BOT_LEVELS[0].level;
+	const maxLevel = BOT_LEVELS[BOT_LEVELS.length - 1].level;
+	const currentLevel = BOT_LEVELS.find((l) => l.level === setup.botLevel) ?? BOT_LEVELS[0];
 
 	const inputId = useId();
 
@@ -123,7 +123,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 
 							{/* Tick labels 1–8 under the slider */}
 							<div className="flex mx-[5px] justify-between mt-1 text-sm text-[rgb(var(--color-fg-secondary))]">
-								{UI_BOT_LEVELS.map((level) => {
+								{BOT_LEVELS.map((level) => {
 									const isActive = level.level === setup.botLevel;
 									return (
 										<button
@@ -155,7 +155,7 @@ export function BotGameTab({ isCreating, error, onStart }: BotGameTabProps) {
 					<SectionLabel>Time Control</SectionLabel>
 					<SelectableCardGrid
 						value={setup.timePresetId}
-						items={UI_TIME_PRESETS.map((p) => ({
+						items={TIME_PRESETS.map((p) => ({
 							id: p.id,
 							title: p.label,
 							subtitle: p.subtitle,

@@ -7,35 +7,35 @@
  * - Optimistic updates
  * - Move execution (including premoves)
  */
-import { Chess, type Square, type Color } from "chess.js";
+import { Chess, type Square, type Piece } from "chess.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GameColor } from "../../../generated/types/gameColor";
+import { GameColor as Color } from "../../../generated/types/gameColor";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { UserExtended } from "../../../generated/types/userExtended";
 import {
-	type UiBoard,
-	type UiGhostPiece,
-	type UiPiece,
-	type UiPieceKey,
-	type UiPremove,
-	type UiPromotionRequest,
+	type PieceMap,
+	type GhostPieceModel,
+	type PieceMapKey,
+	type PremoveModel,
+	type PromotionRequestModel,
 	applyPremoves,
-	boardFromChess,
-	boardToChessboardPosition,
+	pieceMapFromChess,
+	pieceMapToChessboard,
+	chessColorToGameColor,
 	findKingSquare,
 	getPlayerColor,
 	isPlayerInGame,
 	keyToPiece,
 	uciToMove,
-	type UiMove,
+	type MoveModel,
 } from "../model/chess";
 
 export type GameEngineConfig = {
 	gameFull: GameFullEvent | null;
 	serverFen: string;
 	serverTurn: Color;
-	serverHistory: UiMove[];
+	serverHistory: MoveModel[];
 	user: UserExtended | null;
 	isConnected: boolean;
 	makeMove: (uci: string) => Promise<unknown>;
@@ -44,36 +44,36 @@ export type GameEngineConfig = {
 export type GameEngineState = {
 	chess: Chess;
 	position: Record<string, { pieceType: string }>;
-	ghostPieces: UiGhostPiece[];
+	ghostPieces: GhostPieceModel[];
 	lastMoveSquares: { from: Square | null; to: Square | null };
 	checkSquare: Square | null;
-	premoveQueue: UiPremove[];
-	promotionRequest: UiPromotionRequest;
+	premoveQueue: PremoveModel[];
+	promotionRequest: PromotionRequestModel;
 	showAnimations: boolean;
 	moveHistory: string[];
 	pendingUci: string | null;
-	serverHistory: UiMove[];
+	serverHistory: MoveModel[];
 };
 
 export type GameEngineHandlers = {
 	executeMove: (uci: string, isPremove?: boolean) => Promise<void>;
 	rollbackToServer: () => void;
-	getVisualPieceAt: (square: Square) => UiPiece | null;
+	getVisualPieceAt: (square: Square) => Piece | null;
 	ownsSquare: (square: Square) => boolean;
 	canPlayMove: () => boolean;
 	canQueuePremove: () => boolean;
 	isPromotionMove: (source: string, target: string) => boolean;
-	isPremovePromotion: (piece: UiPiece, target: Square) => boolean;
-	setPremoveQueue: React.Dispatch<React.SetStateAction<UiPremove[]>>;
-	setPromotionRequest: React.Dispatch<React.SetStateAction<UiPromotionRequest>>;
+	isPremovePromotion: (piece: Piece, target: Square) => boolean;
+	setPremoveQueue: React.Dispatch<React.SetStateAction<PremoveModel[]>>;
+	setPromotionRequest: React.Dispatch<React.SetStateAction<PromotionRequestModel>>;
 };
 
 export type GameEngineInfo = {
-	myColor: GameColor;
-	boardOrientation: "white" | "black";
+	myColor: Color;
+	boardOrientation: Color;
 	playerColor: Color;
 	isMyGame: boolean;
-	gameEnded: boolean;
+	isGameEnded: boolean;
 	status: GameStatusName | null;
 	winner: string | null;
 };
@@ -97,38 +97,42 @@ export function useGameEngine({
 	const chessRef = useRef(chess);
 	const [pendingUci, setPendingUci] = useState<string | null>(null);
 	const [pendingIsPremove, setPendingIsPremove] = useState(false);
-	const [premoveQueue, setPremoveQueue] = useState<UiPremove[]>([]);
+	const [premoveQueue, setPremoveQueue] = useState<PremoveModel[]>([]);
 	const [lastMoveSquares, setLastMoveSquares] = useState<{
 		from: Square | null;
 		to: Square | null;
 	}>({ from: null, to: null });
 	const [checkSquare, setCheckSquare] = useState<Square | null>(null);
-	const [promotionRequest, setPromotionRequest] = useState<UiPromotionRequest>(null);
+	const [promotionRequest, setPromotionRequest] = useState<PromotionRequestModel>(null);
 
 	// Derived game state
 	const status = gameFull?.state?.status ?? null;
 	const winner = gameFull?.state?.winner ?? null;
-	const gameEnded = Boolean(status) && status !== GameStatusName.started;
+	const isGameEnded = Boolean(status) && status !== GameStatusName.started;
 
 	const myColor = getPlayerColor(gameFull, user);
-	const boardOrientation = (myColor ?? GameColor.white) as "white" | "black";
-	const playerColor: Color = boardOrientation === GameColor.white ? "w" : "b";
+	const boardOrientation = myColor ?? Color.white;
+	const playerColor: Color = boardOrientation;
 	const isMyGame = Boolean(gameFull && isPlayerInGame(gameFull, user));
 
 	// Move permission checks
 	const canPlayMove = useCallback(
 		() =>
 			isConnected &&
-			!gameEnded &&
+			!isGameEnded &&
 			isMyGame &&
 			pendingUci == null &&
-			chessRef.current.turn() === playerColor,
-		[isConnected, gameEnded, isMyGame, pendingUci, playerColor],
+			chessColorToGameColor(chessRef.current.turn()) === playerColor,
+		[isConnected, isGameEnded, isMyGame, pendingUci, playerColor],
 	);
 
 	const canQueuePremove = useCallback(
-		() => isConnected && !gameEnded && isMyGame && chessRef.current.turn() !== playerColor,
-		[isConnected, gameEnded, isMyGame, playerColor],
+		() =>
+			isConnected &&
+			!isGameEnded &&
+			isMyGame &&
+			chessColorToGameColor(chessRef.current.turn()) !== playerColor,
+		[isConnected, isGameEnded, isMyGame, playerColor],
 	);
 
 	// Reset board to last known server state on error
@@ -164,16 +168,16 @@ export function useGameEngine({
 	}, []);
 
 	// Check if a pawn move to target square is a premove promotion
-	const isPremovePromotion = useCallback((piece: UiPiece, target: Square): boolean => {
+	const isPremovePromotion = useCallback((piece: Piece, target: Square): boolean => {
 		if (piece.type !== "p") return false;
 		return (piece.color === "w" && target[1] === "8") || (piece.color === "b" && target[1] === "1");
 	}, []);
 
 	// Build board position = server + pending board + local premove overlay
 	const { boardPosition, ghostPieces } = useMemo(() => {
-		const baseBoard = boardFromChess(chess);
-		let visualBoard: UiBoard;
-		let ghosts: UiGhostPiece[] = [];
+		const baseBoard = pieceMapFromChess(chess);
+		let visualBoard: PieceMap;
+		let ghosts: GhostPieceModel[] = [];
 
 		if (premoveQueue.length > 0) {
 			const result = applyPremoves(baseBoard, premoveQueue);
@@ -195,17 +199,17 @@ export function useGameEngine({
 			}
 		}
 
-		const pos = boardToChessboardPosition(visualBoard);
+		const pos = pieceMapToChessboard(visualBoard);
 
 		const shouldShowGhosts = premoveQueue.length > 0 || promotionRequest?.mode === "premove";
 		return { boardPosition: pos, ghostPieces: shouldShowGhosts ? ghosts : [] };
 	}, [chess, premoveQueue, promotionRequest]);
 
 	const getVisualPieceAt = useCallback(
-		(square: Square): UiPiece | null => {
+		(square: Square): Piece | null => {
 			const entry = boardPosition[square];
 			if (!entry) return null;
-			return keyToPiece(entry.pieceType as UiPieceKey);
+			return keyToPiece(entry.pieceType as PieceMapKey);
 		},
 		[boardPosition],
 	);
@@ -214,7 +218,7 @@ export function useGameEngine({
 		(square: Square) => {
 			const piece = getVisualPieceAt(square);
 			if (!piece) return false;
-			return piece.color === playerColor;
+			return chessColorToGameColor(piece.color) === playerColor;
 		},
 		[getVisualPieceAt, playerColor],
 	);
@@ -233,7 +237,7 @@ export function useGameEngine({
 
 		const next = new Chess(serverFen);
 
-		if (!gameEnded && pendingUci) {
+		if (!isGameEnded && pendingUci) {
 			try {
 				const move = uciToMove(pendingUci);
 				const result = next.move(move);
@@ -247,7 +251,7 @@ export function useGameEngine({
 				setPendingUci(null);
 				setPendingIsPremove(false);
 			}
-		} else if (gameEnded && pendingUci) {
+		} else if (isGameEnded && pendingUci) {
 			setPendingUci(null);
 			setPendingIsPremove(false);
 		}
@@ -263,15 +267,15 @@ export function useGameEngine({
 		}
 
 		setChess(next);
-	}, [serverFen, pendingUci, gameEnded, serverHistory]);
+	}, [serverFen, pendingUci, isGameEnded, serverHistory]);
 
 	// Keep ref in sync, and update check highlight
 	useEffect(() => {
 		chessRef.current = chess;
 
 		if (chess.isCheck()) {
-			const uiBoard = boardFromChess(chess);
-			setCheckSquare(findKingSquare(uiBoard, chess.turn()) ?? null);
+			const pieceMap = pieceMapFromChess(chess);
+			setCheckSquare(findKingSquare(pieceMap, chessColorToGameColor(chess.turn())) ?? null);
 		} else {
 			setCheckSquare(null);
 		}
@@ -282,7 +286,7 @@ export function useGameEngine({
 		if (!gameFull) return;
 		if (!isMyGame) return;
 		if (!isConnected) return;
-		if (gameEnded) return;
+		if (isGameEnded) return;
 		if (!premoveQueue.length) return;
 		if (pendingUci) return;
 
@@ -312,15 +316,10 @@ export function useGameEngine({
 			const testBoard = new Chess(serverFen);
 			const moveResult = testBoard.move(uciToMove(next.uci));
 			if (moveResult) {
-				const moveData: UiMove = {
+				const moveData: MoveModel = {
+					...moveResult,
 					uci: next.uci,
-					from: next.from,
-					to: next.to,
-					san: moveResult.san,
 					fen: testBoard.fen(),
-					color: moveResult.color,
-					captured: moveResult.captured,
-					promotion: moveResult.promotion,
 					check: testBoard.isCheck(),
 				};
 				const soundEvent = new CustomEvent("chess-premove-sound", { detail: moveData });
@@ -335,7 +334,7 @@ export function useGameEngine({
 		serverTurn,
 		isMyGame,
 		isConnected,
-		gameEnded,
+		isGameEnded,
 		premoveQueue,
 		pendingUci,
 		playerColor,
@@ -344,15 +343,17 @@ export function useGameEngine({
 
 	// Clean up on game end
 	useEffect(() => {
-		if (!gameEnded) return;
+		if (!isGameEnded) return;
 		setPromotionRequest(null);
 		setPendingUci(null);
 		setPendingIsPremove(false);
 		setPremoveQueue([]);
-	}, [gameEnded]);
+	}, [isGameEnded]);
 
 	const moveHistory = useMemo(() => {
-		const serverSans = serverHistory.map((m) => m.san);
+		const serverSans = serverHistory
+			.map((m) => m.san)
+			.filter((s): s is string => typeof s === "string");
 		const localSans = chess.history();
 		return [...serverSans, ...localSans];
 	}, [serverHistory, chess]);
@@ -390,7 +391,7 @@ export function useGameEngine({
 			boardOrientation,
 			playerColor,
 			isMyGame,
-			gameEnded,
+			isGameEnded,
 			status,
 			winner,
 		},

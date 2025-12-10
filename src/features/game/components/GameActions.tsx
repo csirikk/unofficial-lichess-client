@@ -1,6 +1,8 @@
 import { CircleX, Flag, Handshake, RotateCcw, Undo2, Play, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../../../components/Button";
+import type { GameStatusModel, Offers, BothPlayersModel } from "../model/types";
+import { GameColor as Color } from "../../../generated/types/gameColor";
 
 export type GameAction = {
 	label: string;
@@ -28,15 +30,11 @@ export type ControlsProps = {
 	onNewGame: () => void;
 	onShowResults?: () => void;
 	isConnected: boolean;
-	gameEnded: boolean;
-	moveCount: number;
-	modalDismissed?: boolean;
-	drawOfferedByMe?: boolean;
-	drawOfferedByOpponent?: boolean;
-	takebackOfferedByMe?: boolean;
-	takebackOfferedByOpponent?: boolean;
-	rematchPending?: boolean;
-	isBotGame?: boolean;
+	totalMoves: number;
+	isModalDismissed?: boolean;
+	offers: Offers;
+	status: GameStatusModel;
+	players: BothPlayersModel;
 };
 
 export function Controls({
@@ -48,24 +46,48 @@ export function Controls({
 	onNewGame,
 	onShowResults,
 	isConnected,
-	gameEnded,
-	moveCount,
-	modalDismissed = false,
-	drawOfferedByMe = false,
-	drawOfferedByOpponent = false,
-	takebackOfferedByMe = false,
-	takebackOfferedByOpponent = false,
-	rematchPending = false,
-	isBotGame = false,
+	totalMoves,
+	isModalDismissed = false,
+	offers,
+	status,
+	players,
 }: ControlsProps) {
 	const [resignConfirming, setResignConfirming] = useState(false);
 
+	// Derive values from unified types
+	const hasGameEnded = status.isOver;
+	const myColor = players.me?.color;
+	const isBotGame = players.opponent?.isBot ?? false;
+
+	// Calculate offer states based on my color
+	const hasDrawOfferedByMe = myColor
+		? myColor === Color.white
+			? offers.drawOfferedByWhite
+			: offers.drawOfferedByBlack
+		: false;
+	const hasDrawOfferedByOpponent = myColor
+		? myColor === Color.white
+			? offers.drawOfferedByBlack
+			: offers.drawOfferedByWhite
+		: false;
+	const hasTakebackOfferedByMe = myColor
+		? myColor === Color.white
+			? offers.takebackOfferedByWhite
+			: offers.takebackOfferedByBlack
+		: false;
+	const hasTakebackOfferedByOpponent = myColor
+		? myColor === Color.white
+			? offers.takebackOfferedByBlack
+			: offers.takebackOfferedByWhite
+		: false;
+	const isRematchPending = offers.rematchPending;
+
 	// Reset resign confirmation when game ends or on any other action
 	useEffect(() => {
-		if (gameEnded) {
+		if (hasGameEnded) {
 			setResignConfirming(false);
 		}
-	}, [gameEnded]);
+	}, [hasGameEnded]);
 
 	// Reset resign confirmation on any click outside
 	useEffect(() => {
@@ -109,10 +131,10 @@ export function Controls({
 		};
 	};
 
-	if (gameEnded) {
+	if (hasGameEnded) {
 		return (
 			<div className="flex flex-col gap-3">
-				{onShowResults && modalDismissed && (
+				{onShowResults && isModalDismissed && (
 					<Button variant="text" size="lg" fullWidth onClick={onShowResults}>
 						Show Results
 					</Button>
@@ -121,11 +143,11 @@ export function Controls({
 					fullWidth
 					size="lg"
 					onClick={onRematch}
-					disabled={rematchPending}
+					disabled={isRematchPending}
 					aria-label="Rematch"
 				>
 					<RotateCcw className="h-5 w-5" aria-hidden />
-					{rematchPending ? "Rematch Sent..." : "Rematch"}
+					{isRematchPending ? "Rematch Sent..." : "Rematch"}
 				</Button>
 				<Button variant="outline" size="lg" fullWidth onClick={onNewGame}>
 					<Play className="h-5 w-5 fill-current" />
@@ -139,43 +161,43 @@ export function Controls({
 		...(!isBotGame
 			? [
 					{
-						label: drawOfferedByOpponent
+						label: hasDrawOfferedByOpponent
 							? "Accept Draw"
-							: drawOfferedByMe
+							: hasDrawOfferedByMe
 								? "Draw Offered"
 								: "Offer Draw",
 						icon: Handshake,
 						onClick: handleOtherAction(onOfferDraw),
-						disabled: !isConnected || drawOfferedByMe,
-						badge: drawOfferedByOpponent ? "!" : undefined,
+						disabled: !isConnected || hasDrawOfferedByMe,
+						badge: hasDrawOfferedByOpponent ? "!" : undefined,
 					},
 				]
 			: []),
 		{
-			label: takebackOfferedByOpponent
+			label: hasTakebackOfferedByOpponent
 				? "Accept Takeback"
-				: takebackOfferedByMe
+				: hasTakebackOfferedByMe
 					? "Takeback Sent"
 					: isBotGame
 						? "Takeback"
 						: "Request Takeback",
 			icon: Undo2,
 			onClick: handleOtherAction(onTakeback),
-			disabled: !isConnected || takebackOfferedByMe || moveCount < 1,
-			badge: takebackOfferedByOpponent ? "!" : undefined,
+			disabled: !isConnected || hasTakebackOfferedByMe || totalMoves < 1,
+			badge: hasTakebackOfferedByOpponent ? "!" : undefined,
 		},
 		{
 			label: resignConfirming ? "Confirm Resign?" : "Resign",
 			icon: Flag,
 			onClick: handleResignClick,
-			disabled: !isConnected || moveCount < 2,
+			disabled: !isConnected || totalMoves < 2,
 			variant: resignConfirming ? "dangerr" : undefined,
 		},
 		{
 			label: "Abort",
 			icon: CircleX,
 			onClick: handleOtherAction(onAbort),
-			disabled: !isConnected || moveCount >= 2,
+			disabled: !isConnected || totalMoves >= 2,
 		},
 	];
 

@@ -6,12 +6,12 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { playSound, type SoundType } from "../model/sounds";
-import type { UiMove } from "../model/chess";
+import type { MoveModel } from "../model/chess";
 
 type SoundEffectsConfig = {
-	moveHistory: UiMove[];
-	gameStarted: boolean;
-	gameEnded: boolean;
+	moveHistory: MoveModel[];
+	isGameStarted: boolean;
+	isGameEnded: boolean;
 	isViewingHistory: boolean;
 	viewingMoveIndex: number | null;
 	whiteTime?: number;
@@ -19,7 +19,7 @@ type SoundEffectsConfig = {
 };
 
 // Priority: check > castle > promotion > capture > normal move
-function detectMoveSound(move: UiMove): SoundType {
+function detectMoveSound(move: MoveModel): SoundType {
 	if (move.check) {
 		return "move-check";
 	}
@@ -41,12 +41,12 @@ function detectMoveSound(move: UiMove): SoundType {
 }
 
 export function useSoundEffects(config: SoundEffectsConfig): {
-	playMoveSound: (move: UiMove) => void;
+	playMoveSound: (move: MoveModel) => void;
 } {
 	const {
 		moveHistory,
-		gameStarted,
-		gameEnded,
+		isGameStarted,
+		isGameEnded,
 		isViewingHistory,
 		viewingMoveIndex,
 		whiteTime,
@@ -68,23 +68,23 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 
 	// Play game start sound
 	useEffect(() => {
-		if (gameStarted && !gameStartedRef.current && !isViewingHistory) {
+		if (isGameStarted && !gameStartedRef.current && !isViewingHistory) {
 			playSound("game-start");
 			gameStartedRef.current = true;
 		}
-	}, [gameStarted, isViewingHistory]);
+	}, [isGameStarted, isViewingHistory]);
 
 	// Play game end sound
 	useEffect(() => {
-		if (gameEnded && !gameEndedRef.current && !isViewingHistory) {
+		if (isGameEnded && !gameEndedRef.current && !isViewingHistory) {
 			playSound("game-end");
 			gameEndedRef.current = true;
 		}
-	}, [gameEnded, isViewingHistory]);
+	}, [isGameEnded, isViewingHistory]);
 
 	// Optimistic move sound
 	const playMoveSound = useCallback(
-		(move: UiMove) => {
+		(move: MoveModel) => {
 			if (isViewingHistory) return;
 			const soundType = detectMoveSound(move);
 			playSound(soundType);
@@ -99,7 +99,7 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 	// Listen for premove execution events and play sound immediately
 	useEffect(() => {
 		const handlePremoveSound = (event: Event) => {
-			const customEvent = event as CustomEvent<UiMove>;
+			const customEvent = event as CustomEvent<MoveModel>;
 			if (customEvent.detail) {
 				playMoveSound(customEvent.detail);
 			}
@@ -154,7 +154,7 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 
 	// Ten seconds warning
 	useEffect(() => {
-		if (isViewingHistory || !gameStarted || gameEnded) return;
+		if (isViewingHistory || !isGameStarted || isGameEnded) return;
 
 		const TEN_SECONDS_MS = 10000;
 		const RESET_THRESHOLD_MS = 15000;
@@ -198,10 +198,10 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 
 			tenSecondsPlayedRef.current.black.lastTime = blackTime;
 		}
-	}, [whiteTime, blackTime, isViewingHistory, gameStarted, gameEnded]);
+	}, [whiteTime, blackTime, isViewingHistory, isGameStarted, isGameEnded]);
 
 	useEffect(() => {
-		if (!gameStarted) {
+		if (!isGameStarted) {
 			playedMovesRef.current.clear();
 			lastProcessedIndexRef.current = -1;
 			gameStartedRef.current = false;
@@ -210,10 +210,10 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 				white: { played: false, lastTime: null },
 				black: { played: false, lastTime: null },
 			};
-		} else if (gameEnded) {
+		} else if (isGameEnded) {
 			playedMovesRef.current.clear();
 		}
-	}, [gameStarted, gameEnded]);
+	}, [isGameStarted, isGameEnded]);
 
 	return { playMoveSound };
 }

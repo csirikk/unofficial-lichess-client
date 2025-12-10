@@ -1,3 +1,4 @@
+import type { GameColor as Color } from "../../../generated/types/gameColor";
 import {
 	apiBoardSeek,
 	boardGameAbort,
@@ -75,7 +76,7 @@ export async function requestTakeback(gameId: string, accept: boolean = false) {
 
 export async function handleRematch(
 	gameFull: GameFullEvent,
-	myColor: "white" | "black" | null,
+	myColor: Color | null,
 ): Promise<{ gameId: string } | { success: true }> {
 	if (!myColor) {
 		throw new Error("Cannot rematch: player color unknown");

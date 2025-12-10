@@ -5,16 +5,16 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameFullEvent, GameStateEvent } from "../../../generated/types";
-import type { Color } from "chess.js";
+import { GameColor as Color } from "../../../generated/types/gameColor";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
-import type { UiMove } from "../model/chess";
+import type { MoveModel } from "../model/chess";
 
 export type ClockConfig = {
 	gameFull: GameFullEvent | null;
 	gameState: GameStateEvent | null;
 	pendingMove: string | null;
 	serverTurn: Color;
-	serverHistory: UiMove[];
+	serverHistory: MoveModel[];
 };
 
 export type ClockState = {
@@ -42,7 +42,7 @@ export function useGameClock({
 	const [now, setNow] = useState(() => Date.now());
 
 	const turnStartedAtRef = useRef<number | null>(null); // when current activeColor turn started
-	const lastUiTurnRef = useRef<ClockColor | null>(null); // previous UI turn
+	const lastTurnRef = useRef<ClockColor | null>(null); // previous turn
 	const hasStartedRef = useRef(false); // has any move been played
 	const lastGameIdRef = useRef<string | null>(null); // to detect new game
 
@@ -59,7 +59,7 @@ export function useGameClock({
 			lastGameIdRef.current = currentGameId;
 
 			hasStartedRef.current = false;
-			lastUiTurnRef.current = null;
+			lastTurnRef.current = null;
 			turnStartedAtRef.current = null;
 			lastServerWhiteMsRef.current = null;
 			lastServerBlackMsRef.current = null;
@@ -101,13 +101,17 @@ export function useGameClock({
 		const lastMove = serverHistory[serverHistory.length - 1];
 		const hasPendingNotAcked = !!pendingMove && lastMove?.uci !== pendingMove;
 
-		// UI turn (flip during pending move)
-		const uiTurn: ClockColor = hasPendingNotAcked ? (serverTurn === "w" ? "b" : "w") : serverTurn;
+		// turn (flip during pending move)
+		const turn: ClockColor = hasPendingNotAcked
+			? serverTurn === Color.white
+				? Color.black
+				: Color.white
+			: serverTurn;
 
-		const prevUiTurn = lastUiTurnRef.current;
+		const prevTurn = lastTurnRef.current;
 		const prevHadStarted = hasStartedRef.current;
 
-		lastUiTurnRef.current = uiTurn;
+		lastTurnRef.current = turn;
 
 		// Game starts only after both sides move
 		if (moveCount > 1 && !hasStartedRef.current) {
@@ -149,14 +153,14 @@ export function useGameClock({
 		// GRACE to RUNNING (first move appeared or mid-game)
 		if (!prevHadStarted && hasStartedRef.current) {
 			// No previous turn to wrap, just enforce server time for current player
-			if (uiTurn === "w") {
+			if (turn === Color.white) {
 				if (wtime != null) setWhiteBaseMs(wtime);
 			} else {
 				if (btime != null) setBlackBaseMs(btime);
 			}
 			turnStartedAtRef.current = nowTs;
 			setIsRunning(true);
-			setActiveColor(uiTurn);
+			setActiveColor(turn);
 			setNow(nowTs);
 			return;
 		}
@@ -165,13 +169,13 @@ export function useGameClock({
 		const wInc = winc;
 		const bInc = binc;
 
-		if (prevUiTurn && prevUiTurn !== uiTurn) {
+		if (prevTurn && prevTurn !== turn) {
 			const turnStartedAt = turnStartedAtRef.current;
 			const elapsed = turnStartedAt != null ? nowTs - turnStartedAt : 0;
 
 			// Finish previous turn: subtract time elapsed + add increment
 			if (elapsed > 0) {
-				if (prevUiTurn === "w") {
+				if (prevTurn === Color.white) {
 					setWhiteBaseMs((prev) => {
 						if (prev == null) return prev;
 						const afterMove = Math.max(0, prev - elapsed) + wInc;
@@ -187,7 +191,7 @@ export function useGameClock({
 			}
 
 			// Start new turn: enforce their server time now
-			if (uiTurn === "w") {
+			if (turn === Color.white) {
 				if (wtime != null) setWhiteBaseMs(wtime);
 			} else {
 				if (btime != null) setBlackBaseMs(btime);
@@ -195,12 +199,12 @@ export function useGameClock({
 
 			turnStartedAtRef.current = nowTs;
 			setIsRunning(true);
-			setActiveColor(uiTurn);
+			setActiveColor(turn);
 			setNow(nowTs);
 			return;
 		}
 
-		setActiveColor(uiTurn);
+		setActiveColor(turn);
 		setIsRunning(true);
 	}, [gameFull, gameState, pendingMove, initialTime, serverTurn, serverHistory]);
 
@@ -230,8 +234,8 @@ export function useGameClock({
 		return Math.max(0, baseMs - elapsed);
 	};
 
-	const whiteMs = computeDisplayMs(whiteBaseMs, "w");
-	const blackMs = computeDisplayMs(blackBaseMs, "b");
+	const whiteMs = computeDisplayMs(whiteBaseMs, Color.white);
+	const blackMs = computeDisplayMs(blackBaseMs, Color.black);
 
 	return {
 		whiteMs,

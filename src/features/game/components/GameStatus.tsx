@@ -1,104 +1,42 @@
 import { Clock, ChessPawn, ChessKing } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
-import type { GameStatusName } from "../../../generated/types/gameStatusName";
-import type { GameEventInfo } from "../../../generated/types/gameEventInfo";
-import type { GameJson } from "../../../generated/types/gameJson";
-import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
-import {
-	formatOpening,
-	formatTimeControl,
-	normalizeClockToSeconds,
-	getGameModeLabel,
-	getGameStatusLong,
-	getGameStatusShort,
-	getGameOutcome,
-	getOutcomeColorClass,
-	getOutcomeLabel,
-} from "../model/game-info-helpers";
+import type { GameStatusModel, GameInfoModel, NetworkModel } from "../model/types";
 
 export type GameStatusProps = {
-	gameEnded: boolean;
-	winner: string | null;
-	myColor: "white" | "black" | null;
-	status: GameStatusName | null;
-	isConnected: boolean;
-	isConnecting: boolean;
-	isReconnecting: boolean;
-	isOffline: boolean;
-	streamNotFound: boolean;
-	error?: string | null;
-	gameEventInfo?: GameEventInfo | null;
-	gameJson?: GameJson | null;
-	gameFull?: GameFullEvent | null;
+	status: GameStatusModel;
+	info: GameInfoModel;
+	network: NetworkModel;
 	className?: string;
 };
 
-export function GameStatus({
-	gameEnded,
-	winner,
-	myColor,
-	status,
-	isConnected,
-	isConnecting,
-	isReconnecting,
-	isOffline,
-	streamNotFound,
-	error,
-	gameEventInfo,
-	gameJson,
-	gameFull,
-	className = "",
-}: GameStatusProps) {
-	const outcome = getGameOutcome(winner, myColor);
-
-	const speed = gameJson?.speed || gameEventInfo?.speed || gameFull?.speed;
-	const rated = gameJson?.rated ?? gameEventInfo?.rated ?? gameFull?.rated;
-	const rawClock = gameJson?.clock || gameFull?.clock;
-	const clock = normalizeClockToSeconds(rawClock);
-	const opening = gameJson?.opening;
-
-	const itemDefs = [
-		{ icon: ChessKing, label: getGameModeLabel(speed, rated) },
-		{ icon: Clock, label: formatTimeControl(clock) },
-		{ icon: ChessPawn, label: formatOpening(opening) ?? "" },
+export function GameStatus({ status, info, network, className = "" }: GameStatusProps) {
+	const gameInfoItems = [
+		{ icon: ChessKing, label: info.gameModeLabel, hidden: !info.gameModeLabel },
+		{ icon: Clock, label: info.timeControlLabel, hidden: !info.timeControlLabel },
+		{
+			icon: ChessPawn,
+			label: info.opening?.name ?? "",
+			hidden: !info.opening?.name,
+		},
 	];
-
-	const gameInfoItems = itemDefs.map((d) => ({
-		icon: d.icon as React.ComponentType<{ className?: string }>,
-		label: d.label,
-		value: "",
-		hidden: !d.label,
-	}));
 
 	return (
 		<div className={`mb-2 shrink-0 ${className}`}>
 			<div
 				className={`text-4xl font-semibold ${
-					gameEnded ? getOutcomeColorClass(outcome) : "text-[rgb(var(--color-fg-secondary))]"
+					status.isOver ? status.outcomeColorClass : "text-[rgb(var(--color-fg-secondary))]"
 				}`}
 			>
-				{gameEnded ? (
-					<span className="uppercase tracking-wide">{getOutcomeLabel(outcome)}</span>
-				) : status ? (
-					<span className="uppercase tracking-wide">{getGameStatusShort(status)}</span>
-				) : (
-					<span className="uppercase tracking-wide">Unknown</span>
-				)}
+				<span className="uppercase tracking-wide">
+					{status.isOver ? status.outcomeLabel : status.statusShort || "Unknown"}
+				</span>
 			</div>
 
 			<div className="text-sm font-medium">
-				{gameEnded ? (
-					<span className="text-[rgb(var(--color-fg-secondary))]">
-						{getGameStatusLong(status, winner, myColor)}
-					</span>
+				{status.isOver ? (
+					<span className="text-[rgb(var(--color-fg-secondary))]">{status.statusText}</span>
 				) : (
-					<ConnectionStatus
-						isConnected={isConnected}
-						isConnecting={isConnecting}
-						isReconnecting={isReconnecting}
-						isOffline={isOffline}
-						streamNotFound={streamNotFound}
-					/>
+					<ConnectionStatus network={network} />
 				)}
 			</div>
 
@@ -120,8 +58,8 @@ export function GameStatus({
 				</div>
 			)}
 
-			{error ? (
-				<div className="mt-2 text-xs text-[rgb(var(--color-error))]">Error: {error}</div>
+			{network.error ? (
+				<div className="mt-2 text-xs text-[rgb(var(--color-error))]">Error: {network.error}</div>
 			) : (
 				<div className="mt-2 text-xs text-[rgb(var(--color-error))] invisible">Error</div>
 			)}

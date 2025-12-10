@@ -4,7 +4,8 @@
  * Manages the game stream connection to Lichess Board API.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Chess, type Color } from "chess.js";
+import { Chess } from "chess.js";
+import { GameColor as Color } from "../../../generated/types/gameColor";
 import { boardGameMove, boardGameStream } from "../../../generated/client/board";
 import type { BoardGameStream200 } from "../../../generated/types/boardGameStream200";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
@@ -12,7 +13,7 @@ import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
 import { createAuthHeaders, createStreamHeaders } from "../../../lib/api";
 import { readNdjsonStream, type StreamControl } from "../../../lib/stream";
-import { buildGameHistory, type UiMove } from "../model/chess";
+import { buildGameHistory, type MoveModel } from "../model/chess";
 
 const RECONNECT_DELAYS = [250, 500, 1000, 2000, 5000]; // ms between attempts
 
@@ -21,7 +22,7 @@ export type GameStreamState = {
 	gameState: GameStateEvent | null;
 	serverFen: string;
 	serverTurn: Color;
-	serverHistory: UiMove[];
+	serverHistory: MoveModel[];
 	error: string | null;
 	streamNotFound: boolean;
 	isConnected: boolean;
@@ -38,8 +39,8 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	const [gameFull, setGameFull] = useState<GameFullEvent | null>(null);
 	const [gameState, setGameState] = useState<GameStateEvent | null>(null);
 	const [serverFen, setServerFen] = useState<string>(() => new Chess().fen());
-	const [serverTurn, setServerTurn] = useState<Color>("w");
-	const [serverHistory, setServerHistory] = useState<UiMove[]>([]);
+	const [serverTurn, setServerTurn] = useState<Color>(Color.white);
+	const [serverHistory, setServerHistory] = useState<MoveModel[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [streamNotFound, setStreamNotFound] = useState(false);
 
@@ -77,7 +78,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 			setGameFull(null);
 			setGameState(null);
 			setServerFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-			setServerTurn("w");
+			setServerTurn(Color.white);
 			setServerHistory([]);
 			setError(null);
 			setStreamNotFound(false);

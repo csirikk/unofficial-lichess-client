@@ -1,19 +1,18 @@
-import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { PieceSymbol } from "chess.js";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";
 import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 import { useMemo } from "react";
-
-export type PlayerInfo = {
-	name: string;
-	rating: string;
-	ratingDelta?: number | null;
-};
+import type { ClockModel, PlayerModel, Material, RatingDeltas } from "../model/types";
+import type { GameColor as Color } from "../../../generated/types/gameColor";
 
 export type ClockProps = {
-	color: "white" | "black";
+	color: Color;
 	position: "top" | "bottom";
-	player: PlayerInfo;
+	player: {
+		name: string;
+		rating: string;
+		ratingDelta?: number | null;
+	};
 	timeMs: number | null;
 	isActive: boolean;
 	isUnlimited: boolean;
@@ -118,67 +117,62 @@ export function Clock({
 }
 
 export type ClockPanelProps = {
-	gameFull: GameFullEvent | null;
-	whiteMs: number | null;
-	blackMs: number | null;
-	activeColor: "w" | "b" | null;
-	timerOrder: Array<"white" | "black">;
-	captured: { white: PieceSymbol[]; black: PieceSymbol[] };
-	whiteDiff: number;
-	blackDiff: number;
-	gameEnded?: boolean;
-	winner?: string | null;
-	myColor?: "white" | "black" | null;
+	/** Unified clock object - single source of truth for all clock state */
+	clock: ClockModel;
+	/** Players from unified model */
+	whitePlayer: PlayerModel;
+	blackPlayer: PlayerModel;
+	/** Timer display order based on board orientation */
+	timerOrder: Color[];
+	/** Grouped material state - captured pieces and material differences */
+	material: Material;
+	/** Optional rating changes to display */
+	ratingChanges?: RatingDeltas;
 };
 
 /**
  * Renders both player clocks.
  */
 export function ClockPanel({
-	gameFull,
-	whiteMs,
-	blackMs,
-	activeColor,
+	clock,
+	whitePlayer,
+	blackPlayer,
 	timerOrder,
-	captured,
-	whiteDiff,
-	blackDiff,
+	material,
+	ratingChanges,
 }: ClockPanelProps) {
-	const isUnlimited = !gameFull?.clock;
+	const {
+		captured: capturedPieces,
+		whiteDiff: whiteMaterialDiff,
+		blackDiff: blackMaterialDiff,
+	} = material;
+	// Trust the unified model - all display strings are pre-calculated
+	const isUnlimited = clock.isUnlimited;
 
-	// Calculate rating differences for rated games
 	const playerPanels = {
 		white: {
-			name: gameFull?.white?.name ?? "Bot",
-			rating:
-				gameFull?.white?.rating != null
-					? `(${gameFull.white.rating})`
-					: gameFull?.white?.aiLevel != null
-						? `(Level ${gameFull.white.aiLevel})`
-						: "",
+			name: whitePlayer.displayName,
+			rating: `(${whitePlayer.displayRating})`,
+			ratingDelta: ratingChanges?.white ?? null,
 		},
 		black: {
-			name: gameFull?.black?.name ?? "Bot",
-			rating:
-				gameFull?.black?.rating != null
-					? `(${gameFull.black.rating})`
-					: gameFull?.black?.aiLevel != null
-						? `(Level ${gameFull.black.aiLevel})`
-						: "",
+			name: blackPlayer.displayName,
+			rating: `(${blackPlayer.displayRating})`,
+			ratingDelta: ratingChanges?.black ?? null,
 		},
 	};
 
 	return (
 		<div className="w-fit space-y-2">
 			{timerOrder.map((color, index) => {
-				const isWhite = color === "white";
-				let ms = isWhite ? whiteMs : blackMs;
+				const isWhite = color === ("white" as Color);
+				let ms: number | null = isWhite ? clock.whiteTime : clock.blackTime;
 				if (isUnlimited) {
 					ms = null;
 				}
-				const isActive = activeColor === (isWhite ? "w" : "b");
-				const myCaptured = isWhite ? captured.white : captured.black;
-				const diff = isWhite ? whiteDiff : blackDiff;
+				const isActive = clock.activeColor === color && clock.isActive;
+				const myCaptured = isWhite ? capturedPieces.white : capturedPieces.black;
+				const diff = isWhite ? whiteMaterialDiff : blackMaterialDiff;
 
 				return (
 					<Clock

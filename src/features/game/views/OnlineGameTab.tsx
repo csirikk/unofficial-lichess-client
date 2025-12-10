@@ -7,7 +7,7 @@ import { SelectableCardGrid } from "../../../components/SelectableCardGrid";
 import {
 	type GameSetup,
 	type SetupColorChoice,
-	UI_TIME_PRESETS,
+	TIME_PRESETS,
 	createDefaultGameSetup,
 } from "../model/setup";
 
@@ -53,7 +53,7 @@ export function OnlineGameTab({
 			? "Creating seek…"
 			: "Find Opponent";
 
-	const availablePresets = UI_TIME_PRESETS.filter((p) => p.category !== "unlimited");
+	const availablePresets = TIME_PRESETS.filter((p) => p.category !== "unlimited");
 
 	return (
 		<Card

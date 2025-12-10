@@ -1,4 +1,7 @@
-export type TimeCategory = "unlimited" | "bullet" | "blitz" | "rapid" | "classical";
+import type { SpeedBucket } from "./types";
+import type { ChallengeColor } from "../../../generated/types/challengeColor";
+
+export type TimeCategory = SpeedBucket;
 
 export type TimePreset = {
 	id: string;
@@ -9,7 +12,7 @@ export type TimePreset = {
 	category: TimeCategory;
 };
 
-export const UI_TIME_PRESETS: TimePreset[] = [
+export const TIME_PRESETS: TimePreset[] = [
 	// Unlimited
 	{
 		id: "unlimited",
@@ -124,14 +127,14 @@ export const UI_TIME_PRESETS: TimePreset[] = [
 /**
  * Player color selection for game setup.
  */
-export type SetupColorChoice = "white" | "black" | "random";
+export type SetupColorChoice = ChallengeColor;
 
 /**
  * Configuration for setting up a new game.
  */
 export type GameSetup = {
 	timePresetId: string;
-	colorChoice: SetupColorChoice;
+	colorChoice: ChallengeColor;
 	rated: boolean;
 };
 
@@ -146,7 +149,7 @@ export type SetupBotLevelInfo = {
 	description: string;
 };
 
-export const UI_BOT_LEVELS: SetupBotLevelInfo[] = [
+export const BOT_LEVELS: SetupBotLevelInfo[] = [
 	{ level: 1, label: "Level 1", description: "Novice" },
 	{ level: 2, label: "Level 2", description: "Beginner" },
 	{ level: 3, label: "Level 3", description: "Casual" },
@@ -183,9 +186,9 @@ export function createDefaultGameSetup(): GameSetup {
 }
 
 export function findTimePreset(presetId: string): TimePreset | undefined {
-	return UI_TIME_PRESETS.find((p) => p.id === presetId);
+	return TIME_PRESETS.find((p) => p.id === presetId);
 }
 
 export function findBotLevel(level: SetupBotLevel): SetupBotLevelInfo | undefined {
-	return UI_BOT_LEVELS.find((b) => b.level === level);
+	return BOT_LEVELS.find((b) => b.level === level);
 }

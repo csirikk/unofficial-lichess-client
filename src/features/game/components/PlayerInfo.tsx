@@ -1,14 +1,13 @@
 import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
+import type { PlayerModel } from "../model/types";
 
 export type PlayerInfoProps = {
-	name: string;
-	rating?: number | null;
-	aiLevel?: number | null;
-	ratingDelta?: number | null;
+	player: PlayerModel;
 	size?: "sm" | "md" | "lg";
 	layout?: "horizontal" | "vertical";
 	label?: string;
 	showDelta?: boolean;
+	showRatingChange?: number | null;
 	className?: string;
 };
 
@@ -30,28 +29,19 @@ const sizeClasses = {
 	},
 };
 
-function getPlayerRatingDisplay(player: {
-	rating?: number | null;
-	aiLevel?: number | null;
-}): string | number | null {
-	if (player.rating != null) return player.rating;
-	if (player.aiLevel != null) return `Level ${player.aiLevel}`;
-	return null;
-}
-
 export function PlayerInfo({
-	name,
-	rating,
-	aiLevel,
-	ratingDelta,
+	player,
 	size = "md",
 	layout = "vertical",
 	label,
 	showDelta = true,
+	showRatingChange,
 	className = "",
 }: PlayerInfoProps) {
 	const classes = sizeClasses[size];
-	const displayRating = getPlayerRatingDisplay({ rating, aiLevel });
+	const displayName = player.displayName;
+	const displayRating = player.displayRating;
+	const ratingDelta = showRatingChange ?? null;
 
 	if (layout === "horizontal") {
 		return (
@@ -61,7 +51,7 @@ export function PlayerInfo({
 						{label}
 					</div>
 				)}
-				<div className={`font-bold truncate ${classes.name}`}>{name}</div>
+				<div className={`font-bold truncate ${classes.name}`}>{displayName}</div>
 				{displayRating && <div className={classes.rating}>({displayRating})</div>}
 				{showDelta && ratingDelta != null && (
 					<div className={`font-semibold ${classes.delta} ${getRatingDeltaClass(ratingDelta)}`}>
@@ -79,9 +69,9 @@ export function PlayerInfo({
 					{label}
 				</div>
 			)}
-			<div className={`truncate font-bold px-2 ${classes.name}`}>{name}</div>
+			<div className={`truncate font-bold px-2 ${classes.name}`}>{displayName}</div>
 			<div className={classes.rating}>
-				{displayRating || "-"}
+				{displayRating}
 				{showDelta && ratingDelta != null && (
 					<span className={`ml-1.5 ${classes.delta} ${getRatingDeltaClass(ratingDelta)}`}>
 						{formatRatingDelta(ratingDelta)}

@@ -1,7 +1,23 @@
 import type { Speed } from "../../../generated/types/speed";
+import type { VariantKey } from "../../../generated/types/variantKey";
 import type { GameJsonClock } from "../../../generated/types/gameJsonClock";
 import type { GameOpening } from "../../../generated/types/gameOpening";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
+import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
+import type { GameJson } from "../../../generated/types/gameJson";
+import type { GameStateEvent } from "../../../generated/types/gameStateEvent";
+import type { GameColor as Color } from "../../../generated/types/gameColor";
+import type {
+	GameModel,
+	PlayerModel,
+	ClockModel,
+	GameStatusModel,
+	BoardModel,
+	GameInfoModel,
+	SpeedBucket,
+} from "./types";
+import type { Square } from "chess.js";
+import { buildGameHistory, chessColorToGameColor } from "./chess";
 
 export type GameOutcome = "win" | "draw" | "loss" | null;
 
@@ -59,7 +75,7 @@ export function getPlayerRatingDisplay(player?: {
 }
 
 export function getGameStatusLong(
-	status: string | null,
+	status: GameStatusName | null,
 	winner?: string | null,
 	myColor?: string | null,
 ): string {
@@ -117,7 +133,7 @@ export function getGameStatusLong(
 	}
 }
 
-export function getGameStatusShort(status: string | null): string {
+export function getGameStatusShort(status: GameStatusName | null): string {
 	if (!status) return "Unknown";
 
 	switch (status) {
@@ -154,47 +170,69 @@ export function getGameStatusShort(status: string | null): string {
 	}
 }
 
-export function formatSpeed(speed: Speed | string | undefined): string {
-	if (!speed) return "Unknown";
+export function formatSpeed(speed: Speed | string | undefined): SpeedBucket {
+	if (!speed) return "rapid"; // Default fallback
 
-	const speedLabels: Record<string, string> = {
+	// Map known Speed values directly
+	if (
+		speed === "ultraBullet" ||
+		speed === "bullet" ||
+		speed === "blitz" ||
+		speed === "rapid" ||
+		speed === "classical" ||
+		speed === "correspondence"
+	) {
+		return speed;
+	}
+
+	// Handle custom "unlimited" for UI
+	if (speed === "unlimited") return "unlimited";
+
+	// Fallback for unknown speeds
+	return "rapid";
+}
+
+/**
+ * Get human-readable label for speed category
+ */
+export function getSpeedLabel(speed: Speed | "unlimited" | undefined): string {
+	if (!speed) return "";
+
+	const speedLabels: Record<SpeedBucket, string> = {
 		ultraBullet: "Ultra Bullet",
 		bullet: "Bullet",
 		blitz: "Blitz",
 		rapid: "Rapid",
 		classical: "Classical",
-		correspondence: "",
+		correspondence: "Correspondence",
+		unlimited: "Unlimited",
 	};
 
-	return speedLabels[speed] || speed;
+	return speedLabels[speed] || "";
 }
 
 /**
  * Normalizes clock values to seconds.
  * - GameJsonClock (exported games): values are already in seconds
  * - GameFullEventClock (live streams): values are in milliseconds
- *
- * Auto-detects the unit based on initial value:
- * If initial > 3600, assume milliseconds (otherwise would be 60+ minutes)
  */
 export function normalizeClockToSeconds(
 	clock: GameJsonClock | { initial?: number; increment?: number } | null | undefined,
+	isLiveStream: boolean = false,
 ): { initial: number; increment: number } | null {
-	if (!clock || !clock.initial) return null;
+	if (!clock || clock.initial == null) return null;
 
-	const isMilliseconds = clock.initial > 3600;
+	const increment = clock.increment || 0;
 
-	if (isMilliseconds) {
-		// GameFullEventClock: convert milliseconds to seconds
+	if (isLiveStream) {
 		return {
-			initial: clock.initial / 1000,
-			increment: (clock.increment || 0) / 1000,
+			initial: clock.initial / 1000, // ms -> s
+			increment: increment / 1000, // ms ->  s
 		};
 	} else {
-		// GameJsonClock: already in seconds
 		return {
-			initial: clock.initial,
-			increment: clock.increment || 0,
+			initial: clock.initial, // s
+			increment: increment, // s
 		};
 	}
 }
@@ -202,9 +240,8 @@ export function normalizeClockToSeconds(
 export function formatTimeControl(
 	clock: { initial: number; increment: number } | null | undefined,
 ): string {
-	if (!clock || !clock.initial) return "Unlimited";
+	if (!clock || clock.initial == null) return "Unlimited";
 
-	// Input is now guaranteed to be in seconds
 	const minutes = Math.floor(clock.initial / 60);
 	const seconds = Math.floor(clock.initial % 60);
 	const increment = Math.floor(clock.increment);
@@ -225,6 +262,7 @@ export function getGameModeDescription(
 	speed: Speed | string | undefined,
 	rated: boolean | undefined,
 	clock: GameJsonClock | { initial?: number; increment?: number } | null | undefined,
+	isLiveStream: boolean = false,
 ): string {
 	const parts: string[] = [];
 
@@ -233,12 +271,13 @@ export function getGameModeDescription(
 
 	// Speed
 	const speedStr = formatSpeed(speed);
-	if (speedStr !== "Unknown") {
-		parts.push(speedStr);
+	const speedLabel = getSpeedLabel(speedStr);
+	if (speedLabel) {
+		parts.push(speedLabel);
 	}
 
 	// Time control
-	const normalizedClock = normalizeClockToSeconds(clock);
+	const normalizedClock = normalizeClockToSeconds(clock, isLiveStream);
 	const timeControl = formatTimeControl(normalizedClock);
 	if (timeControl !== "Unlimited") {
 		parts.push(`(${timeControl})`);
@@ -258,9 +297,177 @@ export function getGameModeLabel(
 	}
 
 	const speedStr = formatSpeed(speed);
-	if (speedStr !== "Unknown") {
-		parts.push(speedStr);
+	const speedLabel = getSpeedLabel(speedStr);
+	if (speedLabel) {
+		parts.push(speedLabel);
 	}
 
 	return parts.join(" ") || "Chess";
+}
+
+export function deriveGameState(
+	gameFull: GameFullEvent | null,
+	gameState: GameStateEvent | null,
+	myColor: "white" | "black" | null,
+	clockState?: { whiteMs: number | null; blackMs: number | null; activeColor: "w" | "b" | null },
+	ratingDeltas?: { white: number | null; black: number | null } | null,
+	offers?: {
+		drawOfferedByWhite?: boolean;
+		drawOfferedByBlack?: boolean;
+		takebackOfferedByWhite?: boolean;
+		takebackOfferedByBlack?: boolean;
+		rematchPending?: boolean;
+	},
+	gameJson?: GameJson | null,
+	isLiveStream: boolean = true,
+): GameModel | null {
+	if (!gameFull) return null;
+
+	const latestState = gameState ?? gameFull.state;
+	const gameId = gameFull.id;
+
+	const buildPlayer = (color: Color): PlayerModel => {
+		const rawPlayer = color === "white" ? gameFull.white : gameFull.black;
+		const isBot = rawPlayer?.aiLevel != null;
+
+		const baseName = rawPlayer?.name || (isBot ? "Stockfish" : "Anonymous");
+		const displayName = rawPlayer?.title ? `${rawPlayer.title} ${baseName}` : baseName;
+
+		// Pre-format rating display string
+		const rating = rawPlayer?.rating ?? (isBot && rawPlayer?.aiLevel ? rawPlayer.aiLevel * 300 : 0);
+		const displayRating =
+			isBot && rawPlayer?.aiLevel
+				? `Level ${rawPlayer.aiLevel}`
+				: rating > 0
+					? rating.toString()
+					: "?";
+
+		return {
+			id: rawPlayer?.id || `${color}-player`,
+			username: baseName,
+			displayName,
+			rating,
+			displayRating,
+			title: rawPlayer?.title ?? undefined,
+			avatarUrl: undefined,
+			color,
+			isBot,
+			aiLevel: rawPlayer?.aiLevel,
+		};
+	};
+
+	const whitePlayer = buildPlayer("white");
+	const blackPlayer = buildPlayer("black");
+	const mePlayer = myColor === "white" ? whitePlayer : myColor === "black" ? blackPlayer : null;
+	const opponentPlayer =
+		myColor === "white" ? blackPlayer : myColor === "black" ? whitePlayer : null;
+
+	const normalizedClock = normalizeClockToSeconds(gameFull.clock ?? null, isLiveStream);
+	const hasClockConfig = normalizedClock != null && normalizedClock.initial != null;
+	const isUnlimited = !hasClockConfig;
+
+	const initial = normalizedClock?.initial ?? 0;
+	const increment = normalizedClock?.increment ?? 0;
+
+	const clock: ClockModel = {
+		initial,
+		increment,
+		isUnlimited,
+		whiteTime: clockState?.whiteMs ?? 0,
+		blackTime: clockState?.blackMs ?? 0,
+		isActive: !isUnlimited && latestState?.status === GameStatusName.started,
+		activeColor: clockState?.activeColor ? chessColorToGameColor(clockState.activeColor) : null,
+	};
+
+	const statusName = latestState?.status ?? GameStatusName.created;
+	const isOver = statusName !== GameStatusName.started && statusName !== GameStatusName.created;
+	const rawWinner = latestState?.winner;
+
+	let winner: Color | "draw" | null = null;
+	if (isOver) {
+		winner = rawWinner === "white" || rawWinner === "black" ? rawWinner : "draw";
+	}
+
+	const outcome = getGameOutcome(winner === "draw" ? "" : winner, myColor);
+
+	const status: GameStatusModel = {
+		isOver,
+		winner,
+		condition: statusName,
+		statusText: getGameStatusLong(statusName, rawWinner, myColor),
+		statusShort: getGameStatusShort(statusName),
+		outcomeLabel: getOutcomeLabel(outcome),
+		outcomeColorClass: getOutcomeColorClass(outcome),
+		outcomeGradient: getOutcomeGradient(outcome),
+	};
+
+	const moves = latestState?.moves ?? "";
+	const initialFen =
+		gameFull.initialFen ?? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+	const { history, fen: derivedFen } = buildGameHistory(moves, initialFen);
+	const fen = derivedFen;
+
+	const lastMoveEntry = history.length > 0 ? history[history.length - 1] : undefined;
+	const lastMove: { from: Square; to: Square } | undefined = lastMoveEntry
+		? { from: lastMoveEntry.from as Square, to: lastMoveEntry.to as Square }
+		: undefined;
+
+	const board: BoardModel = {
+		fen,
+		orientation: myColor ?? "white",
+		lastMove,
+	};
+
+	const speed = gameFull.speed ?? "correspondence";
+	const rated = gameFull.rated ?? false;
+	const variant = (gameFull.variant?.key ?? "standard") as VariantKey;
+	const opening = gameJson?.opening;
+
+	const info: GameInfoModel = {
+		speed: formatSpeed(speed),
+		rated,
+		variant,
+		opening: opening
+			? {
+					eco: opening.eco || "",
+					name: opening.name || "",
+				}
+			: undefined,
+		gameModeLabel: getGameModeLabel(speed, rated),
+		timeControlLabel: formatTimeControl({
+			initial: clock.initial,
+			increment: clock.increment,
+		}),
+	};
+	const offersStatus = {
+		drawOfferedByWhite: offers?.drawOfferedByWhite ?? latestState?.wdraw ?? false,
+		drawOfferedByBlack: offers?.drawOfferedByBlack ?? latestState?.bdraw ?? false,
+		takebackOfferedByWhite: offers?.takebackOfferedByWhite ?? latestState?.wtakeback ?? false,
+		takebackOfferedByBlack: offers?.takebackOfferedByBlack ?? latestState?.btakeback ?? false,
+		rematchPending: offers?.rematchPending ?? false,
+	};
+
+	const ratingChanges = ratingDeltas
+		? {
+				white: ratingDeltas.white,
+				black: ratingDeltas.black,
+			}
+		: undefined;
+
+	return {
+		id: gameId,
+		players: {
+			white: whitePlayer,
+			black: blackPlayer,
+			me: mePlayer,
+			opponent: opponentPlayer,
+		},
+		clock,
+		status,
+		board,
+		info,
+		offers: offersStatus,
+		ratingChanges,
+	};
 }

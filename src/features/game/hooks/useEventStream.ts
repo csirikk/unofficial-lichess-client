@@ -38,7 +38,7 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 
 		const connect = async () => {
 			try {
-				// API: GET https://lichess.org/api/stream/event - Stream incoming events (game starts, finishes)
+				// API: GET https://lichess.org/api/stream/event (NDJSON stream) - Stream incoming events (game starts, finishes)
 				const response = await apiStreamEvent({
 					...createStreamHeaders(),
 					signal: controller.signal,

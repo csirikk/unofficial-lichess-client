@@ -6,16 +6,16 @@
 import { Chess, type PieceSymbol } from "chess.js";
 import { useMemo } from "react";
 import {
-	type UiBoard,
-	type UiMove,
-	boardFromChess,
+	type PieceMap,
+	type MoveModel,
+	pieceMapFromChess,
 	computeCapturedAt,
 	getMaterialScore,
 	uciToMove,
 } from "../model/chess";
 
 export type CapturedPiecesConfig = {
-	serverHistory: UiMove[];
+	serverHistory: MoveModel[];
 	serverFen: string;
 	pendingUci: string | null;
 	viewingMoveIndex: number | null; // null = live, -1 = starting position
@@ -55,20 +55,20 @@ export function useCapturedPieces({
 			} catch {}
 		}
 
-		let board: UiBoard;
+		let board: PieceMap;
 
 		if (isViewingHistory && viewingMoveIndex !== null && viewingMoveIndex >= 0) {
 			// History mode - use the FEN from the viewed move
 			const move = serverHistory[viewingMoveIndex];
 			const tempChess = new Chess(move.fen);
-			board = boardFromChess(tempChess);
+			board = pieceMapFromChess(tempChess);
 		} else if (isViewingHistory && viewingMoveIndex === -1) {
 			// Start position
 			const tempChess = new Chess();
-			board = boardFromChess(tempChess);
+			board = pieceMapFromChess(tempChess);
 		} else {
 			// Live mode - use the current chess instance (includes pending moves)
-			board = boardFromChess(chess);
+			board = pieceMapFromChess(chess);
 		}
 
 		const material = getMaterialScore(board);

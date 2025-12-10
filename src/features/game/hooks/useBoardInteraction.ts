@@ -9,7 +9,13 @@
  */
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type UiPromotionPiece, isFeasiblePremove, moveToUci, type UiMove } from "../model/chess";
+import {
+	type PromotionPieceModel,
+	isFeasiblePremove,
+	moveToUci,
+	type MoveModel,
+	chessColorToGameColor,
+} from "../model/chess";
 import { playSound } from "../model/sounds";
 import type { GameEngineHandlers, GameEngineInfo, GameEngineState } from "./useGameEngine";
 
@@ -17,7 +23,7 @@ export type BoardInteractionConfig = {
 	engineState: GameEngineState;
 	engineHandlers: GameEngineHandlers;
 	gameInfo: GameEngineInfo;
-	playMoveSound: (move: UiMove) => void;
+	playMoveSound: (move: MoveModel) => void;
 };
 
 export type BoardInteractionState = {
@@ -28,8 +34,8 @@ export type BoardInteractionState = {
 };
 
 export type BoardInteractionHandlers = {
-	handleMoveIntent: (from: Square, to: Square, promotion?: UiPromotionPiece) => boolean;
-	handlePromotionChoice: (piece: UiPromotionPiece) => void;
+	handleMoveIntent: (from: Square, to: Square, promotion?: PromotionPieceModel) => boolean;
+	handlePromotionChoice: (piece: PromotionPieceModel) => void;
 	handleSelectSquare: (square: Square | null) => void;
 	handleBoardClick: (square: string | null | undefined) => void;
 	handlePieceDrag: (square: string | null | undefined) => void;
@@ -55,7 +61,7 @@ export function useBoardInteraction({
 	const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, boolean>>({});
 	const [takebackSquares, setTakebackSquares] = useState<Array<{ from: string; to: string }>>([]);
 
-	const previousHistoryRef = useRef<UiMove[] | null>(null);
+	const previousHistoryRef = useRef<MoveModel[] | null>(null);
 
 	const { chess, premoveQueue, promotionRequest, pendingUci } = engineState;
 
@@ -71,12 +77,12 @@ export function useBoardInteraction({
 		setPromotionRequest,
 	} = engineHandlers;
 
-	const { isMyGame, gameEnded, playerColor } = gameInfo;
+	const { isMyGame, isGameEnded, playerColor } = gameInfo;
 
 	// General move intent handler
 	const handleMoveIntent = useCallback(
-		(from: Square, to: Square, promotion?: UiPromotionPiece): boolean => {
-			if (!isMyGame || gameEnded) return false;
+		(from: Square, to: Square, promotion?: PromotionPieceModel): boolean => {
+			if (!isMyGame || isGameEnded) return false;
 
 			const isMyTurn = canPlayMove();
 			const canPremove = canQueuePremove();
@@ -85,7 +91,12 @@ export function useBoardInteraction({
 				if (!promotion && isPromotionMove(from, to)) {
 					const piece = chess.get(from);
 					if (!piece) return false;
-					setPromotionRequest({ from, to, color: piece.color, mode: "live" });
+					setPromotionRequest({
+						from,
+						to,
+						color: chessColorToGameColor(piece.color),
+						mode: "live",
+					});
 					setSelectedSquare(null);
 					return true;
 				}
@@ -98,17 +109,11 @@ export function useBoardInteraction({
 					const uci = moveToUci({ from, to, promotion: move.promotion });
 
 					playMoveSound({
+						...move,
 						uci,
-						from,
-						to,
-						san: move.san,
 						fen: test.fen(),
-						color: move.color,
-						captured: move.captured,
-						promotion: move.promotion,
 						check: test.isCheck(),
 					});
-
 					void executeMove(uci, false);
 					return true;
 				} catch {
@@ -123,11 +128,16 @@ export function useBoardInteraction({
 					visualPiece = getVisualPieceAt(to);
 				}
 
-				if (!visualPiece || visualPiece.color !== playerColor) return false;
+				if (!visualPiece || chessColorToGameColor(visualPiece.color) !== playerColor) return false;
 				if (!isFeasiblePremove(visualPiece, from, to)) return false;
 
 				if (!promotion && isPremovePromotion(visualPiece, to)) {
-					setPromotionRequest({ from, to, color: visualPiece.color, mode: "premove" });
+					setPromotionRequest({
+						from,
+						to,
+						color: chessColorToGameColor(visualPiece.color),
+						mode: "premove",
+					});
 					setSelectedSquare(null);
 					return true;
 				}
@@ -144,7 +154,7 @@ export function useBoardInteraction({
 		},
 		[
 			isMyGame,
-			gameEnded,
+			isGameEnded,
 			canPlayMove,
 			canQueuePremove,
 			isPromotionMove,
@@ -161,7 +171,7 @@ export function useBoardInteraction({
 	);
 
 	const handlePromotionChoice = useCallback(
-		(piece: UiPromotionPiece) => {
+		(piece: PromotionPieceModel) => {
 			if (!promotionRequest) return;
 			const { from, to } = promotionRequest;
 			setPromotionRequest(null);
@@ -194,7 +204,7 @@ export function useBoardInteraction({
 			if (!square) return;
 			setRightClickedSquares({});
 
-			if (!isMyGame || gameEnded) return;
+			if (!isMyGame || isGameEnded) return;
 
 			const targetSquare = square as Square;
 
@@ -212,29 +222,29 @@ export function useBoardInteraction({
 			setSelectedSquare(null);
 			handleMoveIntent(sourceSquare, targetSquare);
 		},
-		[isMyGame, gameEnded, selectedSquare, handleSelectSquare, ownsSquare, handleMoveIntent],
+		[isMyGame, isGameEnded, selectedSquare, handleSelectSquare, ownsSquare, handleMoveIntent],
 	);
 
 	const handlePieceDrag = useCallback(
 		(square: string | null | undefined) => {
 			if (!square) return;
-			if (!isMyGame || gameEnded) return;
+			if (!isMyGame || isGameEnded) return;
 			const next = square as Square;
 			if (!ownsSquare(next)) return;
 			if (selectedSquare !== next) {
 				setSelectedSquare(next);
 			}
 		},
-		[isMyGame, gameEnded, ownsSquare, selectedSquare],
+		[isMyGame, isGameEnded, ownsSquare, selectedSquare],
 	);
 
 	const canDragPiece = useCallback(
 		(square: string | null | undefined): boolean => {
 			if (!square) return false;
-			if (!isMyGame || gameEnded) return false;
+			if (!isMyGame || isGameEnded) return false;
 			return ownsSquare(square as Square);
 		},
-		[isMyGame, gameEnded, ownsSquare],
+		[isMyGame, isGameEnded, ownsSquare],
 	);
 
 	const onPieceDrop = useCallback(
@@ -279,7 +289,7 @@ export function useBoardInteraction({
 	useEffect(() => {
 		if (selectedSquare) {
 			const piece = chess.get(selectedSquare);
-			if (!piece || piece.color !== playerColor) {
+			if (!piece || chessColorToGameColor(piece.color) !== playerColor) {
 				setSelectedSquare(null);
 			}
 		}
@@ -316,9 +326,9 @@ export function useBoardInteraction({
 
 	// Clean up on game end
 	useEffect(() => {
-		if (!gameEnded) return;
+		if (!isGameEnded) return;
 		setSelectedSquare(null);
-	}, [gameEnded]);
+	}, [isGameEnded]);
 
 	// Legal moves for current selection
 	const legalMoves = useMemo<ChessMove[]>(() => {

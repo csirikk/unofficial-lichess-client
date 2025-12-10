@@ -9,13 +9,13 @@ import {
 	type PieceDropHandlerArgs,
 	type PieceRenderObject,
 } from "react-chessboard";
-import type { UiPromotionPiece } from "../model/chess";
+import type { PromotionPieceModel } from "../model/chess";
 import { pieceToKey } from "../model/chess";
 import type { BoardViewModel } from "../hooks/useBoard";
 
 // Promotion order and labels
-const PROMOTION_ORDER: UiPromotionPiece[] = ["q", "r", "b", "n"];
-const PROMOTION_LABELS: Record<UiPromotionPiece, string> = {
+const PROMOTION_ORDER: PromotionPieceModel[] = ["q", "r", "b", "n"];
+const PROMOTION_LABELS: Record<PromotionPieceModel, string> = {
 	q: "Queen",
 	r: "Rook",
 	b: "Bishop",

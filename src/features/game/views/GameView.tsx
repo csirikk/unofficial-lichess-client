@@ -29,15 +29,15 @@ export default function GameView() {
 	};
 
 	const session = useGameSession(gameId, updateGameId);
-	const { boardViewModel, clockState, historyState, capturedState, gameState, actions } = session;
+	const { gameModel, boardViewModel, historyState, capturedState, sessionState, actions } = session;
 
 	useEffect(() => {
-		if (gameState.gameEnded) {
+		if (sessionState.isGameEnded) {
 			setModalDismissed(false);
 		}
-	}, [gameState.gameEnded]);
+	}, [sessionState.isGameEnded]);
 
-	const hasGame = !!gameId;
+	const hasGame = !!gameId && !!gameModel;
 
 	return (
 		<div className="flex h-full w-full flex-col game-view ">
@@ -46,47 +46,32 @@ export default function GameView() {
 				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-(--board-size) lg:w-90 lg:min-h-0">
 					{!hasGame ? (
 						<GameModeTabs
-							isCreating={gameState.isCreatingGame}
-							waitingForGame={gameState.waitingForGame}
-							error={gameState.error}
+							isCreating={sessionState.isCreatingGame}
+							waitingForGame={sessionState.waitingForGame}
+							error={sessionState.error}
 							onStartBotGame={actions.startBotGame}
 							onStartOnlineGame={actions.startOnlineGame}
 						/>
-					) : (
+					) : gameModel ? (
 						<div className="flex flex-col lg:h-full lg:min-h-0">
 							{/* Status */}
 							<div className="mb-2 shrink-0">
 								<GameStatus
-									gameEnded={gameState.gameEnded}
-									winner={gameState.winner}
-									status={gameState.status}
-									myColor={gameState.myColor}
-									isConnected={gameState.isConnected}
-									isReconnecting={gameState.isReconnecting}
-									isOffline={gameState.isOffline}
-									isConnecting={gameState.isConnecting}
-									streamNotFound={gameState.streamNotFound}
-									error={gameState.error}
-									gameEventInfo={gameState.gameEventInfo}
-									gameJson={gameState.gameJson}
-									gameFull={gameState.gameFull}
+									status={gameModel.status}
+									info={gameModel.info}
+									network={sessionState}
 								/>
 							</div>
 							{/* Clocks*/}
 							<div className="shrink-0 min-h-4" />
 							<div className="lg:flex lg:flex-1 lg:min-h-0 lg:items-center lg:justify-left">
 								<ClockPanel
-									gameFull={gameState.gameFull}
-									whiteMs={clockState.whiteMs}
-									blackMs={clockState.blackMs}
-									activeColor={clockState.activeColor}
-									timerOrder={gameState.timerOrder}
-									captured={capturedState.captured}
-									whiteDiff={capturedState.whiteDiff}
-									blackDiff={capturedState.blackDiff}
-									gameEnded={gameState.gameEnded}
-									winner={gameState.winner}
-									myColor={gameState.myColor}
+									clock={gameModel.clock}
+									whitePlayer={gameModel.players.white}
+									blackPlayer={gameModel.players.black}
+									timerOrder={sessionState.timerOrder}
+									material={capturedState}
+									ratingChanges={gameModel.ratingChanges}
 								/>
 							</div>
 							{/* Controls */}
@@ -99,20 +84,16 @@ export default function GameView() {
 									onRematch={actions.rematch}
 									onNewGame={actions.resetToLobby}
 									onShowResults={showResultsModal}
-									isConnected={gameState.isConnected}
-									gameEnded={gameState.gameEnded}
-									moveCount={historyState.totalMoves}
-									modalDismissed={modalDismissed}
-									drawOfferedByMe={gameState.drawOfferedByMe}
-									drawOfferedByOpponent={gameState.drawOfferedByOpponent}
-									takebackOfferedByMe={gameState.takebackOfferedByMe}
-									takebackOfferedByOpponent={gameState.takebackOfferedByOpponent}
-									rematchPending={gameState.rematchPending}
-									isBotGame={gameState.isBotGame}
+									isConnected={sessionState.isConnected}
+									totalMoves={historyState.totalMoves}
+									isModalDismissed={modalDismissed}
+									offers={gameModel.offers}
+									status={gameModel.status}
+									players={gameModel.players}
 								/>
 							</div>
 						</div>
-					)}
+					) : null}
 				</div>
 
 				{/* CENTER PANEL*/}
@@ -145,16 +126,9 @@ export default function GameView() {
 				</div>
 			</div>
 
-			{hasGame && gameState.gameEnded && !modalDismissed && (
+			{hasGame && sessionState.isGameEnded && !modalDismissed && gameModel && (
 				<GameResultModal
-					winner={gameState.winner}
-					reason={gameState.status}
-					myColor={gameState.myColor}
-					gameFull={gameState.gameFull}
-					gameEventInfo={gameState.gameEventInfo}
-					gameJson={gameState.gameJson}
-					ratingDelta={gameState.ratingDelta}
-					rematchPending={gameState.rematchPending}
+					game={gameModel}
 					onRematch={actions.rematch}
 					onNewGame={() => {
 						actions.resetToLobby();

@@ -1,55 +1,23 @@
-export type ConnectionStatusProps = {
-	isConnected: boolean;
-	isConnecting: boolean;
-	isReconnecting: boolean;
-	isOffline: boolean;
-	streamNotFound: boolean;
-	className?: string;
-};
+import type { NetworkModel } from "../model/types";
 
 export function ConnectionStatus({
-	isConnected,
-	isConnecting,
-	isReconnecting,
-	isOffline,
-	streamNotFound,
+	network,
 	className = "",
-}: ConnectionStatusProps) {
-	if (isConnected) {
+}: {
+	network: NetworkModel;
+	className?: string;
+}) {
+	if (network.isConnected)
+		return <span className={`text-[rgb(var(--color-success))] ${className}`}>Connected</span>;
+	if (network.isReconnecting)
+		return <span className={`text-[rgb(var(--color-warning))] ${className}`}>Reconnecting...</span>;
+	if (network.isOffline)
 		return (
-			<span className={`text-[rgb(var(--color-success))] ${className}`} title="Connected">
-				Connected
+			<span className={`text-[rgb(var(--color-error))] ${className}`}>
+				{network.isStreamNotFound ? "Game Not Found" : "Offline"}
 			</span>
 		);
-	}
-
-	if (isReconnecting) {
-		return (
-			<span className={`text-[rgb(var(--color-warning))] ${className}`} title="Reconnecting">
-				Reconnecting...
-			</span>
-		);
-	}
-
-	if (isOffline) {
-		return (
-			<span className={`text-[rgb(var(--color-error))] ${className}`} title="Connection lost">
-				{streamNotFound ? "Game Not Found" : "Offline"}
-			</span>
-		);
-	}
-
-	if (isConnecting) {
-		return (
-			<span className={`text-[rgb(var(--color-warning))] ${className}`} title="Connecting">
-				Connecting...
-			</span>
-		);
-	}
-
-	return (
-		<span className={`text-[rgb(var(--color-error))] ${className}`} title="Unknown">
-			Unknown
-		</span>
-	);
+	if (network.isConnecting)
+		return <span className={`text-[rgb(var(--color-warning))] ${className}`}>Connecting...</span>;
+	return <span className={`text-[rgb(var(--color-error))] ${className}`}>Unknown</span>;
 }

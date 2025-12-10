@@ -1,50 +1,50 @@
 /**
  * Chess Logic
  */
-import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
-import { GameColor } from "../../../generated/types/gameColor";
+import {
+	Chess,
+	type Color as ChessColor,
+	type PieceSymbol,
+	type Square,
+	type Piece,
+	type Move,
+} from "chess.js";
+import { GameColor as Color } from "../../../generated/types/gameColor";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { UserExtended } from "../../../generated/types/userExtended";
 
 /**
- * Compatible with chess.js.
+ * Canonical board representation using chess.js Piece type.
  */
-export type UiPiece = {
-	color: Color; // "w" | "b"
-	type: PieceSymbol; // "p" | "n" | "b" | "r" | "q" | "k"
-};
-
-/**
- * Canonical board representation.
- */
-export type UiBoard = Partial<Record<Square, UiPiece>>;
+export type PieceMap = Partial<Record<Square, Piece>>;
 
 /**
  * Compatible with react-chessboard.
  */
-export type UiPieceKey = `${Color}${Uppercase<PieceSymbol>}`;
+export type PieceMapKey = `${ChessColor}${Uppercase<PieceSymbol>}`;
 
 /**
- * Ghost piece for premove overlay (shows original position during premove).
+ * A single move in the history.
  */
-export type UiGhostPiece = {
-	square: Square;
-	piece: UiPiece;
+export interface MoveModel extends Partial<Move> {
+	uci: string;
+	fen: string;
+	check: boolean;
+}
+
+export type PremoveModel = {
+	uci: string;
+	from: Square;
+	to: Square;
+	promotion?: PromotionPieceModel;
 };
 
 /**
  * Compatible with chess.js.
  */
-export type UiPromotionPiece = "q" | "r" | "b" | "n";
+export type PromotionPieceModel = "q" | "r" | "b" | "n";
 
-export type UiPremove = {
-	uci: string;
-	from: Square;
-	to: Square;
-	promotion?: UiPromotionPiece;
-};
-
-export type UiPromotionRequest = {
+export type PromotionRequestModel = {
 	from: Square;
 	to: Square;
 	color: Color;
@@ -52,28 +52,21 @@ export type UiPromotionRequest = {
 } | null;
 
 /**
- * A single move in the history
- */
-export type UiMove = {
-	uci: string;
-	san: string;
-	fen: string;
-	check: boolean;
-	color: Color;
-	from: string;
-	to: string;
-	promotion?: string;
-	captured?: PieceSymbol;
-};
-
-/**
  * Metrics for positioning the promotion dropdown overlay.
  */
-export type UiPromotionDropdownMetrics = {
+export type PromotionMetricsModel = {
 	left: number;
 	top: number;
 	squareSize: number;
 	direction: "down" | "up";
+};
+
+/**
+ * Ghost piece for premove overlay (shows original position during premove).
+ */
+export type GhostPieceModel = {
+	square: Square;
+	piece: Piece;
 };
 
 export const PIECES_VALUES: Record<string, number> = {
@@ -95,13 +88,27 @@ export const PIECES_UNICODE: Record<PieceSymbol, string> = {
 };
 
 /**
+ * Convert chess.js Color ("w" | "b") to GameColor ("white" | "black")
+ */
+export function chessColorToGameColor(chessColor: ChessColor): Color {
+	return chessColor === "w" ? Color.white : Color.black;
+}
+
+/**
+ * Convert GameColor ("white" | "black") to chess.js Color ("w" | "b")
+ */
+export function gameColorToChessColor(gameColor: Color): ChessColor {
+	return gameColor === Color.white ? "w" : "b";
+}
+
+/**
  * Builds a game from a list of moves string to build a rich history.
  */
 export function buildGameHistory(
 	movesStr: string,
 	initialFen = "startpos",
 ): {
-	history: UiMove[];
+	history: MoveModel[];
 	fen: string;
 	turn: Color;
 } {
@@ -109,7 +116,7 @@ export function buildGameHistory(
 	const chess = new Chess(fenToLoad);
 
 	const moves = movesStr.trim() ? movesStr.trim().split(/\s+/).filter(Boolean) : [];
-	const history: UiMove[] = [];
+	const history: MoveModel[] = [];
 
 	for (const uci of moves) {
 		try {
@@ -117,15 +124,10 @@ export function buildGameHistory(
 			const result = chess.move(moveObj);
 			if (result) {
 				history.push({
+					...result,
 					uci,
-					san: result.san,
 					fen: chess.fen(),
 					check: chess.isCheck(),
-					color: chess.turn(),
-					from: result.from,
-					to: result.to,
-					promotion: result.promotion,
-					captured: result.captured,
 				});
 			}
 		} catch (error) {
@@ -136,11 +138,11 @@ export function buildGameHistory(
 	return {
 		history,
 		fen: chess.fen(),
-		turn: chess.turn(),
+		turn: chessColorToGameColor(chess.turn()),
 	};
 }
 
-export function getMaterialScore(board: UiBoard): { white: number; black: number } {
+export function getMaterialScore(board: PieceMap): { white: number; black: number } {
 	let white = 0;
 	let black = 0;
 	for (const piece of Object.values(board)) {
@@ -156,7 +158,7 @@ export function getMaterialScore(board: UiBoard): { white: number; black: number
  * Aggregates captured pieces from the history up to a specific point.
  */
 export function computeCapturedAt(
-	history: UiMove[],
+	history: MoveModel[],
 	atIndex: number | null,
 ): { white: PieceSymbol[]; black: PieceSymbol[] } {
 	const white: PieceSymbol[] = [];
@@ -184,22 +186,22 @@ export function computeCapturedAt(
 	return { white, black };
 }
 
-export function pieceToKey(piece: UiPiece): UiPieceKey {
-	return `${piece.color}${piece.type.toUpperCase()}` as UiPieceKey;
+export function pieceToKey(piece: Piece): PieceMapKey {
+	return `${piece.color}${piece.type.toUpperCase()}` as PieceMapKey;
 }
 
-export function keyToPiece(key: UiPieceKey): UiPiece {
+export function keyToPiece(key: PieceMapKey): Piece {
 	return {
-		color: key[0] as Color,
+		color: key[0] as ChessColor,
 		type: key[1].toLowerCase() as PieceSymbol,
 	};
 }
 
 /**
- * Create a UiBoard from a chess.js instance
+ * Create a PieceMap from a chess.js instance
  */
-export function boardFromChess(chess: Chess): UiBoard {
-	const uiBoard: UiBoard = {};
+export function pieceMapFromChess(chess: Chess): PieceMap {
+	const pieceMap: PieceMap = {};
 	const matrix = chess.board();
 
 	for (let rank = 0; rank < 8; rank++) {
@@ -211,18 +213,18 @@ export function boardFromChess(chess: Chess): UiBoard {
 			const rankChar = (8 - rank).toString();
 			const square = `${fileChar}${rankChar}` as Square;
 
-			uiBoard[square] = { color: piece.color, type: piece.type };
+			pieceMap[square] = { color: piece.color, type: piece.type };
 		}
 	}
-	return uiBoard;
+	return pieceMap;
 }
 
 /**
- * Convert UiBoard to the format expected by react-chessboard
+ * Convert PieceMap to the format expected by react-chessboard
  */
-export function boardToChessboardPosition(uiBoard: UiBoard): Record<string, { pieceType: string }> {
+export function pieceMapToChessboard(pieceMap: PieceMap): Record<string, { pieceType: string }> {
 	const out: Record<string, { pieceType: string }> = {};
-	for (const [square, piece] of Object.entries(uiBoard)) {
+	for (const [square, piece] of Object.entries(pieceMap)) {
 		if (piece) {
 			out[square] = { pieceType: pieceToKey(piece) };
 		}
@@ -231,14 +233,14 @@ export function boardToChessboardPosition(uiBoard: UiBoard): Record<string, { pi
 }
 
 /**
- * Apply a premove visually to a UiBoard. Returns the new board and any ghost pieces.
+ * Apply a premove visually to a pieceMap. Returns the new board and any ghost pieces.
  */
 export function applyPremoves(
-	baseBoard: UiBoard,
-	premoves: UiPremove[],
-): { board: UiBoard; ghosts: UiGhostPiece[] } {
-	const board: UiBoard = { ...baseBoard };
-	const ghosts: UiGhostPiece[] = [];
+	baseBoard: PieceMap,
+	premoves: PremoveModel[],
+): { board: PieceMap; ghosts: GhostPieceModel[] } {
+	const board: PieceMap = { ...baseBoard };
+	const ghosts: GhostPieceModel[] = [];
 
 	for (const premove of premoves) {
 		const piece = board[premove.from];
@@ -253,7 +255,7 @@ export function applyPremoves(
 		delete board[premove.from];
 
 		// Apply promotion if any
-		const finalPiece: UiPiece = premove.promotion
+		const finalPiece: Piece = premove.promotion
 			? { color: piece.color, type: premove.promotion }
 			: piece;
 
@@ -266,7 +268,7 @@ export function applyPremoves(
 /**
  * Check if a piece can feasibly make a premove. Ignores blocking pieces, captures, etc.
  */
-export function isFeasiblePremove(piece: UiPiece, from: Square, to: Square): boolean {
+export function isFeasiblePremove(piece: Piece, from: Square, to: Square): boolean {
 	const fileFrom = from.charCodeAt(0) - "a".charCodeAt(0);
 	const rankFrom = parseInt(from[1], 10) - 1;
 	const fileTo = to.charCodeAt(0) - "a".charCodeAt(0);
@@ -345,28 +347,26 @@ export function moveToUci(move: { from: string; to: string; promotion?: string }
 	return `${move.from}${move.to}${move.promotion || ""}`;
 }
 
-export function findKingSquare(board: UiBoard, color: Color): Square | null {
+export function findKingSquare(board: PieceMap, color: Color): Square | null {
+	const chessCol = gameColorToChessColor(color);
 	for (const [square, piece] of Object.entries(board)) {
-		if (piece && piece.type === "k" && piece.color === color) {
+		if (piece && piece.type === "k" && piece.color === chessCol) {
 			return square as Square;
 		}
 	}
 	return null;
 }
 
-export function getPlayerColor(
-	gameFull: GameFullEvent | null,
-	user: UserExtended | null,
-): GameColor {
-	if (!gameFull || !user) return GameColor.white;
+export function getPlayerColor(gameFull: GameFullEvent | null, user: UserExtended | null): Color {
+	if (!gameFull || !user) return Color.white;
 
 	const userId = user.id?.toLowerCase();
 	const whiteId = gameFull.white?.id?.toLowerCase();
 	const blackId = gameFull.black?.id?.toLowerCase();
 
-	if (userId && whiteId === userId) return GameColor.white;
-	if (userId && blackId === userId) return GameColor.black;
-	return GameColor.white;
+	if (userId && whiteId === userId) return Color.white;
+	if (userId && blackId === userId) return Color.black;
+	return Color.white;
 }
 
 export function isPlayerInGame(gameFull: GameFullEvent | null, user: UserExtended | null): boolean {

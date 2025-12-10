@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GameColor } from "../../../generated/types/gameColor";
+import { GameColor as Color } from "../../../generated/types/gameColor";
+import { gameColorToChessColor } from "../model/chess";
 import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
-import type { GameEventInfo } from "../../../generated/types/gameEventInfo";
-import type { GameJson } from "../../../generated/types/gameJson";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
 	abortGame,
@@ -17,6 +16,7 @@ import {
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "../model/setup";
 
 import { useBoard } from "./useBoard";
+import { buildGameHistory } from "../model/chess";
 import { useBoardInteraction } from "./useBoardInteraction";
 import { useCapturedPieces } from "./useCapturedPieces";
 import { useEventStream } from "./useEventStream";
@@ -26,6 +26,8 @@ import { useGameStream } from "./useGameStream";
 import { useHistoryKeyboard } from "./useHistoryKeyboard";
 import { useHistoryViewing } from "./useHistoryViewing";
 import { useSoundEffects } from "./useSoundEffects";
+import { deriveGameState } from "../model/game-info-helpers";
+import type { GameModel } from "../model/types";
 
 export function useGameSession(gameId: string | null, setGameId: (id: string | null) => void) {
 	const { user } = useAuth();
@@ -37,8 +39,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		white: number | null;
 		black: number | null;
 	} | null>(null);
-	const [gameEventInfo, setGameEventInfo] = useState<GameEventInfo | null>(null);
-	const [gameJson, setGameJson] = useState<GameJson | null>(null);
 
 	const [pendingDrawOffer, setPendingDrawOffer] = useState(false);
 	const [pendingTakebackOffer, setPendingTakebackOffer] = useState(false);
@@ -57,8 +57,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				setGameId(eventGameId);
 				setWaitingForGame(false);
 				setRematchPending(false);
-				setGameEventInfo(event.game);
-				setGameJson(null);
 				setRatingDelta(null);
 			}
 		},
@@ -66,17 +64,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	);
 
 	const onGameFinishHandler = useCallback(
-		(
-			event: GameFinishEvent,
-			delta: { white: number | null; black: number | null },
-			json?: GameJson | null,
-		) => {
+		(event: GameFinishEvent, delta: { white: number | null; black: number | null }) => {
 			const eventGameId = event.game?.gameId || event.game?.id;
 			if (eventGameId === gameId) {
 				setRatingDelta(delta);
-				if (json) {
-					setGameJson(json);
-				}
 			}
 		},
 		[gameId],
@@ -114,7 +105,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		makeMove,
 	});
 	const { state: engineState, handlers: engineHandlers, gameInfo } = engineResult;
-	const { myColor, gameEnded, status, winner } = gameInfo;
+	const { myColor, isGameEnded } = gameInfo;
 
 	const clockState = useGameClock({
 		gameFull,
@@ -149,8 +140,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 	const { playMoveSound } = useSoundEffects({
 		moveHistory: serverHistory,
-		gameStarted: !!gameId && !!gameFull,
-		gameEnded,
+		isGameStarted: !!gameId && !!gameFull,
+		isGameEnded,
 		isViewingHistory: history.isViewingHistory,
 		viewingMoveIndex: history.viewingMoveIndex,
 		whiteTime: gameState?.wtime,
@@ -187,9 +178,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		try {
 			const { gameId: newGameId } = await startBotGame(config.level, config.clock, config.color);
 			interactionHandlers.resetBoard();
-			// Clear previous game state when starting a new game
-			setGameEventInfo(null);
-			setGameJson(null);
 			setRatingDelta(null);
 			setGameId(newGameId);
 		} catch (error) {
@@ -203,9 +191,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		setError(null);
 		setIsCreatingGame(true);
 		setWaitingForGame(true);
-		// Clear previous game state when starting a new game
-		setGameEventInfo(null);
-		setGameJson(null);
 		setRatingDelta(null);
 		try {
 			await startOnlineSeek(setup);
@@ -238,50 +223,44 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	}, [gameId, isConnected]);
 
 	const handleOfferDraw = useCallback(async () => {
-		if (!gameId || !isConnected || gameEnded) return;
-		const isAccepting = myColor === GameColor.white ? gameState?.bdraw : gameState?.wdraw;
+		if (!gameId || !isConnected || isGameEnded) return;
+		const isAccepting = myColor === Color.white ? gameState?.bdraw : gameState?.wdraw;
 
 		if (!isAccepting) {
 			setPendingDrawOffer(true);
 		}
 
 		try {
-			// API: true/"yes" = propose OR accept, false/"no" = decline
-			// Since we call this to either propose or accept, always send true
+			// API: /api/game/{gameId}/draw
 			await offerDraw(gameId, true);
 		} catch (error) {
 			console.error("Draw action failed:", error);
 			setPendingDrawOffer(false); // Clear on error
 		}
-	}, [gameId, isConnected, gameEnded, gameState, myColor]);
+	}, [gameId, isConnected, isGameEnded, gameState, myColor]);
 
 	const handleTakeback = useCallback(async () => {
-		if (!gameId || !isConnected || gameEnded) return;
-		const isAccepting = myColor === GameColor.white ? gameState?.btakeback : gameState?.wtakeback;
+		if (!gameId || !isConnected || isGameEnded) return;
+		const isAccepting = myColor === Color.white ? gameState?.btakeback : gameState?.wtakeback;
 
 		if (!isAccepting) {
 			setPendingTakebackOffer(true);
 		}
 
 		try {
-			// API: true/"yes" = propose OR accept, false/"no" = decline
-			// Since we call this to either propose or accept, always send true
+			// API:
 			await requestTakeback(gameId, true);
 		} catch (error) {
 			console.error("Takeback action failed:", error);
 			setPendingTakebackOffer(false);
 		}
-	}, [gameId, isConnected, gameEnded, gameState, myColor]);
+	}, [gameId, isConnected, isGameEnded, gameState, myColor]);
 
 	const handleRematchRequest = useCallback(async () => {
 		if (!gameId || rematchPending || !gameFull || !myColor) return;
 		setRematchPending(true);
 		try {
 			const result = await handleRematch(gameFull, myColor);
-
-			// Clear previous game state
-			setGameEventInfo(null);
-			setGameJson(null);
 			setRatingDelta(null);
 
 			if ("gameId" in result) {
@@ -304,21 +283,15 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		setRematchPending(false);
 	}, [interactionHandlers, setGameId]);
 
-	const isBotGame = useMemo(() => {
-		if (!gameFull) return false;
-		return Boolean(gameFull.white.aiLevel || gameFull.black.aiLevel);
-	}, [gameFull]);
-
 	const timerOrder = useMemo(() => {
-		return (myColor === GameColor.white ? ["black", "white"] : ["white", "black"]) as Array<
-			"white" | "black"
-		>;
+		return myColor === Color.white ? [Color.black, Color.white] : [Color.white, Color.black];
 	}, [myColor]);
 
 	useEffect(() => {
 		if (!gameState) return;
 
-		const currentMoveCount = gameState.moves.split(" ").filter((m) => m).length;
+		const { history } = buildGameHistory(gameState.moves, gameFull?.initialFen ?? "start");
+		const currentMoveCount = history.length;
 
 		if (currentMoveCount !== lastMoveCountRef.current) {
 			setPendingDrawOffer(false);
@@ -326,60 +299,92 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			lastMoveCountRef.current = currentMoveCount;
 		}
 
-		const serverHasMyDraw = myColor === GameColor.white ? gameState.wdraw : gameState.bdraw;
-		const serverHasMyTakeback =
-			myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback;
+		const serverHasMyDraw = myColor === Color.white ? gameState.wdraw : gameState.bdraw;
+		const serverHasMyTakeback = myColor === Color.white ? gameState.wtakeback : gameState.btakeback;
 
 		if (serverHasMyDraw) setPendingDrawOffer(false);
 		if (serverHasMyTakeback) setPendingTakebackOffer(false);
-	}, [gameState, myColor]);
+	}, [gameState, myColor, gameFull]);
 
 	const drawOfferedByMe = useMemo(() => {
 		if (!gameState) return false;
-		return (myColor === GameColor.white ? gameState.wdraw : gameState.bdraw) || pendingDrawOffer;
+		return (myColor === Color.white ? gameState.wdraw : gameState.bdraw) || pendingDrawOffer;
 	}, [gameState, myColor, pendingDrawOffer]);
 
 	const drawOfferedByOpponent = useMemo(() => {
 		if (!gameState) return false;
-		return myColor === GameColor.white ? gameState.bdraw : gameState.wdraw;
+		return myColor === Color.white ? gameState.bdraw : gameState.wdraw;
 	}, [gameState, myColor]);
 
 	const takebackOfferedByMe = useMemo(() => {
 		if (!gameState) return false;
 		return (
-			(myColor === GameColor.white ? gameState.wtakeback : gameState.btakeback) ||
-			pendingTakebackOffer
+			(myColor === Color.white ? gameState.wtakeback : gameState.btakeback) || pendingTakebackOffer
 		);
 	}, [gameState, myColor, pendingTakebackOffer]);
 
 	const takebackOfferedByOpponent = useMemo(() => {
 		if (!gameState) return false;
-		return myColor === GameColor.white ? gameState.btakeback : gameState.wtakeback;
+		return myColor === Color.white ? gameState.btakeback : gameState.wtakeback;
 	}, [gameState, myColor]);
 
-	const playerOpponentRatingDelta = useMemo(() => {
-		if (!ratingDelta || !myColor) return null;
-		const myDelta = myColor === GameColor.white ? ratingDelta.white : ratingDelta.black;
-		const oppDelta = myColor === GameColor.white ? ratingDelta.black : ratingDelta.white;
-		return { player: myDelta, opponent: oppDelta };
-	}, [ratingDelta, myColor]);
+	const gameModel = useMemo<GameModel | null>(() => {
+		return deriveGameState(
+			gameFull,
+			gameState,
+			myColor,
+			{
+				whiteMs: clockState.whiteMs,
+				blackMs: clockState.blackMs,
+				activeColor: clockState.activeColor ? gameColorToChessColor(clockState.activeColor) : null,
+			},
+			ratingDelta
+				? {
+						white: myColor === Color.white ? ratingDelta.white : ratingDelta.black,
+						black: myColor === Color.black ? ratingDelta.white : ratingDelta.black,
+					}
+				: null,
+			{
+				drawOfferedByWhite: myColor === Color.white ? drawOfferedByMe : drawOfferedByOpponent,
+				drawOfferedByBlack: myColor === Color.black ? drawOfferedByMe : drawOfferedByOpponent,
+				takebackOfferedByWhite:
+					myColor === Color.white ? takebackOfferedByMe : takebackOfferedByOpponent,
+				takebackOfferedByBlack:
+					myColor === Color.black ? takebackOfferedByMe : takebackOfferedByOpponent,
+				rematchPending,
+			},
+			null,
+			true,
+		);
+	}, [
+		gameFull,
+		gameState,
+		myColor,
+		clockState.whiteMs,
+		clockState.blackMs,
+		clockState.activeColor,
+		ratingDelta,
+		drawOfferedByMe,
+		drawOfferedByOpponent,
+		takebackOfferedByMe,
+		takebackOfferedByOpponent,
+		rematchPending,
+	]);
 
 	return {
+		gameModel,
+
 		boardViewModel,
-		clockState,
 		historyState: {
 			...history,
 			moveHistory: engineState.moveHistory,
+			totalMoves: serverHistory.length,
 		},
 		capturedState,
 
-		gameState: {
+		sessionState: {
 			gameId,
-			gameFull,
-			status,
-			winner,
-			gameEnded,
-			myColor,
+			isGameEnded,
 			timerOrder,
 			isCreatingGame,
 			waitingForGame,
@@ -388,16 +393,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			isConnecting,
 			isReconnecting,
 			isOffline,
-			streamNotFound,
-			drawOfferedByMe,
-			drawOfferedByOpponent,
-			takebackOfferedByMe,
-			takebackOfferedByOpponent,
-			rematchPending,
-			isBotGame,
-			ratingDelta: playerOpponentRatingDelta,
-			gameEventInfo,
-			gameJson,
+			isStreamNotFound: streamNotFound,
 		},
 
 		actions: {

@@ -5,12 +5,12 @@
  */
 import { Chess, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { boardFromChess, boardToChessboardPosition } from "../model/chess";
-import type { UiMove } from "../model/chess";
+import { pieceMapFromChess, pieceMapToChessboard } from "../model/chess";
+import type { MoveModel } from "../model/chess";
 
 export type HistoryViewingConfig = {
 	chess: Chess; // The main chess.js instance representing the current game
-	serverHistory: UiMove[]; // Full move history from the server
+	serverHistory: MoveModel[]; // Full move history from the server
 };
 
 export type HistoryViewingReturn = {
@@ -38,7 +38,7 @@ export function useHistoryViewing({
 	const { displayPosition, viewedLastMove } = useMemo(() => {
 		// Live mode - show current position from the main chess instance
 		if (viewingMoveIndex === null) {
-			const pos = boardToChessboardPosition(boardFromChess(chess));
+			const pos = pieceMapToChessboard(pieceMapFromChess(chess));
 
 			const lastMove =
 				serverHistory.length > 0
@@ -55,7 +55,7 @@ export function useHistoryViewing({
 		if (viewingMoveIndex >= 0 && viewingMoveIndex < serverHistory.length) {
 			const move = serverHistory[viewingMoveIndex];
 			const tempChess = new Chess(move.fen);
-			const pos = boardToChessboardPosition(boardFromChess(tempChess));
+			const pos = pieceMapToChessboard(pieceMapFromChess(tempChess));
 
 			const lastMove = {
 				from: move.from as Square,
@@ -66,7 +66,7 @@ export function useHistoryViewing({
 
 		// Start position
 		const tempChess = new Chess();
-		const pos = boardToChessboardPosition(boardFromChess(tempChess));
+		const pos = pieceMapToChessboard(pieceMapFromChess(tempChess));
 		return { displayPosition: pos, viewedLastMove: { from: null, to: null } };
 	}, [chess, viewingMoveIndex, serverHistory]);
 

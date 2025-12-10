@@ -5,9 +5,15 @@
  */
 import { useMemo } from "react";
 import type { Move as ChessMove, Square } from "chess.js";
-import type { UiGhostPiece, UiPremove, UiPromotionPiece, UiPromotionRequest } from "../model/chess";
+import type {
+	GhostPieceModel,
+	PremoveModel,
+	PromotionPieceModel,
+	PromotionRequestModel,
+} from "../model/chess";
 import type { GameEngineState, GameEngineInfo } from "./useGameEngine";
 import type { BoardInteractionState, BoardInteractionHandlers } from "./useBoardInteraction";
+import type { GameColor as Color } from "../../../generated/types/gameColor";
 
 export type BoardViewModelConfig = {
 	engineState: GameEngineState;
@@ -23,14 +29,14 @@ export type BoardViewModelConfig = {
 
 export type BoardDisplayState = {
 	position: Record<string, { pieceType: string }>;
-	boardOrientation: "white" | "black";
-	ghostPieces: UiGhostPiece[];
+	boardOrientation: Color;
+	ghostPieces: GhostPieceModel[];
 	selectedSquare: Square | null;
 	lastMoveSquares: { from: Square | null; to: Square | null };
 	checkSquare: Square | null;
 	legalMoves: ChessMove[];
-	premoveQueue: UiPremove[];
-	promotionRequest: UiPromotionRequest;
+	premoveQueue: PremoveModel[];
+	promotionRequest: PromotionRequestModel;
 	showAnimations: boolean;
 	rightClickedSquares: Record<string, boolean>;
 	takebackSquares: Array<{ from: Square; to: Square }>;
@@ -42,7 +48,7 @@ export type BoardHandlers = {
 	onPieceDrag: (square: string) => void;
 	canDragPiece: (square: string) => boolean;
 	onPieceDrop: (sourceSquare: string, targetSquare: string | null) => boolean;
-	onPromotionChoice: (piece: UiPromotionPiece) => void;
+	onPromotionChoice: (piece: PromotionPieceModel) => void;
 	onCancelPromotion: () => void;
 	onRightClick: (square: string) => void;
 };
