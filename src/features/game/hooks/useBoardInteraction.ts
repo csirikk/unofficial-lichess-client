@@ -10,12 +10,14 @@
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type UiPromotionPiece, isFeasiblePremove, moveToUci, type UiMove } from "../model/chess";
+import { playSound } from "../model/sounds";
 import type { GameEngineHandlers, GameEngineInfo, GameEngineState } from "./useGameEngine";
 
 export type BoardInteractionConfig = {
 	engineState: GameEngineState;
 	engineHandlers: GameEngineHandlers;
 	gameInfo: GameEngineInfo;
+	playMoveSound: (move: UiMove) => void;
 };
 
 export type BoardInteractionState = {
@@ -47,6 +49,7 @@ export function useBoardInteraction({
 	engineState,
 	engineHandlers,
 	gameInfo,
+	playMoveSound,
 }: BoardInteractionConfig): BoardInteractionReturn {
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, boolean>>({});
@@ -93,6 +96,19 @@ export function useBoardInteraction({
 					if (!move) return false;
 
 					const uci = moveToUci({ from, to, promotion: move.promotion });
+
+					playMoveSound({
+						uci,
+						from,
+						to,
+						san: move.san,
+						fen: test.fen(),
+						color: move.color,
+						captured: move.captured,
+						promotion: move.promotion,
+						check: test.isCheck(),
+					});
+
 					void executeMove(uci, false);
 					return true;
 				} catch {
@@ -118,6 +134,8 @@ export function useBoardInteraction({
 
 				const uci = moveToUci({ from, to, promotion });
 				setPremoveQueue((prev) => [...prev, { uci, from, to, promotion }]);
+				playSound("premove");
+
 				setSelectedSquare(null);
 				return true;
 			}
@@ -138,6 +156,7 @@ export function useBoardInteraction({
 			chess,
 			setPremoveQueue,
 			setPromotionRequest,
+			playMoveSound,
 		],
 	);
 

@@ -25,6 +25,7 @@ import { useGameEngine } from "./useGameEngine";
 import { useGameStream } from "./useGameStream";
 import { useHistoryKeyboard } from "./useHistoryKeyboard";
 import { useHistoryViewing } from "./useHistoryViewing";
+import { useSoundEffects } from "./useSoundEffects";
 
 export function useGameSession(gameId: string | null, setGameId: (id: string | null) => void) {
 	const { user } = useAuth();
@@ -115,13 +116,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const { state: engineState, handlers: engineHandlers, gameInfo } = engineResult;
 	const { myColor, gameEnded, status, winner } = gameInfo;
 
-	const interactionResult = useBoardInteraction({
-		engineState,
-		engineHandlers,
-		gameInfo,
-	});
-	const { state: interactionState, handlers: interactionHandlers } = interactionResult;
-
 	const clockState = useGameClock({
 		gameFull,
 		gameState,
@@ -152,6 +146,24 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		chess: boardChess,
 		isViewingHistory: history.isViewingHistory,
 	});
+
+	const { playMoveSound } = useSoundEffects({
+		moveHistory: serverHistory,
+		gameStarted: !!gameId && !!gameFull,
+		gameEnded,
+		isViewingHistory: history.isViewingHistory,
+		viewingMoveIndex: history.viewingMoveIndex,
+		whiteTime: gameState?.wtime,
+		blackTime: gameState?.btime,
+	});
+
+	const interactionResult = useBoardInteraction({
+		engineState,
+		engineHandlers,
+		gameInfo,
+		playMoveSound,
+	});
+	const { state: interactionState, handlers: interactionHandlers } = interactionResult;
 
 	const boardViewModel = useBoard({
 		engineState,

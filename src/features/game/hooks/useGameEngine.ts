@@ -307,6 +307,27 @@ export function useGameEngine({
 		}
 
 		setPremoveQueue(rest);
+
+		try {
+			const testBoard = new Chess(serverFen);
+			const moveResult = testBoard.move(uciToMove(next.uci));
+			if (moveResult) {
+				const moveData: UiMove = {
+					uci: next.uci,
+					from: next.from,
+					to: next.to,
+					san: moveResult.san,
+					fen: testBoard.fen(),
+					color: moveResult.color,
+					captured: moveResult.captured,
+					promotion: moveResult.promotion,
+					check: testBoard.isCheck(),
+				};
+				const soundEvent = new CustomEvent("chess-premove-sound", { detail: moveData });
+				window.dispatchEvent(soundEvent);
+			}
+		} catch {}
+
 		void executeMove(next.uci, true);
 	}, [
 		gameFull,
