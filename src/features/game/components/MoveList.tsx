@@ -120,7 +120,14 @@ export function MoveList({
 					<span className="text-sm text-[rgb(var(--color-primary-500))]">Viewing history</span>
 				)}
 			</div>
-			<div className="flex-1 overflow-y-auto">
+			<div
+				className="flex-1 overflow-y-auto 
+			[&::-webkit-scrollbar]:w-2 
+			[&::-webkit-scrollbar-track]:rounded-full 
+			[&::-webkit-scrollbar-track]:bg-[rgb(var(--color-surface-card))] 
+			[&::-webkit-scrollbar-thumb]:rounded-full 
+			[&::-webkit-scrollbar-thumb]:bg-[rgb(var(--color-surface-border))]"
+			>
 				<table className="min-w-full divide-y divide-[rgb(var(--color-surface-border)/0.5)]">
 					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none">
 						<tr>
