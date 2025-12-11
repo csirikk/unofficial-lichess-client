@@ -84,6 +84,7 @@ export interface Offers {
 	takebackOfferedByWhite: boolean;
 	takebackOfferedByBlack: boolean;
 	rematchPending: boolean;
+	pendingChallengeId?: string | null;
 }
 
 export interface GameModel {

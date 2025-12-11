@@ -2,6 +2,9 @@ import { useEffect, useRef } from "react";
 import { apiStreamEvent } from "../../../generated/client/board";
 import { gamePgn } from "../../../generated/client/games";
 import type { ApiStreamEvent200 } from "../../../generated/types/apiStreamEvent200";
+import type { ChallengeEvent } from "../../../generated/types/challengeEvent";
+import type { ChallengeCanceledEvent } from "../../../generated/types/challengeCanceledEvent";
+import type { ChallengeDeclinedEvent } from "../../../generated/types/challengeDeclinedEvent";
 import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
 import type { GameJson } from "../../../generated/types/gameJson";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
@@ -16,13 +19,19 @@ type UseEventStreamConfig = {
 		ratingDelta: { white: number | null; black: number | null },
 		gameJson?: GameJson | null,
 	) => void;
+	onChallenge?: (event: ChallengeEvent) => void;
+	onChallengeDeclined?: (event: ChallengeDeclinedEvent) => void;
+	onChallengeCanceled?: (event: ChallengeCanceledEvent) => void;
 };
 
-export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventStreamConfig) {
+export function useEventStream({ enabled, onGameStart, onGameFinish, onChallenge, onChallengeDeclined, onChallengeCanceled }: UseEventStreamConfig) {
 	const streamRef = useRef<StreamControl | null>(null);
 
 	const onGameStartRef = useRef(onGameStart);
 	const onGameFinishRef = useRef(onGameFinish);
+	const onChallengeRef = useRef(onChallenge);
+	const onChallengeDeclinedRef = useRef(onChallengeDeclined);
+	const onChallengeCanceledRef = useRef(onChallengeCanceled);
 
 	useEffect(() => {
 		onGameStartRef.current = onGameStart;
@@ -30,6 +39,15 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 	useEffect(() => {
 		onGameFinishRef.current = onGameFinish;
 	}, [onGameFinish]);
+	useEffect(() => {
+		onChallengeRef.current = onChallenge;
+	}, [onChallenge]);
+	useEffect(() => {
+		onChallengeDeclinedRef.current = onChallengeDeclined;
+	}, [onChallengeDeclined]);
+	useEffect(() => {
+		onChallengeCanceledRef.current = onChallengeCanceled;
+	}, [onChallengeCanceled]);
 
 	useEffect(() => {
 		if (!enabled || streamRef.current) return;
@@ -55,6 +73,12 @@ export function useEventStream({ enabled, onGameStart, onGameFinish }: UseEventS
 					(event) => {
 						if (event.type === "gameStart") {
 							onGameStartRef.current?.(event);
+						} else if (event.type === "challenge") {
+							onChallengeRef.current?.(event);
+						} else if (event.type === "challengeDeclined") {
+							onChallengeDeclinedRef.current?.(event);
+						} else if (event.type === "challengeCanceled") {
+							onChallengeCanceledRef.current?.(event);
 						} else if (event.type === "gameFinish") {
 							const gameId = event.game?.gameId || event.game?.id;
 							if (gameId) {

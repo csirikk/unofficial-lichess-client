@@ -317,6 +317,7 @@ export function deriveGameState(
 		takebackOfferedByWhite?: boolean;
 		takebackOfferedByBlack?: boolean;
 		rematchPending?: boolean;
+		pendingChallengeId?: string | null;
 	},
 	gameJson?: GameJson | null,
 	isLiveStream: boolean = true,
@@ -446,6 +447,7 @@ export function deriveGameState(
 		takebackOfferedByWhite: offers?.takebackOfferedByWhite ?? latestState?.wtakeback ?? false,
 		takebackOfferedByBlack: offers?.takebackOfferedByBlack ?? latestState?.btakeback ?? false,
 		rematchPending: offers?.rematchPending ?? false,
+		pendingChallengeId: offers?.pendingChallengeId ?? null,
 	};
 
 	const ratingChanges = ratingDeltas

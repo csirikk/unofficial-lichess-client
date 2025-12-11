@@ -35,6 +35,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [rematchPending, setRematchPending] = useState(false);
+	const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
 	const [waitingForGame, setWaitingForGame] = useState(false);
 	const [ratingDelta, setRatingDelta] = useState<{
 		white: number | null;
@@ -86,16 +87,17 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 			if (eventGameId === gameId) return;
 
-			if (waitingForGame) {
+			if (waitingForGame || rematchPending) {
 				if (expectedSourceRef.current === "lobby" && source === "ai") {
 					console.log("Ignoring background AI game while seeking lobby game:", eventGameId);
 					return;
 				}
 
-				// When waiting for seek, accept the new game
-				console.log(`Seek fulfilled by game ${eventGameId} (Source: ${source})`);
+				// When waiting for seek/rematch, accept the new game
+				console.log(`Seek/rematch fulfilled by game ${eventGameId} (Source: ${source})`);
 				setGameId(eventGameId);
 				setRematchPending(false);
+				setPendingChallengeId(null);
 				setRatingDelta(null);
 
 				// Stop the seek
@@ -107,7 +109,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				setRatingDelta(null);
 			}
 		},
-		[waitingForGame, gameId, setGameId, cancelSeek],
+		[waitingForGame, rematchPending, gameId, setGameId, cancelSeek],
 	);
 
 	const onGameFinishHandler = useCallback(
@@ -120,11 +122,56 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		[gameId],
 	);
 
+	const onChallengeHandler = useCallback(
+		(event: {
+			challenge: {
+				id: string;
+				challenger?: { id?: string } | null;
+				destUser?: { id?: string } | null;
+			};
+		}) => {
+			// Track if this is our outgoing challenge
+			if (event.challenge.challenger?.id === user?.id) {
+				console.log("Our challenge sent:", event.challenge.id);
+				setPendingChallengeId(event.challenge.id);
+			}
+			// TODO: Handle incoming challenges (show notification/modal)
+		},
+		[user?.id],
+	);
+
+	const onChallengeDeclinedHandler = useCallback(
+		(event: { challenge?: { id?: string } }) => {
+			if (event.challenge?.id === pendingChallengeId) {
+				console.log("Challenge declined:", event.challenge.id);
+				setPendingChallengeId(null);
+				setRematchPending(false);
+				setWaitingForGame(false);
+			}
+		},
+		[pendingChallengeId],
+	);
+
+	const onChallengeCanceledHandler = useCallback(
+		(event: { challenge?: { id?: string } }) => {
+			if (event.challenge?.id === pendingChallengeId) {
+				console.log("Challenge canceled:", event.challenge.id);
+				setPendingChallengeId(null);
+				setRematchPending(false);
+				setWaitingForGame(false);
+			}
+		},
+		[pendingChallengeId],
+	);
+
 	// Global event stream
 	useEventStream({
 		enabled: waitingForGame || gameId != null,
 		onGameStart: onGameStartHandler,
 		onGameFinish: onGameFinishHandler,
+		onChallenge: onChallengeHandler,
+		onChallengeDeclined: onChallengeDeclinedHandler,
+		onChallengeCanceled: onChallengeCanceledHandler,
 	});
 
 	const stream = useGameStream(gameId);
@@ -343,9 +390,14 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 	const handleRematchRequest = useCallback(async () => {
 		if (!gameId || rematchPending || !gameFull || !myColor) return;
+
+		const controller = new AbortController();
+		seekAbortControllerRef.current = controller;
 		setRematchPending(true);
+		setPendingChallengeId(null); // Reset before new challenge
+
 		try {
-			const result = await handleRematch(gameFull, myColor);
+			const result = await handleRematch(gameFull, myColor, { signal: controller.signal });
 			setRatingDelta(null);
 
 			if ("gameId" in result) {
@@ -355,10 +407,39 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				setRematchPending(false);
 			} else {
 				// Human game
+				seekStreamRef.current = result.streamControl;
 				setWaitingForGame(true);
+				expectedSourceRef.current = "friend";
+
+				await result.streamControl.closePromise;
+
+				console.log("Challenge stream closed");
+				seekStreamRef.current = null;
+
+				setPendingChallengeId(null);
+				setRematchPending(false);
+				setWaitingForGame(false);
 			}
 		} catch (error) {
+			// user canceled
+			if (error instanceof Error && error.name === "AbortError") {
+				console.log("Rematch cancelled by user");
+				return;
+			}
+
 			console.error("Rematch failed:", error);
+			setPendingChallengeId(null);
+			setRematchPending(false);
+			setWaitingForGame(false);
+
+			if (seekStreamRef.current) {
+				void seekStreamRef.current.close();
+				seekStreamRef.current = null;
+			}
+		} finally {
+			if (seekAbortControllerRef.current === controller) {
+				seekAbortControllerRef.current = null;
+			}
 		}
 	}, [gameId, rematchPending, gameFull, myColor, interactionHandlers, setGameId]);
 
@@ -371,7 +452,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const timerOrder = useMemo(() => {
 		return myColor === Color.white ? [Color.black, Color.white] : [Color.white, Color.black];
 	}, [myColor]);
-
 	useEffect(() => {
 		if (!gameState) return;
 
@@ -437,6 +517,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				takebackOfferedByBlack:
 					myColor === Color.black ? takebackOfferedByMe : takebackOfferedByOpponent,
 				rematchPending,
+				pendingChallengeId,
 			},
 			null,
 			true,
@@ -454,6 +535,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		takebackOfferedByMe,
 		takebackOfferedByOpponent,
 		rematchPending,
+		pendingChallengeId,
 	]);
 
 	return {

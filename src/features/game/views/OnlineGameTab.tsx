@@ -54,7 +54,7 @@ export function OnlineGameTab({
 
 	const isDisabled = isCreating;
 	const buttonText = waitingForGame ? "Cancel" : isCreating ? "Creating seek…" : "Find Opponent";
-	const buttonVariant = waitingForGame ? "secondary" : "primary";
+	const buttonVariant = waitingForGame ? "outline" : "primary";
 
 	const availablePresets = TIME_PRESETS.filter((p) => p.category !== "unlimited");
 

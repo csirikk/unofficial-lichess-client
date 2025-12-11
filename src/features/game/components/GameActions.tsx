@@ -147,7 +147,11 @@ export function Controls({
 					aria-label="Rematch"
 				>
 					<RotateCcw className="h-5 w-5" aria-hidden />
-					{isRematchPending ? "Rematch Sent..." : "Rematch"}
+					{offers.pendingChallengeId
+						? "Waiting for accept..."
+						: isRematchPending
+							? "Sending..."
+							: "Rematch"}
 				</Button>
 				<Button variant="outline" size="lg" fullWidth onClick={onNewGame}>
 					<Play className="h-5 w-5 fill-current" />
