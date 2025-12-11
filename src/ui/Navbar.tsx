@@ -29,10 +29,10 @@ export default function Navbar() {
 							Play
 						</Link>
 						<Link
-							to="/"
+							to="/games"
 							className="cursor-pointer font-medium text-fg-secondary hover:text-fg-primary"
 						>
-							History
+							Games
 						</Link>
 					</div>
 

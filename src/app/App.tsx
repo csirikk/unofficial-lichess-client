@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AuthCallback from "../features/auth/components/AuthCallback";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import HomePage from "../ui/HomePage";
+import GamesPage from "../ui/GamesPage";
 
 export default function App() {
 	useEffect(() => {
@@ -13,6 +14,7 @@ export default function App() {
 		<AuthProvider>
 			<Routes>
 				<Route path="/" element={<HomePage />} />
+				<Route path="/games" element={<GamesPage />} />
 				<Route path="/auth/callback" element={<AuthCallback />} />
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
