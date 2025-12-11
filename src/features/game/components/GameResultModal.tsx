@@ -39,8 +39,8 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 
 	return (
 		<div
-			className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] p-4
-        ${isExiting ? "animate-backdrop-exit" : "animate-backdrop-entry"}`}
+			className={`absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[1px] p-4
+		${isExiting ? "animate-backdrop-exit" : "animate-backdrop-entry"}`}
 		>
 			{/* Backdrop */}
 			<button

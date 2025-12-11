@@ -121,21 +121,21 @@ export function MoveList({
 			</div>
 			<div
 				ref={scrollContainerRef}
-				className="flex-1 overflow-y-auto 
+				className="relative flex-1 overflow-y-auto 
             [&::-webkit-scrollbar]:w-2 
             [&::-webkit-scrollbar-track]:rounded-full 
             [&::-webkit-scrollbar-track]:bg-[rgb(var(--color-surface-card))] 
             [&::-webkit-scrollbar-thumb]:rounded-full 
             [&::-webkit-scrollbar-thumb]:bg-[rgb(var(--color-surface-border))]"
 			>
-				<table className="min-w-full border-l border-t border-r border-[rgb(var(--color-surface-border)/0.3)] divide-[rgb(var(--color-surface-border)/0.5)] table-fixed">
+				<table className="min-w-full divide-[rgb(var(--color-surface-border)/0.5)] table-fixed">
 					<colgroup>
 						<col style={{ width: "3rem" }} />
 						<col style={{ width: "48%" }} />
 						<col style={{ width: "48%" }} />
 					</colgroup>
-					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none z-10">
-						<tr>
+					<thead className="sticky top-0 z-30 bg-[rgb(var(--color-surface-base))]">
+						<tr className="bg-[rgb(var(--color-surface-base))]">
 							<th
 								scope="col"
 								className="px-2 py-2 text-left text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] opacity-50 w-12"
