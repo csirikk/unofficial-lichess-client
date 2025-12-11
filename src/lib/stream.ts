@@ -2,7 +2,7 @@ export type NdjsonHandler<T = unknown> = (data: T) => void;
 
 export interface StreamControl {
 	closePromise: Promise<void>;
-	close: () => Promise<void> | void;
+	close: () => Promise<void>;
 }
 
 export function readNdjsonStream<T = unknown>(
@@ -65,6 +65,14 @@ export function readNdjsonStream<T = unknown>(
 
 	return {
 		closePromise: loop(),
-		close: () => stream.cancel(),
+		close: async () => {
+			try {
+				await stream.cancel();
+			} catch (error) {
+				if (error instanceof Error && error.name !== "AbortError") {
+					console.debug(`[${name}] Stream cancel error.`, error.message);
+				}
+			}
+		},
 	};
 }

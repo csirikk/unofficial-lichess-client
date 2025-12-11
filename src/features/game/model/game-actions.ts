@@ -5,6 +5,7 @@ import {
 	boardGameTakeback,
 	getApiBoardSeekUrl,
 } from "../../../generated/client/board";
+import { readNdjsonStream, type StreamControl } from "../../../lib/stream";
 import { challengeAi, challengeCreate } from "../../../generated/client/challenges";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameColor as Color } from "../../../generated/types/gameColor";
@@ -128,7 +129,10 @@ export async function handleRematch(
 	throw new Error(`Failed to create rematch challenge: ${response.status}`);
 }
 
-export async function startOnlineSeek(setup: GameSetup, options?: RequestInit): Promise<Response> {
+export async function startOnlineSeek(
+	setup: GameSetup,
+	options?: RequestInit,
+): Promise<StreamControl> {
 	const preset = findTimePreset(setup.timePresetId);
 	if (!preset) {
 		throw new Error("Invalid time preset");
@@ -172,5 +176,6 @@ export async function startOnlineSeek(setup: GameSetup, options?: RequestInit): 
 		throw new Error(errorData.error || "Failed to create seek");
 	}
 
-	return response;
+	const streamControl = readNdjsonStream("seek", response, () => {});
+	return streamControl;
 }

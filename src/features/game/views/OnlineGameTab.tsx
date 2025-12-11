@@ -17,6 +17,7 @@ type OnlineGameTabProps = {
 	error: string | null;
 	rated: boolean;
 	onStart: (setup: GameSetup) => void;
+	onCancel: () => void;
 };
 
 const colorOptions: SegmentedOption<SetupColorChoice>[] = [
@@ -31,6 +32,7 @@ export function OnlineGameTab({
 	error,
 	rated,
 	onStart,
+	onCancel,
 }: OnlineGameTabProps) {
 	const [setup, setSetup] = useState(createDefaultGameSetup);
 
@@ -42,16 +44,17 @@ export function OnlineGameTab({
 		setSetup((prev) => ({ ...prev, colorChoice: color }));
 	};
 
-	const handleStart = () => {
-		onStart({ ...setup, rated });
+	const handleButtonClick = () => {
+		if (waitingForGame) {
+			onCancel();
+		} else {
+			onStart({ ...setup, rated });
+		}
 	};
 
-	const isDisabled = isCreating || waitingForGame;
-	const buttonText = waitingForGame
-		? "Waiting for opponent…"
-		: isCreating
-			? "Creating seek…"
-			: "Find Opponent";
+	const isDisabled = isCreating;
+	const buttonText = waitingForGame ? "Cancel" : isCreating ? "Creating seek…" : "Find Opponent";
+	const buttonVariant = waitingForGame ? "secondary" : "primary";
 
 	const availablePresets = TIME_PRESETS.filter((p) => p.category !== "unlimited");
 
@@ -96,7 +99,13 @@ export function OnlineGameTab({
 				)}
 
 				{/* Start Button */}
-				<Button variant="primary" size="lg" fullWidth onClick={handleStart} disabled={isDisabled}>
+				<Button
+					variant={buttonVariant}
+					size="lg"
+					fullWidth
+					onClick={handleButtonClick}
+					disabled={isDisabled}
+				>
 					{buttonText}
 				</Button>
 

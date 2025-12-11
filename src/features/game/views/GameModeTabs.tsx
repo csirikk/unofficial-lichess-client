@@ -22,6 +22,7 @@ type GameModeTabsProps = {
 		color: SetupColorChoice;
 	}) => void;
 	onStartOnlineGame: (setup: GameSetup) => void;
+	onCancelSeek: () => void;
 };
 
 export function GameModeTabs({
@@ -30,6 +31,7 @@ export function GameModeTabs({
 	error,
 	onStartBotGame,
 	onStartOnlineGame,
+	onCancelSeek,
 }: GameModeTabsProps) {
 	const [mode, setMode] = useState<GameMode>("bot");
 
@@ -57,6 +59,7 @@ export function GameModeTabs({
 						error={error}
 						rated={mode === "rated"}
 						onStart={onStartOnlineGame}
+						onCancel={onCancelSeek}
 					/>
 				)}
 			</div>

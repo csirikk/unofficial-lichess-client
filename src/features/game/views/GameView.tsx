@@ -51,6 +51,7 @@ export default function GameView() {
 							error={sessionState.error}
 							onStartBotGame={actions.startBotGame}
 							onStartOnlineGame={actions.startOnlineGame}
+							onCancelSeek={actions.cancelSeek}
 						/>
 					) : gameModel ? (
 						<div className="flex flex-col lg:h-full lg:min-h-0">

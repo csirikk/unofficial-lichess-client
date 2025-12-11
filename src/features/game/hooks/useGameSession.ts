@@ -46,13 +46,18 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const lastMoveCountRef = useRef<number>(0);
 
 	const seekAbortControllerRef = useRef<AbortController | null>(null);
+	const seekStreamRef = useRef<{ close: () => void } | null>(null);
 	const expectedSourceRef = useRef<"lobby" | "ai" | "friend" | null>(null);
 	const ignoredGameIdsRef = useRef<Set<string>>(new Set());
 
-	const cancelSeek = useCallback(() => {
+	const cancelSeek = useCallback(async () => {
 		if (seekAbortControllerRef.current) {
 			seekAbortControllerRef.current.abort();
 			seekAbortControllerRef.current = null;
+		}
+		if (seekStreamRef.current) {
+			void seekStreamRef.current.close();
+			seekStreamRef.current = null;
 		}
 		setWaitingForGame(false);
 		expectedSourceRef.current = null;
@@ -238,13 +243,12 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			setIsCreatingGame(false);
 		}
 	};
-
 	const handleStartOnlineGame = useCallback(
 		async (setup: GameSetup) => {
-			cancelSeek();
+			void cancelSeek();
 
 			setError(null);
-			setIsCreatingGame(true);
+			setIsCreatingGame(true); // Button is disabled ("Creating seek...")
 			setRatingDelta(null);
 
 			ignoredGameIdsRef.current.clear();
@@ -260,8 +264,12 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			setWaitingForGame(true);
 
 			try {
-				await startOnlineSeek(setup, { signal: controller.signal });
-				// Wait for /api/stream/event
+				const streamControl = await startOnlineSeek(setup, { signal: controller.signal });
+				seekStreamRef.current = streamControl;
+				setIsCreatingGame(false);
+				await streamControl.closePromise;
+				console.log("Seek stream closed.");
+				setWaitingForGame(false);
 			} catch (error: unknown) {
 				if (error instanceof Error && error.name === "AbortError") {
 					console.log("Seek cancelled by user");
@@ -269,9 +277,13 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				}
 				console.error(error);
 				setError(error instanceof Error ? error.message : "Failed to create online game");
-				cancelSeek();
-			} finally {
+				void cancelSeek();
 				setIsCreatingGame(false);
+			} finally {
+				seekStreamRef.current = null;
+				if (seekAbortControllerRef.current === controller) {
+					seekAbortControllerRef.current = null;
+				}
 			}
 		},
 		[gameId, cancelSeek],
@@ -472,6 +484,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		actions: {
 			startBotGame: handleStartBotGame,
 			startOnlineGame: handleStartOnlineGame,
+			cancelSeek,
 			resign: handleResign,
 			abort: handleAbort,
 			offerDraw: handleOfferDraw,
