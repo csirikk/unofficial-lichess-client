@@ -38,8 +38,8 @@ export interface ClockModel {
 	isUnlimited: boolean;
 
 	// Live state
-	whiteTime: number; // milliseconds
-	blackTime: number; // milliseconds
+	whiteTime: number | null; // milliseconds or null if unknown
+	blackTime: number | null; // milliseconds or null if unknown
 	isActive: boolean;
 	activeColor: Color | null;
 }
