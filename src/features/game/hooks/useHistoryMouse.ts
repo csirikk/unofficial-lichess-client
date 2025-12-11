@@ -22,7 +22,33 @@ export function useHistoryMouse({
 	useEffect(() => {
 		if (!enabled) return;
 
+		const eventIsInTarget = (ev: Event) => {
+			const maybe = ev as unknown as { composedPath?: () => EventTarget[] };
+			const path = typeof maybe.composedPath === "function" ? maybe.composedPath() : null;
+			if (path && Array.isArray(path)) {
+				for (const node of path) {
+					if (
+						node &&
+						typeof node === "object" &&
+						(node as Element).hasAttribute &&
+						(node as Element).hasAttribute("data-history-target")
+					) {
+						return true;
+					}
+				}
+			}
+
+			let node = ev.target as Node | null;
+			while (node) {
+				if (node instanceof Element && node.hasAttribute("data-history-target")) return true;
+				node = node.parentElement;
+			}
+
+			return false;
+		};
+
 		const onWheel = (ev: WheelEvent) => {
+			if (!eventIsInTarget(ev)) return;
 			const now = Date.now();
 			if (now - lastWheelAtRef.current < LIMIT_MS) {
 				ev.preventDefault();
@@ -48,6 +74,7 @@ export function useHistoryMouse({
 
 		const onMouseDown = (ev: MouseEvent) => {
 			if (ev.button !== 1) return;
+			if (!eventIsInTarget(ev)) return;
 			ev.preventDefault();
 			ev.stopPropagation();
 			goToLive();

@@ -108,7 +108,10 @@ export function MoveList({
 	const canGoForward = totalMoves > 0 && !atLive;
 
 	return (
-		<aside className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]">
+		<aside
+			data-history-target="true"
+			className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]"
+		>
 			<div className="mb-2 flex items-center justify-between">
 				<div
 					className={`cursor-default text-xl font-semibold uppercase tracking-[0.25em] ${isViewingHistory ? "text-[rgb(var(--color-primary-500))] opacity-80" : "text-[rgb(var(--color-fg-secondary))]"}`}
