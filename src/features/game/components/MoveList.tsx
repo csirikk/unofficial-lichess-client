@@ -128,7 +128,12 @@ export function MoveList({
             [&::-webkit-scrollbar-thumb]:rounded-full 
             [&::-webkit-scrollbar-thumb]:bg-[rgb(var(--color-surface-border))]"
 			>
-				<table className="min-w-full divide-y divide-[rgb(var(--color-surface-border)/0.5)]">
+				<table className="min-w-full border-l border-t border-r border-[rgb(var(--color-surface-border)/0.3)] divide-[rgb(var(--color-surface-border)/0.5)] table-fixed">
+					<colgroup>
+						<col style={{ width: "3rem" }} />
+						<col style={{ width: "48%" }} />
+						<col style={{ width: "48%" }} />
+					</colgroup>
 					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none z-10">
 						<tr>
 							<th
@@ -167,7 +172,7 @@ export function MoveList({
 								<td className="whitespace-nowrap px-2 py-1.5 text-md">
 									<button
 										type="button"
-										className={`truncate bg-transparent text-left w-full ${getMoveClassName(row.whiteIndex)}`}
+										className={`truncate overflow-hidden text-clip bg-transparent text-left w-full ${getMoveClassName(row.whiteIndex)}`}
 										onClick={() => onMoveClick?.(row.whiteIndex)}
 										disabled={!onMoveClick}
 									>
@@ -178,14 +183,14 @@ export function MoveList({
 									{row.blackIndex !== null ? (
 										<button
 											type="button"
-											className={`truncate bg-transparent text-left w-full ${getMoveClassName(row.blackIndex)}`}
+											className={`truncate overflow-hidden text-clip bg-transparent text-left w-full ${getMoveClassName(row.blackIndex)}`}
 											onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
 											disabled={!onMoveClick}
 										>
 											{row.black}
 										</button>
 									) : (
-										<span className="truncate text-left text-[rgb(var(--color-fg-primary))] w-full block">
+										<span className="truncate text-left text-[rgb(var(--color-fg-primary))] w-full block overflow-hidden text-clip">
 											{row.black}
 										</span>
 									)}

@@ -356,12 +356,31 @@ export function useGameEngine({
 	}, [isGameEnded]);
 
 	const moveHistory = useMemo(() => {
-		const serverSans = serverHistory
+		const serverMoves = serverHistory
 			.map((m) => m.san)
 			.filter((s): s is string => typeof s === "string");
-		const localSans = chess.history();
-		return [...serverSans, ...localSans];
-	}, [serverHistory, chess]);
+
+		const localMoves = chess.history();
+		const unsyncedLocalMoves =
+			localMoves.length > serverMoves.length ? localMoves.slice(serverMoves.length) : [];
+
+		let pendingMovess: string[] = [];
+		if (pendingUci && unsyncedLocalMoves.length === 0) {
+			try {
+				const test = new Chess(serverFen);
+				const result = test.move(uciToMove(pendingUci));
+				if (result && typeof result.san === "string") {
+					const pendingSan = result.san;
+					const lastServerSan = serverMoves.length ? serverMoves[serverMoves.length - 1] : null;
+					if (pendingSan !== lastServerSan) {
+						pendingMovess = [pendingSan];
+					}
+				}
+			} catch {}
+		}
+
+		return [...serverMoves, ...unsyncedLocalMoves, ...pendingMovess];
+	}, [serverHistory, chess, pendingUci, serverFen]);
 
 	const showAnimations = !premoveQueue.length && !pendingIsPremove;
 
