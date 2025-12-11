@@ -152,12 +152,9 @@ export function useGameClock({
 
 		// GRACE to RUNNING (first move appeared or mid-game)
 		if (!prevHadStarted && hasStartedRef.current) {
-			// No previous turn to wrap, just enforce server time for current player
-			if (turn === Color.white) {
-				if (wtime != null) setWhiteBaseMs(wtime);
-			} else {
-				if (btime != null) setBlackBaseMs(btime);
-			}
+			// No previous turn to wrap: enforce server snapshot for both sides
+			if (wtime != null) setWhiteBaseMs(wtime);
+			if (btime != null) setBlackBaseMs(btime);
 			turnStartedAtRef.current = nowTs;
 			setIsRunning(true);
 			setActiveColor(turn);
@@ -204,6 +201,8 @@ export function useGameClock({
 			return;
 		}
 
+		if (lastServerWhiteMsRef.current != null) setWhiteBaseMs(lastServerWhiteMsRef.current);
+		if (lastServerBlackMsRef.current != null) setBlackBaseMs(lastServerBlackMsRef.current);
 		setActiveColor(turn);
 		setIsRunning(true);
 	}, [gameFull, gameState, pendingMove, initialTime, serverTurn, serverHistory]);
