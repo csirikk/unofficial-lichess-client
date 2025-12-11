@@ -1,13 +1,13 @@
-import type { GameColor as Color } from "../../../generated/types/gameColor";
 import {
-	apiBoardSeek,
 	boardGameAbort,
 	boardGameDraw,
 	boardGameResign,
 	boardGameTakeback,
+	getApiBoardSeekUrl,
 } from "../../../generated/client/board";
 import { challengeAi, challengeCreate } from "../../../generated/client/challenges";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
+import type { GameColor as Color } from "../../../generated/types/gameColor";
 import { createAuthHeaders } from "../../../lib/api";
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "./setup";
 import { findTimePreset } from "./setup";
@@ -128,24 +128,49 @@ export async function handleRematch(
 	throw new Error(`Failed to create rematch challenge: ${response.status}`);
 }
 
-export async function startOnlineSeek(setup: GameSetup): Promise<void> {
+export async function startOnlineSeek(setup: GameSetup, options?: RequestInit): Promise<Response> {
 	const preset = findTimePreset(setup.timePresetId);
 	if (!preset) {
 		throw new Error("Invalid time preset");
 	}
 
-	const body = {
-		time: preset.limitSeconds / 60,
-		increment: preset.incrementSeconds,
-		rated: setup.rated,
-		variant: "standard" as const,
-		color: setup.colorChoice,
-	};
+	const isRapid = preset.category === "rapid";
+	const isClassical = preset.category === "classical";
+	const allowedRatedRapids = new Set(["15+10", "20+0"]);
 
-	// API: POST https://lichess.org/api/board/seek - Create a public seek to start a game with a random player
-	const response = await apiBoardSeek(body, createAuthHeaders());
-
-	if (response.status !== 200) {
-		throw new Error("Failed to create seek");
+	if (setup.rated) {
+		if (!isClassical && !(isRapid && allowedRatedRapids.has(preset.id))) {
+			throw new Error("Rated seeks support Classical or Rapid 15+10 / 20+0 time controls");
+		}
+	} else {
+		if (!isClassical && !isRapid) {
+			throw new Error("Casual seeks support Rapid or Classical time controls");
+		}
 	}
+
+	const form = new URLSearchParams();
+	form.append("rated", String(setup.rated));
+	form.append("variant", "standard");
+	form.append("color", setup.colorChoice);
+	form.append("time", (preset.limitSeconds / 60).toString());
+	form.append("increment", preset.incrementSeconds.toString());
+
+	const authHeaders = createAuthHeaders("application/x-ndjson");
+	const headers = new Headers(authHeaders.headers);
+	headers.set("Content-Type", "application/x-www-form-urlencoded");
+
+	// API: POST https://lichess.org/api/board/seek - Create a new seek
+	const response = await fetch(getApiBoardSeekUrl(), {
+		method: "POST",
+		headers,
+		body: form,
+		signal: options?.signal,
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json().catch(() => ({ error: "Failed to create seek" }));
+		throw new Error(errorData.error || "Failed to create seek");
+	}
+
+	return response;
 }

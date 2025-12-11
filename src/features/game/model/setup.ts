@@ -179,7 +179,7 @@ export function createDefaultBotGameSetup(): BotGameSetup {
 
 export function createDefaultGameSetup(): GameSetup {
 	return {
-		timePresetId: "5+0",
+		timePresetId: "10+5",
 		colorChoice: "random",
 		rated: false,
 	};

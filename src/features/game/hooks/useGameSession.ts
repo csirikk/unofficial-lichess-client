@@ -44,23 +44,64 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [pendingTakebackOffer, setPendingTakebackOffer] = useState(false);
 	const lastMoveCountRef = useRef<number>(0);
 
+	const seekAbortControllerRef = useRef<AbortController | null>(null);
+	const expectedSourceRef = useRef<"lobby" | "ai" | "friend" | null>(null);
+	const ignoredGameIdsRef = useRef<Set<string>>(new Set());
+
+	const cancelSeek = useCallback(() => {
+		if (seekAbortControllerRef.current) {
+			seekAbortControllerRef.current.abort();
+			seekAbortControllerRef.current = null;
+		}
+		setWaitingForGame(false);
+		expectedSourceRef.current = null;
+		ignoredGameIdsRef.current.clear();
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			cancelSeek();
+		};
+	}, [cancelSeek]);
+
 	const onGameStartHandler = useCallback(
 		(event: GameStartEvent) => {
 			if (!event.game) return;
 
 			const eventGameId = event.game.gameId || event.game.id;
+			const source = event.game.source || "unknown";
+
 			if (!eventGameId) return;
+
+			if (ignoredGameIdsRef.current.has(eventGameId)) {
+				console.log("Ignoring pre-existing game:", eventGameId, "(source:", source, ")");
+				return;
+			}
 
 			if (eventGameId === gameId) return;
 
-			if (waitingForGame || !gameId) {
+			if (waitingForGame) {
+				if (expectedSourceRef.current === "lobby" && source === "ai") {
+					console.log("Ignoring background AI game while seeking lobby game:", eventGameId);
+					return;
+				}
+
+				// When waiting for seek, accept the new game
+				console.log(`Seek fulfilled by game ${eventGameId} (Source: ${source})`);
+				setGameId(eventGameId);
+				setRematchPending(false);
+				setRatingDelta(null);
+
+				// Stop the seek
+				cancelSeek();
+			} else if (!gameId) {
 				setGameId(eventGameId);
 				setWaitingForGame(false);
 				setRematchPending(false);
 				setRatingDelta(null);
 			}
 		},
-		[waitingForGame, gameId, setGameId],
+		[waitingForGame, gameId, setGameId, cancelSeek],
 	);
 
 	const onGameFinishHandler = useCallback(
@@ -173,6 +214,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		clock: { limit: number; increment: number } | null;
 		color: SetupColorChoice;
 	}) => {
+		cancelSeek();
+
 		setIsCreatingGame(true);
 		setError(null);
 		try {
@@ -187,22 +230,43 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		}
 	};
 
-	const handleStartOnlineGame = useCallback(async (setup: GameSetup) => {
-		setError(null);
-		setIsCreatingGame(true);
-		setWaitingForGame(true);
-		setRatingDelta(null);
-		try {
-			await startOnlineSeek(setup);
-			// Wait for /api/stream/event
-		} catch (error) {
-			console.error(error);
-			setError(error instanceof Error ? error.message : "Failed to create online game");
-			setWaitingForGame(false);
-		} finally {
-			setIsCreatingGame(false);
-		}
-	}, []);
+	const handleStartOnlineGame = useCallback(
+		async (setup: GameSetup) => {
+			cancelSeek();
+
+			setError(null);
+			setIsCreatingGame(true);
+			setRatingDelta(null);
+
+			ignoredGameIdsRef.current.clear();
+			if (gameId) {
+				ignoredGameIdsRef.current.add(gameId);
+				console.log("Ignoring current game during seek:", gameId);
+			}
+
+			expectedSourceRef.current = "lobby";
+			const controller = new AbortController();
+			seekAbortControllerRef.current = controller;
+
+			setWaitingForGame(true);
+
+			try {
+				await startOnlineSeek(setup, { signal: controller.signal });
+				// Wait for /api/stream/event
+			} catch (error: unknown) {
+				if (error instanceof Error && error.name === "AbortError") {
+					console.log("Seek cancelled by user");
+					return;
+				}
+				console.error(error);
+				setError(error instanceof Error ? error.message : "Failed to create online game");
+				cancelSeek();
+			} finally {
+				setIsCreatingGame(false);
+			}
+		},
+		[gameId, cancelSeek],
+	);
 
 	const handleResign = useCallback(async () => {
 		if (!gameId || !isConnected) return;
