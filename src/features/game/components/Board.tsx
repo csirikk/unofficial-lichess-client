@@ -34,6 +34,7 @@ export function Board({ viewModel }: BoardProps) {
 		showAnimations,
 		rightClickedSquares,
 		takebackSquares,
+		isDraggable,
 	} = displayState;
 
 	const {
@@ -257,7 +258,11 @@ export function Board({ viewModel }: BoardProps) {
 
 	return (
 		<div className="aspect-square w-full max-w-full border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] p-2">
-			<div data-history-target="true" className="size-full relative" ref={boardContainerRef}>
+			<div
+				data-history-target="true"
+				className={`size-full relative ${!isDraggable ? "**:data-piece:cursor-default!" : ""}`}
+				ref={boardContainerRef}
+			>
 				<Chessboard
 					key={preferences.preferencesVersion}
 					options={{

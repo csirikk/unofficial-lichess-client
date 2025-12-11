@@ -40,6 +40,7 @@ export type BoardDisplayState = {
 	showAnimations: boolean;
 	rightClickedSquares: Record<string, boolean>;
 	takebackSquares: Array<{ from: Square; to: Square }>;
+	isDraggable: boolean;
 };
 
 export type BoardHandlers = {
@@ -90,6 +91,7 @@ export function useBoard({
 				from: square.from as Square,
 				to: square.to as Square,
 			})),
+			isDraggable: !isViewingHistory && gameInfo.isMyGame && !gameInfo.isGameEnded,
 		}),
 		[
 			isViewingHistory,
@@ -105,6 +107,8 @@ export function useBoard({
 			interactionState.legalMoves,
 			interactionState.rightClickedSquares,
 			gameInfo.boardOrientation,
+			gameInfo.isMyGame,
+			gameInfo.isGameEnded,
 			viewedLastMove,
 			takebackSquares,
 		],
