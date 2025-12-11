@@ -180,6 +180,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	});
 
 	const { playMoveSound } = useSoundEffects({
+		gameId,
 		moveHistory: serverHistory,
 		isGameStarted: !!gameId && !!gameFull,
 		isGameEnded,
