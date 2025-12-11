@@ -105,12 +105,48 @@ export function useBoardInteraction({
 					}
 				}
 
+				// Handle castling by dragging king onto rook or rook onto king
 				try {
+					let origFrom = from;
+					let origTo = to;
+					const movingPiece = chess.get(from);
+					const targetPiece = chess.get(to);
+
+					// king dragged onto rook
+					if (
+						movingPiece &&
+						movingPiece.type === "k" &&
+						targetPiece &&
+						targetPiece.type === "r" &&
+						targetPiece.color === movingPiece.color
+					) {
+						const fromFile = from.charCodeAt(0);
+						const toFile = to.charCodeAt(0);
+						const castleFile = fromFile < toFile ? fromFile + 2 : fromFile - 2;
+						origTo = String.fromCharCode(castleFile) + from[1];
+					}
+
+					// rook dragged onto king
+					if (
+						movingPiece &&
+						movingPiece.type === "r" &&
+						targetPiece &&
+						targetPiece.type === "k" &&
+						targetPiece.color === movingPiece.color
+					) {
+						const kingSquare = to;
+						const rookFile = from.charCodeAt(0);
+						const kingFile = kingSquare.charCodeAt(0);
+						const castleFile = kingFile < rookFile ? kingFile + 2 : kingFile - 2;
+						origFrom = kingSquare;
+						origTo = String.fromCharCode(castleFile) + kingSquare[1];
+					}
+
 					const test = new Chess(chess.fen());
-					const move = test.move({ from, to, promotion });
+					const move = test.move({ from: origFrom, to: origTo, promotion });
 					if (!move) return false;
 
-					const uci = moveToUci({ from, to, promotion: move.promotion });
+					const uci = moveToUci({ from: origFrom, to: origTo, promotion: move.promotion });
 
 					playMoveSound({
 						...move,
