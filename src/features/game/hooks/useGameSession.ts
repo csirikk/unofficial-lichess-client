@@ -24,6 +24,7 @@ import { useGameClock } from "./useGameClock";
 import { useGameEngine } from "./useGameEngine";
 import { useGameStream } from "./useGameStream";
 import { useHistoryKeyboard } from "./useHistoryKeyboard";
+import { useHistoryMouse } from "./useHistoryMouse";
 import { useHistoryViewing } from "./useHistoryViewing";
 import { useSoundEffects } from "./useSoundEffects";
 import { deriveGameState } from "../model/game-info-helpers";
@@ -167,6 +168,13 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		goBack: history.goBack,
 		goForward: history.goForward,
 		goToStart: history.goToStart,
+		goToLive: history.goToLive,
+	});
+
+	useHistoryMouse({
+		enabled: Boolean(gameId),
+		goBack: history.goBack,
+		goForward: history.goForward,
 		goToLive: history.goToLive,
 	});
 
