@@ -31,10 +31,9 @@ export function MoveList({
 	onGoForward,
 	onGoToLive,
 }: MoveListProps) {
-	const moveListRef = useRef<HTMLTableSectionElement>(null);
-	const prevMoveCountRef = useRef(0);
+	const moveListBodyRef = useRef<HTMLTableSectionElement>(null);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-	// Convert flat moves array to rows + indexes
 	const moveRows = useMemo<MoveRow[]>(
 		() =>
 			moves.reduce((rows, move, index) => {
@@ -54,34 +53,35 @@ export function MoveList({
 
 	const activeMoveIndex = viewingMoveIndex ?? (moves.length > 0 ? moves.length - 1 : null);
 
-	// Auto-scroll to viewed move or latest when in live mode
+	// Scroll
 	useEffect(() => {
-		const currentMoveCount = moves.length;
-		const isLiveMode = viewingMoveIndex === null;
+		if (!scrollContainerRef.current) return;
 
-		if (isLiveMode && currentMoveCount > prevMoveCountRef.current) {
-			prevMoveCountRef.current = currentMoveCount;
-			if (moveListRef.current) {
-				setTimeout(() => {
-					if (moveListRef.current) {
-						const lastRow = moveListRef.current.lastElementChild as HTMLElement | null;
-						if (lastRow) {
-							lastRow.scrollIntoView({ behavior: "smooth", block: "end" });
-						}
-					}
-				}, 0);
-			}
+		// Start of game
+		if (viewingMoveIndex === -1) {
+			scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+			return;
 		}
 
-		// When viewing history, scroll the active move into view
-		if (!isLiveMode && viewingMoveIndex !== null && viewingMoveIndex >= 0 && moveListRef.current) {
+		// End of game / Live
+		if (viewingMoveIndex === null) {
+			scrollContainerRef.current.scrollTo({
+				top: scrollContainerRef.current.scrollHeight,
+				behavior: "smooth",
+			});
+			return;
+		}
+
+		// Specific move
+		if (moveListBodyRef.current && viewingMoveIndex >= 0) {
 			const rowIndex = Math.floor(viewingMoveIndex / 2);
-			const rowElement = moveListRef.current.children[rowIndex] as HTMLElement | undefined;
+			const rowElement = moveListBodyRef.current.children[rowIndex] as HTMLElement | undefined;
+
 			if (rowElement) {
 				rowElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
 			}
 		}
-	}, [moves, viewingMoveIndex]);
+	}, [viewingMoveIndex]);
 
 	if (!visible) {
 		return null;
@@ -89,16 +89,15 @@ export function MoveList({
 
 	const getMoveClassName = (moveIndex: number | null) => {
 		if (moveIndex === null) return "";
-
 		const isActive = moveIndex === activeMoveIndex;
 		const isClickable = onMoveClick !== undefined;
 
 		return `
-			rounded px-3 -mx-2
-			${isActive ? "text-[rgb(var(--color-primary-500))]" : ""}
-			${isClickable && !isActive ? "cursor-pointer hover:bg-[rgb(var(--color-surface-card)/0.7)]" : ""}
-			${isClickable ? "cursor-pointer" : ""}
-			`;
+            rounded px-3 -mx-2
+            ${isActive ? "text-[rgb(var(--color-primary-500))] font-bold" : ""} 
+            ${isClickable && !isActive ? "cursor-pointer hover:bg-[rgb(var(--color-surface-card)/0.7)]" : ""}
+            ${isClickable ? "cursor-pointer" : ""}
+            `;
 	};
 
 	const isViewingHistory = viewingMoveIndex !== null;
@@ -121,37 +120,38 @@ export function MoveList({
 				)}
 			</div>
 			<div
+				ref={scrollContainerRef}
 				className="flex-1 overflow-y-auto 
-			[&::-webkit-scrollbar]:w-2 
-			[&::-webkit-scrollbar-track]:rounded-full 
-			[&::-webkit-scrollbar-track]:bg-[rgb(var(--color-surface-card))] 
-			[&::-webkit-scrollbar-thumb]:rounded-full 
-			[&::-webkit-scrollbar-thumb]:bg-[rgb(var(--color-surface-border))]"
+            [&::-webkit-scrollbar]:w-2 
+            [&::-webkit-scrollbar-track]:rounded-full 
+            [&::-webkit-scrollbar-track]:bg-[rgb(var(--color-surface-card))] 
+            [&::-webkit-scrollbar-thumb]:rounded-full 
+            [&::-webkit-scrollbar-thumb]:bg-[rgb(var(--color-surface-border))]"
 			>
 				<table className="min-w-full divide-y divide-[rgb(var(--color-surface-border)/0.5)]">
-					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none">
+					<thead className="sticky top-0 bg-[rgb(var(--color-surface-base))] border-none z-10">
 						<tr>
 							<th
 								scope="col"
-								className="px-2 py-2 text-left text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] opacity-50"
+								className="px-2 py-2 text-left text-sm font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] opacity-50 w-12"
 							>
 								#
 							</th>
 							<th
 								scope="col"
-								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]"
+								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] w-[45%]"
 							>
 								White
 							</th>
 							<th
 								scope="col"
-								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))]"
+								className="px-2 py-2 text-left text-lg font-mono uppercase tracking-[0.18em] text-[rgb(var(--color-fg-secondary))] w-[45%]"
 							>
 								Black
 							</th>
 						</tr>
 					</thead>
-					<tbody ref={moveListRef}>
+					<tbody ref={moveListBodyRef}>
 						{moveRows.map((row, index) => (
 							<tr
 								key={row.moveNumber}
@@ -161,13 +161,13 @@ export function MoveList({
 										: "bg-[rgb(var(--color-surface-card)/0.3)]"
 								}
 							>
-								<td className="whitespace-nowrap px-2 py-1.5 text-sm text-[rgb(var(--color-fg-secondary))]">
+								<td className="whitespace-nowrap px-2 py-1.5 text-sm text-[rgb(var(--color-fg-secondary))] opacity-70">
 									{row.moveNumber}.
 								</td>
 								<td className="whitespace-nowrap px-2 py-1.5 text-md">
 									<button
 										type="button"
-										className={`truncate bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.whiteIndex)}`}
+										className={`truncate bg-transparent text-left w-full ${getMoveClassName(row.whiteIndex)}`}
 										onClick={() => onMoveClick?.(row.whiteIndex)}
 										disabled={!onMoveClick}
 									>
@@ -178,14 +178,14 @@ export function MoveList({
 									{row.blackIndex !== null ? (
 										<button
 											type="button"
-											className={`truncate bg-transparent text-left text-[rgb(var(--color-fg-primary))] ${getMoveClassName(row.blackIndex)}`}
+											className={`truncate bg-transparent text-left w-full ${getMoveClassName(row.blackIndex)}`}
 											onClick={() => row.blackIndex !== null && onMoveClick?.(row.blackIndex)}
 											disabled={!onMoveClick}
 										>
 											{row.black}
 										</button>
 									) : (
-										<span className="truncate text-left text-[rgb(var(--color-fg-primary))]">
+										<span className="truncate text-left text-[rgb(var(--color-fg-primary))] w-full block">
 											{row.black}
 										</span>
 									)}
@@ -194,10 +194,11 @@ export function MoveList({
 						))}
 					</tbody>
 				</table>
+				<div className="h-2" />
 			</div>
 
 			{onGoToStart && onGoBack && onGoForward && onGoToLive && (
-				<div className="flex items-center justify-center gap-1 border-t border-[rgb(var(--color-surface-border)/0.5)] pt-2">
+				<div className="flex items-center justify-center gap-1 border-t border-[rgb(var(--color-surface-border)/0.5)] pt-2 mt-2">
 					<IconButton
 						variant="ghost"
 						size="lg"
