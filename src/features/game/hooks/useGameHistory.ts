@@ -30,6 +30,7 @@ export function useGameHistory(): GameHistoryViewModel {
 		const fetchOngoing = async () => {
 			try {
 				setIsLoadingOngoing(true);
+				// API: GET /api/account/playing
 				const response = await apiAccountPlaying(undefined, createAuthHeaders());
 				if (response.status === 200) {
 					setOngoingGames(response.data.nowPlaying || []);
@@ -45,6 +46,7 @@ export function useGameHistory(): GameHistoryViewModel {
 			try {
 				setIsLoadingHistory(true);
 				const games: GameJson[] = [];
+				// API: GET /api/games/user/{username}
 				const response = await apiGamesUser(user.username, { max: 20 }, createStreamHeaders());
 
 				if (response.status === 200 && "stream" in response) {
