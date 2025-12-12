@@ -292,7 +292,7 @@ export function useGameEngine({
 		}
 	}, [chess]);
 
-	useEffect(() => {
+	const processPremoveQueue = useCallback(() => {
 		if (!gameFull || !isMyGame || !isConnected || isGameEnded) return;
 		if (!premoveQueue.length) return;
 		if (pendingUci) return; // Wait for pending move to resolve
@@ -339,12 +339,9 @@ export function useGameEngine({
 
 		void executeMove(next.uci, true);
 	}, [
-		// Dependencies for premove triggering
 		serverTurn,
 		premoveQueue,
 		pendingUci,
-
-		// Config
 		gameFull,
 		isMyGame,
 		isConnected,
@@ -355,6 +352,10 @@ export function useGameEngine({
 		executeMove,
 		onPremoveSound,
 	]);
+
+	useEffect(() => {
+		processPremoveQueue();
+	}, [processPremoveQueue]);
 
 	// Clean up on game end
 	useEffect(() => {
