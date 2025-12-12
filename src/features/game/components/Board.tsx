@@ -11,8 +11,6 @@ import {
 } from "react-chessboard";
 import { pieceToKey } from "../model/chess";
 import type { BoardViewModel } from "../hooks/useBoard";
-import { useBoardPreferences } from "../hooks/useBoardPreferences";
-import { useBoardTheme } from "../hooks/useBoardTheme";
 import { PromotionMenu } from "./PromotionMenu";
 
 export type BoardProps = {
@@ -35,6 +33,7 @@ export function Board({ viewModel }: BoardProps) {
 		rightClickedSquares,
 		takebackSquares,
 		isDraggable,
+		visuals,
 	} = displayState;
 
 	const {
@@ -47,9 +46,6 @@ export function Board({ viewModel }: BoardProps) {
 		onCancelPromotion,
 		onRightClick,
 	} = handlers;
-
-	const preferences = useBoardPreferences();
-	const themeViewModel = useBoardTheme(preferences.theme);
 
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
@@ -87,7 +83,7 @@ export function Board({ viewModel }: BoardProps) {
 		[],
 	);
 
-	const { colors: boardColors } = themeViewModel;
+	const boardColors = visuals.colors;
 
 	// Calculate promotion dropdown position
 	const promotionDropdown = useMemo(() => {
@@ -139,7 +135,7 @@ export function Board({ viewModel }: BoardProps) {
 			tintSquare(selectedSquare, boardColors.selectedHighlight);
 			appendShadow(
 				selectedSquare,
-				preferences.theme === "classic"
+				visuals.themeCode === "classic"
 					? "inset 0 0 0 2px rgba(20, 85, 30, 0.9)"
 					: "inset 0 0 0 2px rgb(var(--color-primary-500) / 0.9)",
 			);
@@ -177,13 +173,13 @@ export function Board({ viewModel }: BoardProps) {
 		if (checkSquare) {
 			tintSquare(
 				checkSquare,
-				preferences.theme === "classic"
+				visuals.themeCode === "classic"
 					? "rgba(255, 0, 0, 0.18)"
 					: "rgb(var(--color-chess-in-check) / 0.18)",
 			);
 			appendShadow(
 				checkSquare,
-				preferences.theme === "classic"
+				visuals.themeCode === "classic"
 					? "inset 0 0 0 2px rgba(255, 0, 0, 0.89)"
 					: "inset 0 0 0 2px rgb(var(--color-chess-in-check) / 0.9)",
 			);
@@ -193,13 +189,13 @@ export function Board({ viewModel }: BoardProps) {
 		for (const step of premoveQueue) {
 			tintSquare(
 				step.from,
-				preferences.theme === "classic"
+				visuals.themeCode === "classic"
 					? "rgba(155, 199, 0, 0.2)"
 					: "rgb(var(--color-chess-move-premove) / 0.2)",
 			);
 			tintSquare(
 				step.to,
-				preferences.theme === "classic"
+				visuals.themeCode === "classic"
 					? "rgba(155, 199, 0, 0.4)"
 					: "rgb(var(--color-chess-move-premove) / 0.4)",
 			);
@@ -221,7 +217,7 @@ export function Board({ viewModel }: BoardProps) {
 		rightClickedSquares,
 		takebackSquares,
 		boardColors,
-		preferences.theme,
+		visuals.themeCode,
 	]);
 
 	// Handlers for react-chessboard
@@ -264,7 +260,7 @@ export function Board({ viewModel }: BoardProps) {
 				ref={boardContainerRef}
 			>
 				<Chessboard
-					key={preferences.preferencesVersion}
+					key={visuals.preferencesVersion}
 					options={{
 						position,
 						boardOrientation,
@@ -276,9 +272,9 @@ export function Board({ viewModel }: BoardProps) {
 						onSquareRightClick: handleSquareRightClick,
 						squareStyles,
 						showAnimations,
-						showNotation: preferences.showCoordinates,
+						showNotation: visuals.showCoordinates,
 						animationDurationInMs: 150,
-						arrowOptions: themeViewModel.useCustomArrows
+						arrowOptions: visuals.useCustomArrows
 							? {
 									color: boardColors.premoveHighlight,
 									secondaryColor: boardColors.lastMoveHighlight,

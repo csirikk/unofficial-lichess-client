@@ -1,8 +1,3 @@
-/**
- * useBoard Hook
- *
- * Contains all board display state and interaction handlers. Handles live play and history viewing.
- */
 import { useMemo } from "react";
 import type { Move as ChessMove, Square } from "chess.js";
 import type {
@@ -13,6 +8,9 @@ import type {
 } from "../model/chess";
 import type { GameEngineState, GameEngineInfo } from "./useGameEngine";
 import type { BoardInteractionState, BoardInteractionHandlers } from "./useBoardInteraction";
+import type { BoardThemeViewModel, BoardColors } from "./useBoardTheme";
+import type { BoardPreferencesViewModel } from "./useBoardPreferences";
+import type { BoardTheme } from "../model/preferences";
 import type { GameColor as Color } from "../../../generated/types/gameColor";
 
 export type BoardViewModelConfig = {
@@ -25,6 +23,8 @@ export type BoardViewModelConfig = {
 	viewedLastMove: { from: Square | null; to: Square | null };
 	takebackSquares: Array<{ from: string; to: string }>;
 	onInteract: () => void;
+	preferences: BoardPreferencesViewModel;
+	theme: BoardThemeViewModel;
 };
 
 export type BoardDisplayState = {
@@ -41,6 +41,13 @@ export type BoardDisplayState = {
 	rightClickedSquares: Record<string, boolean>;
 	takebackSquares: Array<{ from: Square; to: Square }>;
 	isDraggable: boolean;
+	visuals: {
+		colors: BoardColors;
+		useCustomArrows: boolean;
+		showCoordinates: boolean;
+		preferencesVersion: number;
+		themeCode: BoardTheme;
+	};
 };
 
 export type BoardHandlers = {
@@ -69,6 +76,8 @@ export function useBoard({
 	displayPosition,
 	viewedLastMove,
 	takebackSquares,
+	preferences,
+	theme,
 }: BoardViewModelConfig): BoardViewModel {
 	const displayState = useMemo<BoardDisplayState>(
 		() => ({
@@ -92,6 +101,14 @@ export function useBoard({
 				to: square.to as Square,
 			})),
 			isDraggable: !isViewingHistory && gameInfo.isMyGame && !gameInfo.isGameEnded,
+
+			visuals: {
+				colors: theme.colors,
+				useCustomArrows: theme.useCustomArrows,
+				showCoordinates: preferences.showCoordinates,
+				preferencesVersion: preferences.preferencesVersion,
+				themeCode: preferences.theme,
+			},
 		}),
 		[
 			isViewingHistory,
@@ -111,6 +128,8 @@ export function useBoard({
 			gameInfo.isGameEnded,
 			viewedLastMove,
 			takebackSquares,
+			preferences,
+			theme,
 		],
 	);
 

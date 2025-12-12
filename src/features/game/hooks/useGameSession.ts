@@ -27,6 +27,9 @@ import { useHistoryKeyboard } from "./useHistoryKeyboard";
 import { useHistoryMouse } from "./useHistoryMouse";
 import { useHistoryViewing } from "./useHistoryViewing";
 import { useSoundEffects } from "./useSoundEffects";
+import { useBoardPreferences } from "./useBoardPreferences";
+import { useBoardTheme } from "./useBoardTheme";
+
 import { deriveGameState } from "../model/game-info-helpers";
 import type { GameModel } from "../model/types";
 
@@ -50,6 +53,9 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const seekStreamRef = useRef<{ close: () => void } | null>(null);
 	const expectedSourceRef = useRef<"lobby" | "ai" | "friend" | null>(null);
 	const ignoredGameIdsRef = useRef<Set<string>>(new Set());
+
+	const preferences = useBoardPreferences();
+	const themeViewModel = useBoardTheme(preferences.theme);
 
 	const cancelSeek = useCallback(async () => {
 		if (seekAbortControllerRef.current) {
@@ -268,6 +274,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		viewedLastMove: history.viewedLastMove,
 		takebackSquares: interactionState.takebackSquares,
 		onInteract: history.goToLive,
+		preferences,
+		theme: themeViewModel,
 	});
 
 	const handleStartBotGame = async (config: {
