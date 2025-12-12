@@ -22,31 +22,31 @@ export const TIME_PRESETS: TimePreset[] = [
 		incrementSeconds: 0,
 		category: "unlimited",
 	},
-	// // Bullet
-	// {
-	// 	id: "1+0",
-	// 	label: "1+0",
-	// 	subtitle: "bullet",
-	// 	limitSeconds: 60,
-	// 	incrementSeconds: 0,
-	// 	category: "bullet",
-	// },
-	// {
-	// 	id: "1+1",
-	// 	label: "1+1",
-	// 	subtitle: "bullet",
-	// 	limitSeconds: 60,
-	// 	incrementSeconds: 1,
-	// 	category: "bullet",
-	// },
-	// {
-	// 	id: "2+1",
-	// 	label: "2+1",
-	// 	subtitle: "bullet",
-	// 	limitSeconds: 120,
-	// 	incrementSeconds: 1,
-	// 	category: "bullet",
-	// },
+	// Bullet
+	{
+		id: "1+0",
+		label: "1+0",
+		subtitle: "bullet",
+		limitSeconds: 60,
+		incrementSeconds: 0,
+		category: "bullet",
+	},
+	{
+		id: "1+1",
+		label: "1+1",
+		subtitle: "bullet",
+		limitSeconds: 60,
+		incrementSeconds: 1,
+		category: "bullet",
+	},
+	{
+		id: "2+1",
+		label: "2+1",
+		subtitle: "bullet",
+		limitSeconds: 120,
+		incrementSeconds: 1,
+		category: "bullet",
+	},
 	// Blitz
 	{
 		id: "3+0",
@@ -90,6 +90,14 @@ export const TIME_PRESETS: TimePreset[] = [
 		category: "rapid",
 	},
 	{
+		id: "10+2",
+		label: "10+2",
+		subtitle: "rapid",
+		limitSeconds: 600,
+		incrementSeconds: 2,
+		category: "rapid",
+	},
+	{
 		id: "10+5",
 		label: "10+5",
 		subtitle: "rapid",
@@ -98,11 +106,19 @@ export const TIME_PRESETS: TimePreset[] = [
 		category: "rapid",
 	},
 	{
-		id: "15+10",
-		label: "15+10",
+		id: "15+0",
+		label: "15+0",
 		subtitle: "rapid",
 		limitSeconds: 900,
-		incrementSeconds: 10,
+		incrementSeconds: 0,
+		category: "rapid",
+	},
+	{
+		id: "15+2",
+		label: "15+2",
+		subtitle: "rapid",
+		limitSeconds: 900,
+		incrementSeconds: 2,
 		category: "rapid",
 	},
 	// Classical
@@ -115,6 +131,14 @@ export const TIME_PRESETS: TimePreset[] = [
 		category: "classical",
 	},
 	{
+		id: "30+2",
+		label: "30+2",
+		subtitle: "classical",
+		limitSeconds: 1800,
+		incrementSeconds: 2,
+		category: "classical",
+	},
+	{
 		id: "30+20",
 		label: "30+20",
 		subtitle: "classical",
@@ -123,6 +147,23 @@ export const TIME_PRESETS: TimePreset[] = [
 		category: "classical",
 	},
 ];
+
+/**
+ * Default preset ids per tab/mode.
+ */
+export const DEFAULT_PRESET_IDS: Record<"bot" | "unrated" | "rated", string[]> = {
+	bot: ["3+2", "5+0", "10+0", "unlimited"],
+	unrated: ["10+0", "10+2", "15+2", "30+0"],
+	rated: ["15+0", "15+2", "30+0", "30+2"],
+};
+
+/**
+ * Return the TimePreset list for a given mode based on the default ids.
+ */
+export function getDefaultTimePresetsForMode(mode: "bot" | "unrated" | "rated"): TimePreset[] {
+	const ids = DEFAULT_PRESET_IDS[mode] ?? [];
+	return ids.map((id) => findTimePreset(id)).filter((p): p is TimePreset => !!p);
+}
 
 /**
  * Player color selection for game setup.
@@ -179,7 +220,7 @@ export function createDefaultBotGameSetup(): BotGameSetup {
 
 export function createDefaultGameSetup(): GameSetup {
 	return {
-		timePresetId: "10+5",
+		timePresetId: "10+0",
 		colorChoice: "random",
 		rated: false,
 	};

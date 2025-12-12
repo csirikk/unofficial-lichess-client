@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
@@ -6,7 +6,7 @@ import { Board } from "../components/Board";
 import { ClockPanel } from "../components/ClockPanel";
 import { Controls } from "../components/GameActions";
 import { MoveList } from "../components/MoveList";
-import { GameModeTabs } from "./GameModeTabs";
+import { GameSetupView } from "./GameSetupView";
 import { GameResultModal } from "../components/GameResultModal";
 import { GameStatus } from "../components/GameStatus";
 
@@ -20,13 +20,16 @@ export default function GameView() {
 		setModalDismissed(false);
 	};
 
-	const updateGameId = (newId: string | null) => {
-		if (newId) {
-			setSearchParams({ game: newId });
-		} else {
-			setSearchParams({});
-		}
-	};
+	const updateGameId = useCallback(
+		(newId: string | null) => {
+			if (newId) {
+				setSearchParams({ game: newId });
+			} else {
+				setSearchParams({});
+			}
+		},
+		[setSearchParams],
+	);
 
 	const session = useGameSession(gameId, updateGameId);
 	const { gameModel, boardViewModel, historyState, capturedState, sessionState, actions } = session;
@@ -37,15 +40,23 @@ export default function GameView() {
 		}
 	}, [sessionState.isGameEnded]);
 
-	const hasGame = !!gameId && !!gameModel;
+	const shouldShowGameUI = !!gameId;
+	const isDataReady = !!gameModel;
 
 	return (
-		<div className="flex h-full w-full flex-col game-view ">
+		<div className="flex h-full w-full flex-col game-view overflow-hidden">
 			<div className="flex h-full min-h-0 w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-center">
 				{/* RIGHT PANEL */}
-				<div className="order-1 w-full shrink-0 flex flex-col lg:order-3 lg:h-(--board-size) lg:w-90 lg:min-h-0">
-					{!hasGame ? (
-						<GameModeTabs
+				<div
+					className={`
+						order-1 w-full shrink-0 flex flex-col 
+						lg:order-3 lg:h-(--board-size) lg:min-h-0 
+						transition-all duration-300 ease-in-out
+						${shouldShowGameUI ? "lg:w-90" : "lg:w-120"} 
+						`}
+				>
+					{!shouldShowGameUI ? (
+						<GameSetupView
 							isCreating={sessionState.isCreatingGame}
 							waitingForGame={sessionState.waitingForGame}
 							error={sessionState.error}
@@ -53,8 +64,8 @@ export default function GameView() {
 							onStartOnlineGame={actions.startOnlineGame}
 							onCancelSeek={actions.cancelSeek}
 						/>
-					) : gameModel ? (
-						<div className="flex flex-col lg:h-full lg:min-h-0">
+					) : isDataReady ? (
+						<div className="flex flex-col lg:h-full lg:min-h-0 fade-in duration-300">
 							{/* Status */}
 							<div className="mb-2 shrink-0">
 								<GameStatus
@@ -94,40 +105,51 @@ export default function GameView() {
 								/>
 							</div>
 						</div>
-					) : null}
+					) : (
+						<div className="flex h-full items-center justify-center">
+							<div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+						</div>
+					)}
 				</div>
 
 				{/* CENTER PANEL*/}
 				<div
-					className={`order-2 flex w-full justify-center lg:order-2 lg:h-(--board-size) lg:flex-1 lg:min-w-0 ${
-						!hasGame ? "opacity-80" : ""
+					className={`order-2 flex w-full justify-center lg:order-2 lg:h-(--board-size) lg:flex-1 lg:min-w-0 transition-opacity duration-300 ${
+						!shouldShowGameUI ? "opacity-80" : "opacity-100"
 					}`}
 				>
 					<div className="relative aspect-square w-full max-h-[calc(95vh-4rem)] max-w-full shrink-0 lg:h-(--board-size) lg:w-(--board-size)">
-						<Board viewModel={boardViewModel} />
+						{boardViewModel && <Board viewModel={boardViewModel} />}
 					</div>
 				</div>
 
 				{/* LEFT PANEL*/}
 				<div
-					className={`order-3 w-full shrink-0 flex flex-col lg:overflow-hidden lg:order-1 lg:h-(--board-size) lg:w-60 lg:min-h-0 ${
-						!hasGame ? "invisible pointer-events-none" : ""
-					}`}
+					className={`
+						order-3 shrink-0 flex flex-col lg:order-1 lg:h-(--board-size) lg:min-h-0
+						overflow-hidden whitespace-nowrap
+						transition-all duration-300 ease-in-out ${
+							shouldShowGameUI
+								? "w-full opacity-100 lg:w-60 translate-x-0"
+								: "w-0 opacity-0 lg:-translate-x-20 pointer-events-none"
+						}`}
 				>
-					<MoveList
-						moves={historyState.moveHistory}
-						visible={true}
-						viewingMoveIndex={historyState.viewingMoveIndex}
-						onMoveClick={historyState.goToMove}
-						onGoToStart={historyState.goToStart}
-						onGoBack={historyState.goBack}
-						onGoForward={historyState.goForward}
-						onGoToLive={historyState.goToLive}
-					/>
+					<div className="min-w-60 h-full">
+						<MoveList
+							moves={historyState.moveHistory}
+							visible={true}
+							viewingMoveIndex={historyState.viewingMoveIndex}
+							onMoveClick={historyState.goToMove}
+							onGoToStart={historyState.goToStart}
+							onGoBack={historyState.goBack}
+							onGoForward={historyState.goForward}
+							onGoToLive={historyState.goToLive}
+						/>
+					</div>
 				</div>
 			</div>
 
-			{hasGame && sessionState.isGameEnded && !modalDismissed && gameModel && (
+			{shouldShowGameUI && sessionState.isGameEnded && !modalDismissed && gameModel && (
 				<GameResultModal
 					game={gameModel}
 					onRematch={actions.rematch}
