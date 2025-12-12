@@ -32,6 +32,7 @@ export function GameSetupView({
 	onCancelSeek,
 }: GameSetupViewProps) {
 	const [mode, setMode] = useState<GameMode>("bot");
+	const [isTimeExpanded, setIsTimeExpanded] = useState(false);
 
 	return (
 		<div className="flex flex-col justify-start">
@@ -67,7 +68,13 @@ export function GameSetupView({
 						style={{ transform: `translateX(-${TABS.findIndex((t) => t.id === mode) * 100}%)` }}
 					>
 						<div className="w-full shrink-0 h-full">
-							<BotTab isCreating={isCreating} error={error} onStart={onStartBotGame} />
+							<BotTab
+								isCreating={isCreating}
+								error={error}
+								onStart={onStartBotGame}
+								isTimeExpanded={isTimeExpanded}
+								setIsTimeExpanded={setIsTimeExpanded}
+							/>
 						</div>
 
 						<div className="w-full shrink-0 h-full">
@@ -77,6 +84,8 @@ export function GameSetupView({
 								error={error}
 								onStart={onStartOnlineGame}
 								onCancel={onCancelSeek}
+								isTimeExpanded={isTimeExpanded}
+								setIsTimeExpanded={setIsTimeExpanded}
 							/>
 						</div>
 
@@ -87,6 +96,8 @@ export function GameSetupView({
 								error={error}
 								onStart={onStartOnlineGame}
 								onCancel={onCancelSeek}
+								isTimeExpanded={isTimeExpanded}
+								setIsTimeExpanded={setIsTimeExpanded}
 							/>
 						</div>
 					</div>

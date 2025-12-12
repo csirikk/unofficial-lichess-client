@@ -1,18 +1,26 @@
 import { useId, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTimePresets } from "../features/game/hooks/useTimePresets";
+import {
+	BOT_LEVELS,
+	type SetupBotLevel,
+	type SetupColorChoice,
+	createDefaultBotGameSetup,
+	MIN_RATED_MINUTES,
+	MIN_UNRATED_MINUTES,
+	MIN_BOT_MINUTES,
+	getDefaultTimePresetsForMode,
+} from "../features/game/model/setup";
+import {
+	type GameSetup,
+	type TimePreset,
+	createDefaultGameSetup,
+} from "../features/game/model/setup";
 import { Button } from "./Button";
+import { IconButton } from "./IconButton";
 import { SectionLabel } from "./SectionLabel";
 import { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
 import { SelectableCardGrid } from "./TimeControlGrid";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import {
-	type SetupBotLevel,
-	type SetupColorChoice,
-	BOT_LEVELS,
-	getDefaultTimePresetsForMode,
-	createDefaultBotGameSetup,
-	findTimePreset,
-} from "../features/game/model/setup";
-import { type GameSetup, createDefaultGameSetup } from "../features/game/model/setup";
 
 const colorOptions: SegmentedOption<SetupColorChoice>[] = [
 	{ value: "white", label: "White" },
@@ -20,15 +28,7 @@ const colorOptions: SegmentedOption<SetupColorChoice>[] = [
 	{ value: "black", label: "Black" },
 ];
 
-const mapPresetItems = (
-	presets: {
-		id: string;
-		label: string;
-		subtitle: string;
-		limitSeconds: number;
-		incrementSeconds: number;
-	}[],
-) =>
+const mapPresetItems = (presets: TimePreset[]) =>
 	presets.map((p) => ({
 		id: p.id,
 		preset: p.label,
@@ -84,26 +84,124 @@ type TimeControlItem = {
 	incrementSeconds: number;
 };
 
+function CustomTimeControlInput({
+	limit,
+	increment,
+	onChange,
+	onSelect,
+	isActive,
+}: {
+	limit: number;
+	increment: number;
+	onChange: (limit: number, increment: number) => void;
+	onSelect: () => void;
+	isActive: boolean;
+}) {
+	const minutes = limit / 60;
+
+	const activeClasses = isActive
+		? "border-[rgb(var(--color-primary-500))] bg-[rgb(var(--color-primary-500)/0.05)] shadow-sm"
+		: "border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-base)/0.5)] hover:border-[rgb(var(--color-primary-500)/0.3)]";
+
+	return (
+		<button
+			type="button"
+			tabIndex={0}
+			onClick={onSelect}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onSelect();
+				}
+			}}
+			className={`mt-4 text-left rounded-lg border-2 p-4 transition-colors duration-200 cursor-pointer w-full ${activeClasses}`}
+		>
+			<div className="flex w-full justify-between items-center mb-1">
+				<span className="text-lg font-semibold uppercase tracking-wide text-[rgb(var(--color-fg-primary))]">
+					Custom
+				</span>
+
+				<span
+					className={`text-2xl font-semibold shrink-0 ${
+						isActive
+							? "text-[rgb(var(--color-primary-700))]"
+							: "text-[rgb(var(--color-fg-primary))]"
+					}`}
+				>
+					{limit === 0 && increment === 0 ? "∞" : `${Math.floor(limit / 60)}+${increment}`}
+				</span>
+			</div>
+			<div className="flex gap-4">
+				<div className="flex-1">
+					<label className="block">
+						<div className="block text-sm font-medium text-[rgb(var(--color-fg-secondary))] mb-1">
+							Starting time in minutes
+						</div>
+						<input
+							type="number"
+							min={0}
+							max={180}
+							step={1}
+							value={minutes}
+							onChange={(e) => onChange(Number(e.target.value) * 60, increment)}
+							onFocus={onSelect}
+							className="w-full px-3 py-2 rounded-md bg-[rgb(var(--color-surface-card))] border border-[rgb(var(--color-surface-border))] text-[rgb(var(--color-fg-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary-500))]"
+						/>
+					</label>
+				</div>
+				<div className="flex-1">
+					<label className="block">
+						<div className="block text-sm font-medium text-[rgb(var(--color-fg-secondary))] mb-1">
+							Seconds added per move
+						</div>
+						<input
+							type="number"
+							min={0}
+							max={180}
+							value={increment}
+							onChange={(e) => onChange(limit, Number(e.target.value))}
+							onFocus={onSelect}
+							className="w-full px-3 py-2 rounded-md bg-[rgb(var(--color-surface-card))] border border-[rgb(var(--color-surface-border))] text-[rgb(var(--color-fg-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary-500))]"
+						/>
+					</label>
+				</div>
+			</div>
+		</button>
+	);
+}
+
 function TimeControl({
 	value,
 	items,
 	onChange,
 	isExpanded,
 	setIsExpanded,
+	customValues,
+	onCustomChange,
 }: {
 	value: string;
 	items: TimeControlItem[];
 	onChange: (id: string) => void;
 	isExpanded: boolean;
 	setIsExpanded: (v: boolean) => void;
+	customValues?: { limit: number; increment: number };
+	onCustomChange?: (limit: number, increment: number) => void;
 }) {
+	const isCustomActive = value === "custom";
+	const handleCustomInputChange = (limit: number, increment: number) => {
+		if (onCustomChange) {
+			onCustomChange(limit, increment);
+			onChange("custom");
+		}
+	};
+
 	return (
 		<div>
 			<SectionLabel>Time Control</SectionLabel>
 
 			<div
 				className={`overflow-hidden transition-all duration-500 ease-in-out relative ${
-					isExpanded ? "max-h-106" : "max-h-60"
+					isExpanded ? "max-h-150" : "max-h-60"
 				}`}
 			>
 				<SelectableCardGrid
@@ -112,16 +210,27 @@ function TimeControl({
 					onChange={onChange}
 					scrollable={isExpanded}
 				/>
+				{customValues && onCustomChange && (
+					<CustomTimeControlInput
+						limit={customValues.limit}
+						increment={customValues.increment}
+						onChange={handleCustomInputChange}
+						onSelect={() => onChange("custom")}
+						isActive={isCustomActive}
+					/>
+				)}
 			</div>
 
 			<div className="mt-3 flex justify-center">
-				<button
-					type="button"
+				<IconButton
+					size="sm"
+					variant="ghost"
+					aria-label={isExpanded ? "Collapse time control" : "Expand time control"}
 					onClick={() => setIsExpanded(!isExpanded)}
-					className="cursor-pointer flex items-center gap-1.5 text-sm font-medium text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-primary-500))] transition-colors focus:outline-none"
+					className="text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-primary-500))] transition-colors"
 				>
 					{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-				</button>
+				</IconButton>
 			</div>
 		</div>
 	);
@@ -135,18 +244,45 @@ type BotTabProps = {
 		clock: { limit: number; increment: number } | null;
 		color: SetupColorChoice;
 	}) => void;
+	isTimeExpanded: boolean;
+	setIsTimeExpanded: (expanded: boolean) => void;
 };
 
-export function BotTab({ isCreating, error, onStart }: BotTabProps) {
+export function BotTab({
+	isCreating,
+	error,
+	onStart,
+	isTimeExpanded,
+	setIsTimeExpanded,
+}: BotTabProps) {
 	const [setup, setSetup] = useState(createDefaultBotGameSetup);
-	const [isTimeExpanded, setIsTimeExpanded] = useState(false);
+	const { presets } = useTimePresets();
+	const modePresets = presets.bot;
 
 	const handleLevelChange = (id: string) => {
 		setSetup((prev) => ({ ...prev, botLevel: Number(id) as SetupBotLevel }));
 	};
 
 	const handleTimeChange = (id: string) => {
-		setSetup((prev) => ({ ...prev, timePresetId: id }));
+		if (id === "custom") {
+			setSetup((prev) => ({ ...prev, timePresetId: "custom" }));
+		} else {
+			const preset = modePresets.find((p) => p.id === id);
+			if (preset) {
+				setSetup((prev) => ({
+					...prev,
+					timePresetId: id,
+					timeControl: { limit: preset.limitSeconds, increment: preset.incrementSeconds },
+				}));
+			}
+		}
+	};
+
+	const handleCustomChange = (limit: number, increment: number) => {
+		setSetup((prev) => ({
+			...prev,
+			timeControl: { limit, increment },
+		}));
 	};
 
 	const handleColorChange = (color: SetupColorChoice) => {
@@ -154,16 +290,12 @@ export function BotTab({ isCreating, error, onStart }: BotTabProps) {
 	};
 
 	const handleStart = () => {
-		const preset = findTimePreset(setup.timePresetId);
-		if (!preset) return;
-
-		const isUnlimited = preset.limitSeconds === 0 && preset.incrementSeconds === 0;
+		const { limit, increment } = setup.timeControl;
+		const isUnlimited = limit === 0 && increment === 0;
 
 		onStart({
 			level: setup.botLevel,
-			clock: isUnlimited
-				? null
-				: { limit: preset.limitSeconds, increment: preset.incrementSeconds },
+			clock: isUnlimited ? null : { limit, increment },
 			color: setup.colorChoice,
 		});
 	};
@@ -173,6 +305,10 @@ export function BotTab({ isCreating, error, onStart }: BotTabProps) {
 	const currentLevel = BOT_LEVELS.find((l) => l.level === setup.botLevel) ?? BOT_LEVELS[0];
 
 	const inputId = useId();
+
+	const isValid =
+		setup.timeControl.limit >= MIN_BOT_MINUTES * 60 ||
+		(setup.timeControl.limit === 0 && setup.timeControl.increment === 0);
 
 	return (
 		<Panel
@@ -228,14 +364,14 @@ export function BotTab({ isCreating, error, onStart }: BotTabProps) {
 												isActive ? "text-[rgb(var(--color-primary-500))]" : ""
 											}`}
 										>
-											<span
+											<div
 												className={`block h-1 w-px rounded-full ${
 													isActive
 														? "bg-[rgb(var(--color-primary-500))]"
 														: "bg-[rgb(var(--color-surface-border)/0.9)]"
 												}`}
 											/>
-											<span className="font-medium">{level.level}</span>
+											<div className="font-medium">{level.level}</div>
 										</button>
 									);
 								})}
@@ -246,16 +382,29 @@ export function BotTab({ isCreating, error, onStart }: BotTabProps) {
 
 				<TimeControl
 					value={setup.timePresetId}
-					items={mapPresetItems(getDefaultTimePresetsForMode("bot"))}
+					items={mapPresetItems(modePresets)}
 					onChange={handleTimeChange}
 					isExpanded={isTimeExpanded}
 					setIsExpanded={setIsTimeExpanded}
+					customValues={setup.timeControl}
+					onCustomChange={handleCustomChange}
 				/>
 
 				<div className="pt-2">
-					<Button variant="primary" size="lg" fullWidth onClick={handleStart} disabled={isCreating}>
-						{isCreating ? "Starting…" : "Start Game"}
+					<Button
+						variant="primary"
+						size="lg"
+						fullWidth
+						onClick={handleStart}
+						disabled={isCreating || !isValid}
+					>
+						{isCreating ? "Starting…" : isValid ? "Start Game" : "Invalid Time Control"}
 					</Button>
+					{!isValid && (
+						<p className="mt-2 text-sm text-center text-[rgb(var(--color-error))]">
+							Bot games must be {MIN_BOT_MINUTES} minutes or longer.
+						</p>
+					)}
 				</div>
 			</div>
 		</Panel>
@@ -268,6 +417,8 @@ type OnlineTabBaseProps = {
 	error: string | null;
 	onStart: (setup: GameSetup) => void;
 	onCancel: () => void;
+	isTimeExpanded: boolean;
+	setIsTimeExpanded: (expanded: boolean) => void;
 };
 
 function OnlineTab({
@@ -277,12 +428,53 @@ function OnlineTab({
 	onStart,
 	onCancel,
 	rated,
+	isTimeExpanded,
+	setIsTimeExpanded,
 }: OnlineTabBaseProps & { rated: boolean }) {
-	const [setup, setSetup] = useState(createDefaultGameSetup);
-	const [isTimeExpanded, setIsTimeExpanded] = useState(false);
+	const [setup, setSetup] = useState(() => {
+		const defaults = createDefaultGameSetup();
+		if (rated) {
+			// pick a valid default preset for rated mode
+			const ratedDefaults = getDefaultTimePresetsForMode("rated");
+			if (ratedDefaults.length > 0) {
+				const first = ratedDefaults[0];
+				defaults.timePresetId = first.id;
+				defaults.timeControl = { limit: first.limitSeconds, increment: first.incrementSeconds };
+			}
+		} else {
+			const unratedDefaults = getDefaultTimePresetsForMode("unrated");
+			if (unratedDefaults.length > 0) {
+				const first = unratedDefaults[0];
+				defaults.timePresetId = first.id;
+				defaults.timeControl = { limit: first.limitSeconds, increment: first.incrementSeconds };
+			}
+		}
+		return defaults;
+	});
+	const { presets } = useTimePresets();
+	const mode = rated ? "rated" : "unrated";
+	const modePresets = presets[mode];
 
 	const handleTimeChange = (id: string) => {
-		setSetup((prev) => ({ ...prev, timePresetId: id }));
+		if (id === "custom") {
+			setSetup((prev) => ({ ...prev, timePresetId: "custom" }));
+		} else {
+			const preset = modePresets.find((p) => p.id === id);
+			if (preset) {
+				setSetup((prev) => ({
+					...prev,
+					timePresetId: id,
+					timeControl: { limit: preset.limitSeconds, increment: preset.incrementSeconds },
+				}));
+			}
+		}
+	};
+
+	const handleCustomChange = (limit: number, increment: number) => {
+		setSetup((prev) => ({
+			...prev,
+			timeControl: { limit, increment },
+		}));
 	};
 
 	const handleColorChange = (color: SetupColorChoice) => {
@@ -300,6 +492,10 @@ function OnlineTab({
 	const isDisabled = isCreating;
 	const buttonText = waitingForGame ? "Cancel" : isCreating ? "Creating seek…" : "Find Opponent";
 	const buttonVariant = waitingForGame ? "outline" : "primary";
+
+	// Validation
+	const limitMinutes = setup.timeControl.limit / 60;
+	const isValid = rated ? limitMinutes >= MIN_RATED_MINUTES : limitMinutes >= MIN_UNRATED_MINUTES;
 
 	return (
 		<Panel
@@ -331,10 +527,12 @@ function OnlineTab({
 
 				<TimeControl
 					value={setup.timePresetId}
-					items={mapPresetItems(getDefaultTimePresetsForMode(rated ? "rated" : "unrated"))}
+					items={mapPresetItems(modePresets)}
 					onChange={handleTimeChange}
 					isExpanded={isTimeExpanded}
 					setIsExpanded={setIsTimeExpanded}
+					customValues={setup.timeControl}
+					onCustomChange={handleCustomChange}
 				/>
 
 				<div className="pt-2">
@@ -343,13 +541,20 @@ function OnlineTab({
 						size="lg"
 						fullWidth
 						onClick={handleButtonClick}
-						disabled={isDisabled}
+						disabled={isDisabled || (!waitingForGame && !isValid)}
 					>
 						{buttonText}
 					</Button>
 					{waitingForGame && (
 						<p className="mt-2 text-sm text-center text-[rgb(var(--color-fg-secondary))]">
 							Looking for a player near your rating...
+						</p>
+					)}
+					{!waitingForGame && !isValid && (
+						<p className="mt-2 text-sm text-center text-[rgb(var(--color-error))]">
+							{rated
+								? `Rated games must be ${MIN_RATED_MINUTES} minutes or longer.`
+								: `Unrated games must be ${MIN_UNRATED_MINUTES} minutes or longer.`}
 						</p>
 					)}
 				</div>

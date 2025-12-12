@@ -12,13 +12,20 @@ import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameColor as Color } from "../../../generated/types/gameColor";
 import { createAuthHeaders } from "../../../lib/api";
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "./setup";
-import { findTimePreset } from "./setup";
+import { MIN_RATED_MINUTES, MIN_UNRATED_MINUTES, MIN_BOT_MINUTES } from "./setup";
 
 export async function startBotGame(
 	level: SetupBotLevel,
 	clock: { limit: number; increment: number } | null = { limit: 300, increment: 3 },
 	color: SetupColorChoice = "random",
 ): Promise<{ gameId: string }> {
+	// Validate clock
+	if (clock && (clock.limit > 0 || clock.increment > 0)) {
+		if (clock.limit < MIN_BOT_MINUTES * 60) {
+			throw new Error(`Bot games must be ${MIN_BOT_MINUTES} minutes or longer.`);
+		}
+	}
+
 	// Build body
 	const body: Parameters<typeof challengeAi>[0] = {
 		level,
@@ -154,22 +161,16 @@ export async function startOnlineSeek(
 	setup: GameSetup,
 	options?: RequestInit,
 ): Promise<StreamControl> {
-	const preset = findTimePreset(setup.timePresetId);
-	if (!preset) {
-		throw new Error("Invalid time preset");
-	}
-
-	const isRapid = preset.category === "rapid";
-	const isClassical = preset.category === "classical";
-	const allowedRatedRapids = new Set(["15+10", "20+0"]);
+	const { limit, increment } = setup.timeControl;
+	const limitMinutes = limit / 60;
 
 	if (setup.rated) {
-		if (!isClassical && !(isRapid && allowedRatedRapids.has(preset.id))) {
-			throw new Error("Rated seeks support Classical or Rapid 15+10 / 20+0 time controls");
+		if (limitMinutes < MIN_RATED_MINUTES) {
+			throw new Error(`Rated games must be ${MIN_RATED_MINUTES} minutes or longer.`);
 		}
 	} else {
-		if (!isClassical && !isRapid) {
-			throw new Error("Casual seeks support Rapid or Classical time controls");
+		if (limitMinutes < MIN_UNRATED_MINUTES) {
+			throw new Error(`Unrated games must be ${MIN_UNRATED_MINUTES} minutes or longer.`);
 		}
 	}
 
@@ -177,8 +178,8 @@ export async function startOnlineSeek(
 	form.append("rated", String(setup.rated));
 	form.append("variant", "standard");
 	form.append("color", setup.colorChoice);
-	form.append("time", (preset.limitSeconds / 60).toString());
-	form.append("increment", preset.incrementSeconds.toString());
+	form.append("time", parseFloat(limitMinutes.toFixed(2)).toString());
+	form.append("increment", increment.toString());
 
 	const authHeaders = createAuthHeaders("application/x-ndjson");
 	const headers = new Headers(authHeaders.headers);

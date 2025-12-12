@@ -3,10 +3,14 @@ import type { ChallengeColor } from "../../../generated/types/challengeColor";
 
 export type TimeCategory = SpeedBucket;
 
+export const MIN_RATED_MINUTES = 15;
+export const MIN_UNRATED_MINUTES = 10;
+export const MIN_BOT_MINUTES = 3;
+
 export type TimePreset = {
 	id: string;
 	label: string;
-	subtitle: TimeCategory;
+	subtitle: string;
 	limitSeconds: number;
 	incrementSeconds: number;
 	category: TimeCategory;
@@ -175,6 +179,10 @@ export type SetupColorChoice = ChallengeColor;
  */
 export type GameSetup = {
 	timePresetId: string;
+	timeControl: {
+		limit: number;
+		increment: number;
+	};
 	colorChoice: ChallengeColor;
 	rated: boolean;
 };
@@ -206,6 +214,10 @@ export const BOT_LEVELS: SetupBotLevelInfo[] = [
  */
 export type BotGameSetup = {
 	timePresetId: string;
+	timeControl: {
+		limit: number;
+		increment: number;
+	};
 	colorChoice: SetupColorChoice;
 	botLevel: SetupBotLevel;
 };
@@ -213,6 +225,7 @@ export type BotGameSetup = {
 export function createDefaultBotGameSetup(): BotGameSetup {
 	return {
 		timePresetId: "unlimited",
+		timeControl: { limit: 0, increment: 0 },
 		colorChoice: "random",
 		botLevel: 1,
 	};
@@ -221,6 +234,7 @@ export function createDefaultBotGameSetup(): BotGameSetup {
 export function createDefaultGameSetup(): GameSetup {
 	return {
 		timePresetId: "10+0",
+		timeControl: { limit: 600, increment: 0 },
 		colorChoice: "random",
 		rated: false,
 	};
