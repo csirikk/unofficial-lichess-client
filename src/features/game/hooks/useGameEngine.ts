@@ -8,7 +8,15 @@
  * - Move execution (including premoves)
  */
 import { Chess, type Square, type Piece } from "chess.js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type Dispatch,
+	type SetStateAction,
+} from "react";
 import { GameColor as Color } from "../../../generated/types/gameColor";
 import { GameStatusName } from "../../../generated/types/gameStatusName";
 import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
@@ -39,6 +47,7 @@ export type GameEngineConfig = {
 	user: UserExtended | null;
 	isConnected: boolean;
 	makeMove: (uci: string) => Promise<unknown>;
+	onPremoveSound: (move: MoveModel) => void;
 };
 
 export type GameEngineState = {
@@ -64,8 +73,8 @@ export type GameEngineHandlers = {
 	canQueuePremove: () => boolean;
 	isPromotionMove: (source: string, target: string) => boolean;
 	isPremovePromotion: (piece: Piece, target: Square) => boolean;
-	setPremoveQueue: React.Dispatch<React.SetStateAction<PremoveModel[]>>;
-	setPromotionRequest: React.Dispatch<React.SetStateAction<PromotionRequestModel>>;
+	setPremoveQueue: Dispatch<SetStateAction<PremoveModel[]>>;
+	setPromotionRequest: Dispatch<SetStateAction<PromotionRequestModel>>;
 };
 
 export type GameEngineInfo = {
@@ -92,6 +101,7 @@ export function useGameEngine({
 	user,
 	isConnected,
 	makeMove,
+	onPremoveSound,
 }: GameEngineConfig): GameEngineReturn {
 	const [chess, setChess] = useState(() => new Chess(serverFen));
 	const chessRef = useRef(chess);
@@ -282,19 +292,14 @@ export function useGameEngine({
 		}
 	}, [chess]);
 
-	// Send premoves when it becomes our turn according to the server state
 	useEffect(() => {
-		if (!gameFull) return;
-		if (!isMyGame) return;
-		if (!isConnected) return;
-		if (isGameEnded) return;
+		if (!gameFull || !isMyGame || !isConnected || isGameEnded) return;
 		if (!premoveQueue.length) return;
-		if (pendingUci) return;
+		if (pendingUci) return; // Wait for pending move to resolve
 
 		if (serverTurn !== playerColor) return;
 
 		const [next, ...rest] = premoveQueue;
-
 		const serverBoard = new Chess(serverFen);
 
 		let legal = false;
@@ -326,24 +331,29 @@ export function useGameEngine({
 					fen: testBoard.fen(),
 					check: testBoard.isCheck(),
 				};
-				const soundEvent = new CustomEvent("chess-premove-sound", { detail: moveData });
-				window.dispatchEvent(soundEvent);
+				onPremoveSound(moveData);
 			}
-		} catch {}
+		} catch (e) {
+			console.warn("Error calculating premove sound:", e);
+		}
 
 		void executeMove(next.uci, true);
 	}, [
-		gameFull,
-		serverFen,
+		// Dependencies for premove triggering
 		serverTurn,
+		premoveQueue,
+		pendingUci,
+
+		// Config
+		gameFull,
 		isMyGame,
 		isConnected,
 		isGameEnded,
-		premoveQueue,
-		pendingUci,
+		serverFen,
 		playerColor,
 		promotionRequest,
 		executeMove,
+		onPremoveSound,
 	]);
 
 	// Clean up on game end

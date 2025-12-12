@@ -16,7 +16,7 @@ import {
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "../model/setup";
 
 import { useBoard } from "./useBoard";
-import { buildGameHistory } from "../model/chess";
+import { buildGameHistory, type MoveModel } from "../model/chess";
 import { useBoardInteraction } from "./useBoardInteraction";
 import { useCapturedPieces } from "./useCapturedPieces";
 import { useEventStream } from "./useEventStream";
@@ -136,12 +136,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				destUser?: { id?: string } | null;
 			};
 		}) => {
-			// Track if this is our outgoing challenge
 			if (event.challenge.challenger?.id === user?.id) {
 				console.log("Our challenge sent:", event.challenge.id);
 				setPendingChallengeId(event.challenge.id);
 			}
-			// TODO: Handle incoming challenges (show notification/modal)
 		},
 		[user?.id],
 	);
@@ -170,7 +168,6 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		[pendingChallengeId],
 	);
 
-	// Global event stream
 	useEventStream({
 		enabled: waitingForGame || gameId != null,
 		onGameStart: onGameStartHandler,
@@ -195,6 +192,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		makeMove,
 	} = stream;
 
+	const playPremoveSoundRef = useRef<((move: MoveModel) => void) | null>(null);
+
 	const engineResult = useGameEngine({
 		gameFull,
 		serverFen,
@@ -203,6 +202,9 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		user,
 		isConnected,
 		makeMove,
+		onPremoveSound: (move) => {
+			playPremoveSoundRef.current?.(move);
+		},
 	});
 	const { state: engineState, handlers: engineHandlers, gameInfo } = engineResult;
 	const { myColor, isGameEnded } = gameInfo;
@@ -255,6 +257,10 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		whiteTime: gameState?.wtime,
 		blackTime: gameState?.btime,
 	});
+
+	useEffect(() => {
+		playPremoveSoundRef.current = playMoveSound;
+	}, [playMoveSound]);
 
 	const interactionResult = useBoardInteraction({
 		engineState,
@@ -460,6 +466,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const timerOrder = useMemo(() => {
 		return myColor === Color.white ? [Color.black, Color.white] : [Color.white, Color.black];
 	}, [myColor]);
+
 	useEffect(() => {
 		if (!gameState) return;
 

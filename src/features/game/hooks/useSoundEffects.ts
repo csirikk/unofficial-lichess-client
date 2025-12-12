@@ -90,19 +90,6 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 		[isViewingHistory],
 	);
 
-	// Listen for premove execution events and play sound immediately
-	useEffect(() => {
-		const handlePremoveSound = (event: Event) => {
-			const customEvent = event as CustomEvent<MoveModel>;
-			if (customEvent.detail) {
-				playMoveSound(customEvent.detail);
-			}
-		};
-
-		window.addEventListener("chess-premove-sound", handlePremoveSound);
-		return () => window.removeEventListener("chess-premove-sound", handlePremoveSound);
-	}, [playMoveSound]);
-
 	// Play sounds when navigating through history
 	useEffect(() => {
 		if (!isViewingHistory || viewingMoveIndex === null) {
