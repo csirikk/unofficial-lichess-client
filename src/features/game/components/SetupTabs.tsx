@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useBotSetup, useOnlineSetup } from "../features/game/hooks/useGameSetup";
+import { useBotSetup, useOnlineSetup } from "../hooks/useGameSetup";
 import {
 	BOT_LEVELS,
 	type SetupBotLevel,
@@ -10,11 +10,11 @@ import {
 	MIN_BOT_MINUTES,
 	type GameSetup,
 	type TimePreset,
-} from "../features/game/model/setup";
-import { Button } from "./Button";
-import { IconButton } from "./IconButton";
-import { SectionLabel } from "./SectionLabel";
-import { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
+} from "../model/setup";
+import { Button } from "../../../components/Button";
+import { IconButton } from "../../../components/IconButton";
+import { SectionLabel } from "../../../components/SectionLabel";
+import { SegmentedControl, type SegmentedOption } from "../../../components/SegmentedControl";
 import { SelectableCardGrid } from "./TimeControlGrid";
 
 const colorOptions: SegmentedOption<SetupColorChoice>[] = [

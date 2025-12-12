@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "../model/setup";
-import { BotTab, RatedTab, UnratedTab } from "../../../components/SetupTabs";
+import { BotTab, RatedTab, UnratedTab } from "../components/SetupTabs";
 
 type GameMode = "bot" | "unrated" | "rated";
 
