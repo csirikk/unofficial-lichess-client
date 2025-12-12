@@ -49,6 +49,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const [pendingTakebackOffer, setPendingTakebackOffer] = useState(false);
 	const lastMoveCountRef = useRef<number>(0);
 
+	const [modalDismissed, setModalDismissed] = useState(false);
+
 	const seekAbortControllerRef = useRef<AbortController | null>(null);
 	const seekStreamRef = useRef<{ close: () => void } | null>(null);
 	const expectedSourceRef = useRef<"lobby" | "ai" | "friend" | null>(null);
@@ -208,6 +210,12 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	});
 	const { state: engineState, handlers: engineHandlers, gameInfo } = engineResult;
 	const { myColor, isGameEnded } = gameInfo;
+
+	useEffect(() => {
+		if (isGameEnded) {
+			setModalDismissed(false);
+		}
+	}, [isGameEnded]);
 
 	const clockState = useGameClock({
 		gameFull,
@@ -567,6 +575,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		sessionState: {
 			gameId,
 			isGameEnded,
+			modalDismissed,
 			timerOrder,
 			isCreatingGame,
 			waitingForGame,
@@ -588,6 +597,8 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			takeback: handleTakeback,
 			rematch: handleRematchRequest,
 			resetToLobby,
+			showResultsModal: useCallback(() => setModalDismissed(false), []),
+			dismissResultsModal: useCallback(() => setModalDismissed(true), []),
 		},
 	};
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";
 
@@ -12,13 +12,7 @@ import { GameStatus } from "../components/GameStatus";
 
 export default function GameView() {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const [modalDismissed, setModalDismissed] = useState(false);
-
 	const gameId = searchParams.get("game");
-
-	const showResultsModal = () => {
-		setModalDismissed(false);
-	};
 
 	const updateGameId = useCallback(
 		(newId: string | null) => {
@@ -33,12 +27,6 @@ export default function GameView() {
 
 	const session = useGameSession(gameId, updateGameId);
 	const { gameModel, boardViewModel, historyState, capturedState, sessionState, actions } = session;
-
-	useEffect(() => {
-		if (sessionState.isGameEnded) {
-			setModalDismissed(false);
-		}
-	}, [sessionState.isGameEnded]);
 
 	const shouldShowGameUI = !!gameId;
 	const isDataReady = !!gameModel;
@@ -95,10 +83,10 @@ export default function GameView() {
 									onTakeback={actions.takeback}
 									onRematch={actions.rematch}
 									onNewGame={actions.resetToLobby}
-									onShowResults={showResultsModal}
+									onShowResults={actions.showResultsModal}
 									isConnected={sessionState.isConnected}
 									totalMoves={historyState.totalMoves}
-									isModalDismissed={modalDismissed}
+									isModalDismissed={sessionState.modalDismissed}
 									offers={gameModel.offers}
 									status={gameModel.status}
 									players={gameModel.players}
@@ -149,17 +137,20 @@ export default function GameView() {
 				</div>
 			</div>
 
-			{shouldShowGameUI && sessionState.isGameEnded && !modalDismissed && gameModel && (
-				<GameResultModal
-					game={gameModel}
-					onRematch={actions.rematch}
-					onNewGame={() => {
-						actions.resetToLobby();
-						setModalDismissed(true);
-					}}
-					onDismiss={() => setModalDismissed(true)}
-				/>
-			)}
+			{shouldShowGameUI &&
+				sessionState.isGameEnded &&
+				!sessionState.modalDismissed &&
+				gameModel && (
+					<GameResultModal
+						game={gameModel}
+						onRematch={actions.rematch}
+						onNewGame={() => {
+							actions.resetToLobby();
+							actions.dismissResultsModal();
+						}}
+						onDismiss={actions.dismissResultsModal}
+					/>
+				)}
 		</div>
 	);
 }
