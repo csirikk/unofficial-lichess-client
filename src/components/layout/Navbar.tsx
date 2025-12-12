@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Button } from "../components/Button";
-import { useAuth } from "../features/auth/hooks/useAuth";
+import { Button } from "../Button";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { SettingsDropdown } from "./SettingsDropdown";
 
 export default function Navbar() {

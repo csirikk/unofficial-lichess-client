@@ -8,7 +8,7 @@ import { createAuthHeaders, createStreamHeaders } from "../lib/api";
 import { readNdjsonStream } from "../lib/stream";
 import { formatSpeed } from "../features/game/model/game-info-helpers";
 import { formatClockTime } from "../features/game/model/chess";
-import Layout from "./Layout";
+import Layout from "../components/layout/Layout";
 
 type OngoingGame = ApiAccountPlaying200NowPlayingItem;
 

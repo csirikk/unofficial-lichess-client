@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthCallback from "../features/auth/components/AuthCallback";
 import { AuthProvider } from "../features/auth/AuthProvider";
-import HomePage from "../ui/HomePage";
-import GamesPage from "../ui/GamesPage";
+import HomePage from "../pages/HomePage";
+import GamesPage from "../pages/GamesPage";
 
 export default function App() {
 	useEffect(() => {

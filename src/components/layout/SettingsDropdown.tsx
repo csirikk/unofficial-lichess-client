@@ -10,13 +10,13 @@ import {
 	Palette,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { IconButton } from "../components/IconButton";
+import { IconButton } from "../IconButton";
 import {
 	playSound,
 	isSoundEnabled,
 	setSoundEnabled,
 	type SoundType,
-} from "../features/game/model/sounds";
+} from "../../features/game/model/sounds";
 import {
 	isPremoveEnabled,
 	setPremoveEnabled,
@@ -27,7 +27,7 @@ import {
 	getBoardTheme,
 	toggleBoardTheme,
 	type BoardTheme,
-} from "../features/game/model/preferences";
+} from "../../features/game/model/preferences";
 
 // Define the order for sound preview cycling
 const PREVIEW_ORDER: SoundType[] = [

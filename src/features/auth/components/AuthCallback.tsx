@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import Layout from "../../../ui/Layout";
+import Layout from "../../../components/layout/Layout";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AuthCallback() {

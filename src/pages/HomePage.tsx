@@ -1,6 +1,6 @@
 import { useAuth } from "../features/auth/hooks/useAuth";
 import GameView from "../features/game/views/GameView";
-import Layout from "./Layout";
+import Layout from "../components/layout/Layout";
 
 export default function HomePage() {
 	const { user, isLoading } = useAuth();
