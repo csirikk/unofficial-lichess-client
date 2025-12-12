@@ -240,10 +240,40 @@ export function createDefaultGameSetup(): GameSetup {
 	};
 }
 
+export function createDefaultOnlineSetup(rated: boolean): GameSetup {
+	const defaults = createDefaultGameSetup();
+	defaults.rated = rated;
+
+	const mode = rated ? "rated" : "unrated";
+	const availablePresets = getDefaultTimePresetsForMode(mode);
+
+	if (availablePresets.length > 0) {
+		const first = availablePresets[0];
+		defaults.timePresetId = first.id;
+		defaults.timeControl = { limit: first.limitSeconds, increment: first.incrementSeconds };
+	}
+
+	return defaults;
+}
+
 export function findTimePreset(presetId: string): TimePreset | undefined {
 	return TIME_PRESETS.find((p) => p.id === presetId);
 }
 
 export function findBotLevel(level: SetupBotLevel): SetupBotLevelInfo | undefined {
 	return BOT_LEVELS.find((b) => b.level === level);
+}
+
+export function isValidGameSetup(setup: GameSetup | BotGameSetup): boolean {
+	const limit = setup.timeControl.limit;
+	const increment = setup.timeControl.increment;
+
+	if ((setup as BotGameSetup).botLevel !== undefined) {
+		return limit >= MIN_BOT_MINUTES * 60 || (limit === 0 && increment === 0);
+	}
+
+	const limitMinutes = limit / 60;
+	return (setup as GameSetup).rated
+		? limitMinutes >= MIN_RATED_MINUTES
+		: limitMinutes >= MIN_UNRATED_MINUTES;
 }

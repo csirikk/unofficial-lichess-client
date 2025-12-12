@@ -12,7 +12,7 @@ import type { GameFullEvent } from "../../../generated/types/gameFullEvent";
 import type { GameColor as Color } from "../../../generated/types/gameColor";
 import { createAuthHeaders } from "../../../lib/api";
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "./setup";
-import { MIN_RATED_MINUTES, MIN_UNRATED_MINUTES, MIN_BOT_MINUTES } from "./setup";
+import { MIN_RATED_MINUTES, MIN_UNRATED_MINUTES, MIN_BOT_MINUTES, isValidGameSetup } from "./setup";
 
 export async function startBotGame(
 	level: SetupBotLevel,
@@ -164,12 +164,10 @@ export async function startOnlineSeek(
 	const { limit, increment } = setup.timeControl;
 	const limitMinutes = limit / 60;
 
-	if (setup.rated) {
-		if (limitMinutes < MIN_RATED_MINUTES) {
+	if (!isValidGameSetup(setup)) {
+		if (setup.rated) {
 			throw new Error(`Rated games must be ${MIN_RATED_MINUTES} minutes or longer.`);
-		}
-	} else {
-		if (limitMinutes < MIN_UNRATED_MINUTES) {
+		} else {
 			throw new Error(`Unrated games must be ${MIN_UNRATED_MINUTES} minutes or longer.`);
 		}
 	}
