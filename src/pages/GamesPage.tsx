@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../features/auth/hooks/useAuth";
-import { apiAccountPlaying, apiGamesUser } from "../generated/client/games";
+import { useGameHistory } from "../features/game/hooks/useGameHistory";
 import type { ApiAccountPlaying200NowPlayingItem } from "../generated/types/apiAccountPlaying200NowPlayingItem";
 import type { GameJson } from "../generated/types/gameJson";
-import { createAuthHeaders, createStreamHeaders } from "../lib/api";
-import { readNdjsonStream } from "../lib/stream";
 import { formatSpeed } from "../features/game/model/game-info-helpers";
 import { formatClockTime } from "../features/game/model/chess";
 import Layout from "../components/layout/Layout";
@@ -13,57 +9,9 @@ import Layout from "../components/layout/Layout";
 type OngoingGame = ApiAccountPlaying200NowPlayingItem;
 
 export default function GamesPage() {
-	const { user } = useAuth();
-	const [ongoingGames, setOngoingGames] = useState<OngoingGame[]>([]);
-	const [recentGames, setRecentGames] = useState<GameJson[]>([]);
-	const [isLoadingOngoing, setIsLoadingOngoing] = useState(true);
-	const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+	const { ongoingGames, recentGames, isLoading, isAuthenticated } = useGameHistory();
 
-	useEffect(() => {
-		if (!user) return;
-
-		// Fetch ongoing games
-		const fetchOngoing = async () => {
-			try {
-				setIsLoadingOngoing(true);
-				const response = await apiAccountPlaying(undefined, createAuthHeaders());
-				if (response.status === 200) {
-					setOngoingGames(response.data.nowPlaying || []);
-				}
-			} catch (error) {
-				console.error("Failed to fetch ongoing games:", error);
-			} finally {
-				setIsLoadingOngoing(false);
-			}
-		};
-
-		// Fetch recent games
-		const fetchHistory = async () => {
-			try {
-				setIsLoadingHistory(true);
-				const games: GameJson[] = [];
-				const response = await apiGamesUser(user.username, { max: 20 }, createStreamHeaders());
-
-				if (response.status === 200 && "stream" in response) {
-					const stream = readNdjsonStream<GameJson>("game-history", response.stream, (game) =>
-						games.push(game),
-					);
-
-					await stream.closePromise;
-					setRecentGames(games);
-				}
-			} catch (error) {
-				console.error("Failed to fetch game history:", error);
-			} finally {
-				setIsLoadingHistory(false);
-			}
-		};
-
-		fetchOngoing();
-		fetchHistory();
-	}, [user]);
-
-	if (!user) {
+	if (!isAuthenticated) {
 		return (
 			<Layout>
 				<div className="flex min-h-screen items-center justify-center">
@@ -84,7 +32,7 @@ export default function GamesPage() {
 						<h2 className="mb-4 text-2xl font-bold text-[rgb(var(--color-fg-primary))]">
 							Ongoing Games
 						</h2>
-						{isLoadingOngoing ? (
+						{isLoading ? (
 							<p className="text-sm text-[rgb(var(--color-fg-secondary))]">Loading…</p>
 						) : (
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,7 +49,7 @@ export default function GamesPage() {
 					<h2 className="mb-4 text-2xl font-bold text-[rgb(var(--color-fg-primary))]">
 						Game History
 					</h2>
-					{isLoadingHistory ? (
+					{isLoading ? (
 						<p className="text-sm text-[rgb(var(--color-fg-secondary))]">Loading…</p>
 					) : recentGames.length === 0 ? (
 						<p className="text-sm text-[rgb(var(--color-fg-secondary))]">No games found</p>
