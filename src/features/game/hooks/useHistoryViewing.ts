@@ -56,13 +56,12 @@ export function useHistoryViewing({
 		// Historical position
 		if (viewingMoveIndex >= 0 && viewingMoveIndex < serverHistory.length) {
 			const move = serverHistory[viewingMoveIndex];
-			const tempChess = new Chess(move.fen);
+			const tempChess = move?.fen ? new Chess(move.fen) : new Chess();
 			const pos = pieceMapToChessboard(pieceMapFromChess(tempChess));
 
-			const lastMove = {
-				from: move.from as Square,
-				to: move.to as Square,
-			};
+			const lastMove = move
+				? { from: move.from as Square, to: move.to as Square }
+				: { from: null, to: null };
 			return { displayPosition: pos, viewedLastMove: lastMove };
 		}
 

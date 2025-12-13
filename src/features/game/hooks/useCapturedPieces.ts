@@ -47,7 +47,7 @@ export function useCapturedPieces({
 		if (isViewingHistory && viewingMoveIndex !== null && viewingMoveIndex >= 0) {
 			// History mode - use the FEN from the viewed move
 			const move = serverHistory[viewingMoveIndex];
-			const tempChess = new Chess(move.fen);
+			const tempChess = move?.fen ? new Chess(move.fen) : new Chess();
 			board = pieceMapFromChess(tempChess);
 		} else if (isViewingHistory && viewingMoveIndex === -1) {
 			// Start position
