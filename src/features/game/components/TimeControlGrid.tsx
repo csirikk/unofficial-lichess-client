@@ -83,7 +83,6 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 			aria-pressed={isActive}
 			className={`${baseClasses} ${interactionClasses} ${stateClasses}`}
 		>
-			{/* Top row: speed bucket left, small preset shown on hover top-right */}
 			<div className="flex w-full items-start justify-between">
 				<span
 					className={`text-xl uppercase tracking-widest leading-snug truncate mr-2 ${
@@ -96,11 +95,10 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 				</span>
 			</div>
 
-			<div className="absolute right-3 bottom-3 text-4xl p-2 font-semibold transform transition-transform duration-300 translate-y-0 group-hover:-translate-y-10 group-hover:scale-80">
+			<div className="absolute right-3 bottom-3 text-4xl p-2 font-semibold transform transition-transform duration-300 translate-y-0 group-hover:-translate-y-10 group-hover:scale-70">
 				{item.preset}
 			</div>
 
-			{/* Explanation panel slides up from bottom on hover */}
 			<div className="absolute left-0 right-0 bottom-0 px-3 pb-3 transition-transform duration-250 transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
 				<div
 					className={`text-md leading-tight w-full ${isActive ? "text-[rgb(var(--color-primary-600))]" : "text-[rgb(var(--color-fg-secondary))]"}`}
@@ -115,7 +113,6 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 					)}
 				</div>
 			</div>
-			{/* <div className="invisible h-0">&nbsp;</div> */}
 		</button>
 	);
 }
