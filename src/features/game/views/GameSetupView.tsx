@@ -44,7 +44,13 @@ export function GameSetupView({
 	return (
 		<div className="flex flex-col justify-start">
 			<div className="shrink-0">
-				<div className="flex items-center border-b border-[rgb(var(--color-surface-border))]">
+				<div
+					className={`flex items-center border-b transition-all duration-500 ${
+						mode === "rated"
+							? "border-[rgb(var(--color-primary-500)/0.4)] shadow-[0px_64px_64px_10px_rgb(var(--color-primary-500)/0.25)]"
+							: "border-[rgb(var(--color-surface-border))]"
+					}`}
+				>
 					{TABS.map((tab) => {
 						const isActive = mode === tab.id;
 						return (

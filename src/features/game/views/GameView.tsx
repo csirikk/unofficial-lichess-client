@@ -38,7 +38,7 @@ export default function GameView() {
 	const isDataReady = !!gameModel;
 
 	return (
-		<div className="flex h-full w-full flex-col game-view overflow-hidden">
+		<div className="flex h-full w-full flex-col game-view">
 			<div className="flex h-full min-h-0 w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-center">
 				{/* RIGHT PANEL */}
 				<div

@@ -52,11 +52,19 @@ export function Clock({
 		${isLow ? "text-[rgb(var(--color-error))]" : "text-[rgb(var(--color-fg-primary))]"}
 		${isCritical && !isUnlimited ? "animate-pulse" : ""}`;
 
-	const containerClasses = `rounded-lg border border-[rgb(var(--color-surface-border)/0.5)]
+	const containerClasses = `rounded-lg border 
 		bg-[rgb(var(--color-surface-card))]
 		px-3 py-2 md:px-5 md:py-4
-		text-left transition-opacity
-		${isActive ? "" : "opacity-40"}`;
+		text-left transition-all duration-300
+		${
+			isActive && isLow && !isUnlimited
+				? isCritical
+					? "border-[rgb(var(--color-error)/0.6)] shadow-[0_0_20px_4px_rgb(var(--color-error)/0.4)] animate-pulse"
+					: "border-[rgb(var(--color-error)/0.5)] shadow-[0_0_16px_3px_rgb(var(--color-error)/0.3)]"
+				: isActive
+					? "border-[rgb(var(--color-fg-primary)/0.3)] shadow-[0_0_16px_2px_rgb(var(--color-fg-primary)/0.15)]"
+					: "border-[rgb(var(--color-surface-border)/0.5)] opacity-40"
+		}`;
 
 	const nameRating = (
 		<div className="flex max-w-100 w-fit text-[rgb(var(--color-fg-primary))]">

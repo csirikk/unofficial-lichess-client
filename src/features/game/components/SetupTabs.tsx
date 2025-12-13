@@ -400,7 +400,7 @@ function OnlineTab({
 		<Panel
 			title={`Play ${rated ? "Rated" : "Unrated"} Online`}
 			subtitle="Play against a random opponent with similar rating."
-			className="rounded-b-md rounded-t-none"
+			className={`rounded-b-md rounded-t-none`}
 		>
 			<div className="space-y-2">
 				{error && (
