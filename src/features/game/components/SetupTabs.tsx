@@ -264,7 +264,7 @@ export function BotTab({
 					</div>
 				)}
 
-				<div className="flex gap-6 items-start">
+				<div className="flex gap-4 items-start">
 					<div className="shrink-0 pb-2">
 						<SectionLabel>Play as</SectionLabel>
 						<SegmentedControl
@@ -274,7 +274,7 @@ export function BotTab({
 						/>
 					</div>
 
-					<div className="flex-1 pr-2">
+					<div className="flex-1">
 						<SectionLabel hint={`${BOT_LEVEL_ELO[currentLevel.level]}`}>
 							<label htmlFor={`bot-level-${inputId}`}>Bot strength</label>
 						</SectionLabel>
