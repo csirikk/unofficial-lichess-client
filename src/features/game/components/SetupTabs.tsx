@@ -5,7 +5,7 @@
  */
 
 import { useId } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, RotateCw } from "lucide-react";
 import { useBotSetup, useOnlineSetup } from "../hooks/useGameSetup";
 import {
 	BOT_LEVELS,
@@ -388,6 +388,7 @@ export function BotTab({
 						onClick={handlers.startGame}
 						disabled={isCreating || !isValid}
 					>
+						{isCreating && <RotateCw className="h-5 w-5 mr-2 animate-spin" />}
 						{isCreating ? "Starting…" : isValid ? "Start Game" : "Invalid Time Control"}
 					</Button>
 					{!isValid && (
@@ -478,6 +479,7 @@ function OnlineTab({
 						onClick={handlers.handleAction}
 						disabled={isDisabled || (!waitingForGame && !isValid)}
 					>
+						{(waitingForGame || isCreating) && <RotateCw className="h-5 w-5 mr-2 animate-spin" />}
 						{buttonText}
 					</Button>
 					{waitingForGame && (

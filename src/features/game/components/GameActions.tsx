@@ -4,7 +4,7 @@
  * Game action and control buttons (offer draw, resign, takeback, rematch, etc.).
  */
 
-import { CircleX, Flag, Handshake, RotateCcw, Undo2, Play, type LucideIcon } from "lucide-react";
+import { CircleX, Flag, Handshake, RotateCw, Undo2, Play, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../../../components/Button";
 import type { GameStatusModel, Offers, BothPlayersModel } from "../model/types";
@@ -152,7 +152,7 @@ export function Controls({
 					disabled={isRematchPending}
 					aria-label="Rematch"
 				>
-					<RotateCcw className="h-5 w-5" aria-hidden />
+					<RotateCw className="h-5 w-5" aria-hidden />
 					{offers.pendingChallengeId
 						? "Waiting for accept..."
 						: isRematchPending

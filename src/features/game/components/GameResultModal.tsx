@@ -4,7 +4,7 @@
  * Modal dialog showing game result, ratings and rematch/new game actions.
  */
 
-import { Play, RotateCcw, Trophy, X } from "lucide-react";
+import { Play, RotateCw, Trophy, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "../../../components/Button";
 import { Card } from "../../../components/Card";
@@ -147,7 +147,7 @@ export function GameResultModal({ game, onRematch, onNewGame, onDismiss }: GameR
 									onClick={onRematch}
 									disabled={offers.rematchPending}
 								>
-									<RotateCcw className={`h-5 w-5 ${offers.rematchPending ? "animate-spin" : ""}`} />
+									{offers.rematchPending && <RotateCw className="h-5 w-5 mr-2 animate-spin" />}
 									{offers.rematchPending ? "Rematch Sent..." : "Rematch"}
 								</Button>
 							) : (
