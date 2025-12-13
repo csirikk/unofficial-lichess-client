@@ -67,7 +67,7 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 	const increment = item.incrementSeconds ?? 0;
 
 	const baseClasses =
-		"relative flex flex-col justify-between w-full h-28 rounded-lg border-2 p-3 text-left transition-all duration-200 ease-in-out";
+		"relative flex flex-col justify-between w-full h-28 rounded-lg border-2 p-3 text-left transition-all duration-200 ease-in-out overflow-hidden";
 
 	const interactionClasses =
 		"cursor-pointer group focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary-500))/0.5]";
@@ -83,7 +83,8 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 			aria-pressed={isActive}
 			className={`${baseClasses} ${interactionClasses} ${stateClasses}`}
 		>
-			<div className="flex w-full justify-between items-center mb-1">
+			{/* Top row: speed bucket left, small preset shown on hover top-right */}
+			<div className="flex w-full items-start justify-between">
 				<span
 					className={`text-xl uppercase tracking-widest leading-snug truncate mr-2 ${
 						isActive
@@ -93,34 +94,28 @@ function PresetCard<T extends string>({ item, isActive, onClick }: PresetCardPro
 				>
 					{item.speedBucket ? String(item.speedBucket).toUpperCase() : ""}
 				</span>
+			</div>
 
-				<span
-					className={`text-2xl font-semibold shrink-0 ${
-						isActive
-							? "text-[rgb(var(--color-primary-700))]"
-							: "text-[rgb(var(--color-fg-primary))]"
-					}`}
+			<div className="absolute right-3 bottom-3 text-4xl p-2 font-semibold transform transition-transform duration-300 translate-y-0 group-hover:-translate-y-10 group-hover:scale-80">
+				{item.preset}
+			</div>
+
+			{/* Explanation panel slides up from bottom on hover */}
+			<div className="absolute left-0 right-0 bottom-0 px-3 pb-3 transition-transform duration-250 transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
+				<div
+					className={`text-md leading-tight w-full ${isActive ? "text-[rgb(var(--color-primary-600))]" : "text-[rgb(var(--color-fg-secondary))]"}`}
 				>
-					{item.preset}
-				</span>
+					{item.limitSeconds !== undefined && item.limitSeconds > 0 ? (
+						<>
+							<div>{minutes} minutes starting time</div>
+							<div>{`${increment} seconds added per move`}</div>
+						</>
+					) : (
+						<div>Infinite time</div>
+					)}
+				</div>
 			</div>
-
-			<div
-				className={`mt-2 text-sm leading-tight w-full ${
-					isActive
-						? "text-[rgb(var(--color-primary-600))]"
-						: "text-[rgb(var(--color-fg-secondary))]"
-				}`}
-			>
-				{item.limitSeconds !== undefined && item.limitSeconds > 0 ? (
-					<>
-						<div>{minutes} minutes starting time</div>
-						<div>{`${increment} seconds added per move`}</div>
-					</>
-				) : (
-					<div>Infinite time</div>
-				)}
-			</div>
+			{/* <div className="invisible h-0">&nbsp;</div> */}
 		</button>
 	);
 }
