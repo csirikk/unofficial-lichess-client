@@ -222,16 +222,18 @@ function TimeControl({
 				)}
 			</div>
 
-			<div className="mt-3 flex justify-center">
+			<div className="flex items-center">
+				<div className="flex-1 border-t border-[rgb(var(--color-surface-border))]" />
 				<IconButton
-					size="sm"
+					size="lg"
 					variant="ghost"
 					aria-label={isExpanded ? "Collapse time control" : "Expand time control"}
 					onClick={() => setIsExpanded(!isExpanded)}
 					className="text-[rgb(var(--color-fg-secondary))] hover:text-[rgb(var(--color-primary-500))] transition-colors"
 				>
-					{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+					{isExpanded ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
 				</IconButton>
+				<div className="flex-1 border-t border-[rgb(var(--color-surface-border))]" />
 			</div>
 		</div>
 	);
@@ -264,6 +266,17 @@ export function BotTab({
 
 	const inputId = useId();
 
+	const BOT_LEVEL_ELO: Record<number, string> = {
+		1: "~400 elo",
+		2: "~800 elo",
+		3: "~1100 elo",
+		4: "~1400 elo",
+		5: "~1700 elo",
+		6: "~2000 elo",
+		7: "~2300 elo",
+		8: "~2500 elo",
+	};
+
 	return (
 		<Panel
 			title="Play against Bot"
@@ -291,11 +304,11 @@ export function BotTab({
 					</div>
 
 					<div className="flex-1 pr-2">
-						<SectionLabel hint={`${currentLevel.label}`}>
+						<SectionLabel hint={`${BOT_LEVEL_ELO[currentLevel.level]}`}>
 							<label htmlFor={`bot-level-${inputId}`}>Bot strength</label>
 						</SectionLabel>
 
-						<div className="space-y-3 h-1">
+						<div className="space-y-3 h-2">
 							<input
 								id={`bot-level-${inputId}`}
 								type="range"
@@ -306,13 +319,30 @@ export function BotTab({
 								onChange={(e) => handlers.setLevel(e.target.value)}
 								className="w-full cursor-pointer appearance-none bg-transparent focus-visible:outline-none 
 								focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-primary-500))] 
-								[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:size-6 
-								[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[rgb(var(--color-primary-500))] 
-								[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[rgb(var(--color-surface-card))] 
-								[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:-mt-2.5 [&::-moz-range-thumb]:size-4 
-								[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[rgb(var(--color-primary-500))] [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[rgb(var(--color-surface-card))] [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-runnable-track]:w-full [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-[rgb(var(--color-surface-border)/0.7)] [&::-moz-range-track]:h-1 [&::-moz-range-track]:w-full [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[rgb(var(--color-surface-border)/0.7)]"
+								[&::-webkit-slider-thumb]:appearance-none
+								[&::-webkit-slider-thumb]:size-6 
+								[&::-webkit-slider-thumb]:rounded-full
+								[&::-webkit-slider-thumb]:bg-[rgb(var(--color-primary-500))] 
+								[&::-webkit-slider-thumb]:border
+								[&::-webkit-slider-thumb]:border-[rgb(var(--color-surface-card))] 
+								[&::-webkit-slider-thumb]:shadow-sm
+								[&::-webkit-slider-thumb]:-mt-2.5
+								[&::-moz-range-thumb]:size-4 
+								[&::-moz-range-thumb]:rounded-full
+								[&::-moz-range-thumb]:bg-[rgb(var(--color-primary-500))]
+								[&::-moz-range-thumb]:border
+								[&::-moz-range-thumb]:border-[rgb(var(--color-surface-card))]
+								[&::-moz-range-thumb]:shadow-sm
+								[&::-webkit-slider-runnable-track]:w-full
+								[&::-webkit-slider-runnable-track]:h-1.5
+								[&::-webkit-slider-runnable-track]:rounded-full
+								[&::-webkit-slider-runnable-track]:bg-[rgb(var(--color-surface-border)/0.7)]
+								[&::-moz-range-track]:h-1
+								[&::-moz-range-track]:w-full
+								[&::-moz-range-track]:rounded-full
+								[&::-moz-range-track]:bg-[rgb(var(--color-surface-border)/0.7)]"
 							/>
-							<div className="flex mx-[5px] justify-between mt-1 text-sm text-[rgb(var(--color-fg-secondary))]">
+							<div className="flex mx-[5px] justify-between mt-1 text-xl text-[rgb(var(--color-fg-secondary))]">
 								{BOT_LEVELS.map((level) => {
 									const isActive = level.level === setup.botLevel;
 									return (
@@ -320,7 +350,7 @@ export function BotTab({
 											key={level.level}
 											type="button"
 											onClick={() => handlers.setLevel(String(level.level))}
-											className={`cursor-pointer flex flex-col items-center gap-1 focus-visible:outline-none ${
+											className={`cursor-pointer w-3.5 flex flex-col items-center gap-1 focus-visible:outline-none ${
 												isActive ? "text-[rgb(var(--color-primary-500))]" : ""
 											}`}
 										>
