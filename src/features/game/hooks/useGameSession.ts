@@ -309,6 +309,14 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 		setIsCreatingGame(true);
 		setError(null);
+
+		// Clear ignore list and add current game to it (similar to online game flow)
+		ignoredGameIdsRef.current.clear();
+		if (gameId) {
+			ignoredGameIdsRef.current.add(gameId);
+			console.log("Ignoring current game during bot game start:", gameId);
+		}
+
 		try {
 			const { gameId: newGameId } = await startBotGame(config.level, config.clock, config.color);
 			interactionHandlers.resetBoard();
