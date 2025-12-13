@@ -38,7 +38,7 @@ export function GameSetupView({
 	onStartOnlineGame,
 	onCancelSeek,
 }: GameSetupViewProps) {
-	const [mode, setMode] = useState<GameMode>("bot");
+	const [mode, setMode] = useState<GameMode>("unrated");
 	const [isTimeExpanded, setIsTimeExpanded] = useState(false);
 
 	return (

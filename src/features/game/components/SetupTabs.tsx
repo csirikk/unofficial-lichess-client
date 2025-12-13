@@ -304,7 +304,13 @@ export function BotTab({
 								step={1}
 								value={setup.botLevel}
 								onChange={(e) => handlers.setLevel(e.target.value)}
-								className="w-full cursor-pointer appearance-none bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-primary-500))] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[rgb(var(--color-primary-500))] [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[rgb(var(--color-surface-card))] [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:-mt-2.5 [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[rgb(var(--color-primary-500))] [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[rgb(var(--color-surface-card))] [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-runnable-track]:w-full [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-[rgb(var(--color-surface-border)/0.7)] [&::-moz-range-track]:h-1 [&::-moz-range-track]:w-full [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[rgb(var(--color-surface-border)/0.7)]"
+								className="w-full cursor-pointer appearance-none bg-transparent focus-visible:outline-none 
+								focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-primary-500))] 
+								[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:size-6 
+								[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[rgb(var(--color-primary-500))] 
+								[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[rgb(var(--color-surface-card))] 
+								[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:-mt-2.5 [&::-moz-range-thumb]:size-4 
+								[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[rgb(var(--color-primary-500))] [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[rgb(var(--color-surface-card))] [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-runnable-track]:w-full [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-[rgb(var(--color-surface-border)/0.7)] [&::-moz-range-track]:h-1 [&::-moz-range-track]:w-full [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[rgb(var(--color-surface-border)/0.7)]"
 							/>
 							<div className="flex mx-[5px] justify-between mt-1 text-sm text-[rgb(var(--color-fg-secondary))]">
 								{BOT_LEVELS.map((level) => {
