@@ -31,42 +31,49 @@ export default function GamesPage() {
 
 	return (
 		<Layout>
-			<div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
-				{/* Ongoing Games Section */}
-				{ongoingGames.length > 0 && (
-					<section>
-						<h2 className="mb-4 text-2xl font-bold text-[rgb(var(--color-fg-primary))]">
-							Ongoing Games
-						</h2>
-						{isLoading ? (
-							<p className="text-sm text-[rgb(var(--color-fg-secondary))]">Loading…</p>
-						) : (
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-								{ongoingGames.map((game) => (
-									<GameCard key={game.gameId} game={game} type="ongoing" />
-								))}
-							</div>
-						)}
-					</section>
-				)}
+			<div className="mx-auto max-w-6xl px-4 py-8">
+				{/* Page Title */}
+				<h1 className="mb-8 text-3xl font-bold text-[rgb(var(--color-fg-primary))]">Your Games</h1>
 
-				{/* Recent Games Section */}
-				<section>
-					<h2 className="mb-4 text-2xl font-bold text-[rgb(var(--color-fg-primary))]">
-						Game History
-					</h2>
-					{isLoading ? (
+				{isLoading ? (
+					<div className="flex items-center justify-center py-12">
 						<p className="text-sm text-[rgb(var(--color-fg-secondary))]">Loading…</p>
-					) : recentGames.length === 0 ? (
-						<p className="text-sm text-[rgb(var(--color-fg-secondary))]">No games found</p>
-					) : (
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							{recentGames.map((game) => (
-								<GameCard key={game.id} game={game} type="history" />
-							))}
-						</div>
-					)}
-				</section>
+					</div>
+				) : (
+					<div className="space-y-10">
+						{/* Ongoing Games */}
+						{ongoingGames.length > 0 && (
+							<section>
+								<h2 className="mb-4 text-xl font-semibold text-[rgb(var(--color-fg-primary))]">
+									Ongoing ({ongoingGames.length})
+								</h2>
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+									{ongoingGames.map((game) => (
+										<GameCard key={game.gameId} game={game} type="ongoing" />
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Recent Games */}
+						<section>
+							<h2 className="mb-4 text-xl font-semibold text-[rgb(var(--color-fg-primary))]">
+								Recent Games
+							</h2>
+							{recentGames.length === 0 ? (
+								<p className="py-8 text-center text-sm text-[rgb(var(--color-fg-secondary))]">
+									No games found
+								</p>
+							) : (
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+									{recentGames.map((game) => (
+										<GameCard key={game.id} game={game} type="history" />
+									))}
+								</div>
+							)}
+						</section>
+					</div>
+				)}
 			</div>
 		</Layout>
 	);

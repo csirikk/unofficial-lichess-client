@@ -4,7 +4,7 @@
  * Hook fetching the user's ongoing games and recent game history.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { apiAccountPlaying, apiGamesUser } from "../../../generated/client/games";
 import type { ApiAccountPlaying200NowPlayingItem } from "../../../generated/types/apiAccountPlaying200NowPlayingItem";
@@ -25,13 +25,24 @@ export function useGameHistory(): GameHistoryViewModel {
 	const { user, isAuthenticated } = useAuth();
 	const [ongoingGames, setOngoingGames] = useState<OngoingGame[]>([]);
 	const [recentGames, setRecentGames] = useState<GameJson[]>([]);
-	const [isLoadingOngoing, setIsLoadingOngoing] = useState(true);
-	const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+	const [isLoadingOngoing, setIsLoadingOngoing] = useState(false);
+	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+	const hasFetchedRef = useRef(false);
 
 	const isLoading = isLoadingOngoing || isLoadingHistory;
 
-	const fetchGames = useCallback(async () => {
-		if (!user) return;
+	useEffect(() => {
+		// Don't fetch if not authenticated or no user
+		if (!isAuthenticated || !user?.id) {
+			setIsLoadingOngoing(false);
+			setIsLoadingHistory(false);
+			hasFetchedRef.current = false;
+			return;
+		}
+
+		// Prevent double-fetch in React Strict Mode
+		if (hasFetchedRef.current) return;
+		hasFetchedRef.current = true;
 
 		const fetchOngoing = async () => {
 			try {
@@ -53,7 +64,7 @@ export function useGameHistory(): GameHistoryViewModel {
 				setIsLoadingHistory(true);
 				const games: GameJson[] = [];
 				// API: GET /api/games/user/{username}
-				const response = await apiGamesUser(user.username, { max: 20 }, createStreamHeaders());
+				const response = await apiGamesUser(user.id, { max: 20 }, createStreamHeaders());
 
 				if (response.status === 200 && "stream" in response) {
 					const stream = readNdjsonStream<GameJson>("game-history", response.stream, (game) =>
@@ -69,12 +80,8 @@ export function useGameHistory(): GameHistoryViewModel {
 			}
 		};
 
-		await Promise.all([fetchOngoing(), fetchHistory()]);
-	}, [user]);
-
-	useEffect(() => {
-		fetchGames();
-	}, [fetchGames]);
+		Promise.all([fetchOngoing(), fetchHistory()]).catch(console.error);
+	}, [isAuthenticated, user?.id]);
 
 	return {
 		ongoingGames,

@@ -4,7 +4,7 @@
  * Manages OAuth session: login, callback handling, profile loading and logout.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { accountMe } from "../../../generated/client/account";
 import { apiToken, apiTokenDelete } from "../../../generated/client/oauth";
 import type { UserExtended } from "../../../generated/types/userExtended";
@@ -22,9 +22,13 @@ import {
 export function useAuthSession() {
 	const [user, setUser] = useState<UserExtended | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const hasFetchedRef = useRef(false);
 
 	// Fetch user profile on mount
 	useEffect(() => {
+		if (hasFetchedRef.current) return;
+		hasFetchedRef.current = true;
+
 		const loadProfile = async () => {
 			setIsLoading(true);
 			try {

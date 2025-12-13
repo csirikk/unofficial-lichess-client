@@ -1,28 +1,43 @@
 /**
  * HomePage.tsx
  *
- * Main application page rendering GameView when authenticated.
- * Shows loading state or placeholder when not authenticated. Used as the "/" route.
+ * Main application page. Shows GameView when authenticated,
+ * simple welcome message when not signed in.
  */
 
 import { useAuth } from "../features/auth/hooks/useAuth";
 import GameView from "../features/game/views/GameView";
 import Layout from "../components/layout/Layout";
+import { Button } from "../components/Button";
 
 export default function HomePage() {
-	const { user, isLoading } = useAuth();
+	const { user, isLoading, login } = useAuth();
+
+	if (!isLoading && user) {
+		return (
+			<Layout>
+				<GameView />
+			</Layout>
+		);
+	}
 
 	return (
 		<Layout>
-			{isLoading ? (
-				<div className="flex min-h-screen items-center justify-center">
-					<p className="text-sm text-gray-600 dark:text-gray-400">Loading…</p>
-				</div>
-			) : null}
-
-			{!user ? <h1 className="text-2xl justify-center flex font-bold">...</h1> : null}
-
-			{!isLoading && user ? <GameView /> : null}
+			<div className="flex min-h-screen items-center justify-center">
+				{isLoading ? (
+					<p className="text-sm text-[rgb(var(--color-fg-secondary))]">Loading…</p>
+				) : (
+					<div className="text-center space-y-6">
+						<h1 className="text-4xl font-bold text-[rgb(var(--color-fg-primary))]">Chess</h1>
+						<p className="text-[rgb(var(--color-fg-secondary))]">
+							Play chess with your Lichess account
+						</p>
+						<Button onClick={login} type="button" size="lg">
+							Sign in with Lichess
+						</Button>
+					</div>
+				)}
+			</div>
 		</Layout>
 	);
 }

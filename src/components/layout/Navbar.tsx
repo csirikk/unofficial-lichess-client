@@ -49,13 +49,13 @@ export default function Navbar() {
 					{!isLoggedIn ? (
 						<div className="flex items-center gap-2 sm:gap-3">
 							<Button variant="outline" size="sm" onClick={login} className="rounded-2xl">
-								<span>Sign up</span>
+								<span>Sign in</span>
 							</Button>
 						</div>
 					) : (
 						<div className="flex items-center gap-3">
-							<span className="hidden text-sm font-normal text-fg-primary sm:inline">
-								{user.username}
+							<span className="text-sm font-normal text-fg-primary">
+								{user?.username || user?.id || "User"}
 							</span>
 							<Button variant="outline" size="sm" onClick={logout} className="rounded-2xl">
 								<span>Sign out</span>
