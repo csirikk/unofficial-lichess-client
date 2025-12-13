@@ -1,19 +1,19 @@
-========================================================================
-ITU PROJECT 2025/2026 - Chess Site
-========================================================================
-- Author: Matúš Csirik (xcsirim00)
+# ITU PROJECT 2025/2026 - Chess Site
 
+- Author: Matúš Csirik (xcsirim00)
 - Video showcase: TODO:
 
---- [ TECHNOLOGIES ] ---------------------------------------------------
+
+## Technologies
+
 - Frontend: React 19, TypeScript, Vite, Tailwind CSS 4, React Router
 - UI Libraries: Preline, React Chessboard, Lucide React
 - Chess Engine: chess.js
 - API: Lichess API (NDJSON streaming, OAuth PKCE)
 - Runtime: Bun
 
---- [ DIRECTORY STRUCTURE ] --------------------------------------------
-All non-generated files authored by xcsirim00
+
+## Directory structure
 
 - `src/`
   - `src/app` - application entry and bootstrap
@@ -34,11 +34,11 @@ All non-generated files authored by xcsirim00
     - `src/lib` - small utilities (api, stream helpers)
     - `src/pages` - top-level page components
     - `src/styles` - global styles and CSS
-- `sounds/` - licensed from 'chess.com' as per the [user agreement](https://www.chess.com/legal/user-agreement)
+- `sounds/` - Proprietary audio assets from Chess.com. See the **Licensing and Copyright** section.
 - project config files: `package.json`, `tsconfig.*.json`, `vite.config.ts`, etc.
 
 
---- [ RUNNING THE APPLICATION ] ----------------------------------------
+## Running the project
 
 Prerequisites:
 - Bun runtime installed (https://bun.sh)
@@ -47,12 +47,30 @@ Prerequisites:
 Steps:
 
 1. Install dependencies:
-   $ bun install
+  $ bun install
 
 2. Start the development server:
-   $ bun run dev
+  $ bun run dev
 
 3. Open your browser and navigate to:
-   http://localhost:5173
+  http://localhost:3000
 
-4. Sign in with your Lichess account to start playing
+4. Sign in with your Lichess account
+
+
+## Licensing and Copyright
+
+### 1. Source Code and Libraries
+
+All *non-generated* source code (excluding proprietary sound assets) is licensed under the **MIT License**.
+This license is compatible with the underlying Lichess API usage and the 'Vite React' project template 
+([YousifAbozid/template-react-ts](https://github.com/YousifAbozid/template-react-ts)).
+
+### 2. Audio Assets (Proprietary Sounds)
+
+The sound files in the `sounds/` directory are the proprietary intellectual 
+property of Chess.com and are not covered by the MIT License.
+
+Permission for their use was granted **strictly for non-commercial purposes** 
+within this project by a Chess.com representative (Shaun, Dec 11, 2025).
+Any public release or deployment of this application requires these sounds to be removed or replaced.
