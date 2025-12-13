@@ -401,7 +401,11 @@ function OnlineTab({
 	} = useOnlineSetup(rated, onStart, onCancel, waitingForGame);
 
 	const isDisabled = isCreating;
-	const buttonText = waitingForGame ? "Cancel" : isCreating ? "Creating seek…" : "Find Opponent";
+	const buttonText = waitingForGame
+		? "Finding opponent"
+		: isCreating
+			? "Creating seek…"
+			: "Find Opponent";
 	const buttonVariant = waitingForGame ? "outline" : "primary";
 
 	return (
@@ -453,11 +457,6 @@ function OnlineTab({
 						{(waitingForGame || isCreating) && <RotateCw className="h-5 w-5 mr-2 animate-spin" />}
 						{buttonText}
 					</Button>
-					{waitingForGame && (
-						<p className="mt-2 text-sm text-center text-[rgb(var(--color-fg-secondary))]">
-							Looking for a player near your rating...
-						</p>
-					)}
 					{!waitingForGame && !isValid && (
 						<p className="mt-2 text-sm text-center text-[rgb(var(--color-error))]">
 							{rated
