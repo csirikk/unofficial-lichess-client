@@ -25,6 +25,7 @@ export type GameAction = {
 		| "text"
 		| "uppercase";
 	badge?: string;
+	title?: string;
 };
 
 export type ControlsProps = {
@@ -180,6 +181,7 @@ export function Controls({
 						onClick: handleOtherAction(onOfferDraw),
 						disabled: !isConnected || hasDrawOfferedByMe,
 						badge: hasDrawOfferedByOpponent ? "!" : undefined,
+						title: "Ask your opponent to agree to a draw. They can say no.",
 					},
 				]
 			: []),
@@ -195,6 +197,7 @@ export function Controls({
 			onClick: handleOtherAction(onTakeback),
 			disabled: !isConnected || hasTakebackOfferedByMe || totalMoves < 1,
 			badge: hasTakebackOfferedByOpponent ? "!" : undefined,
+			title: "Ask your opponent to let you undo your last move. They can say no.",
 		},
 		{
 			label: resignConfirming ? "Confirm Resign?" : "Resign",
@@ -202,25 +205,27 @@ export function Controls({
 			onClick: handleResignClick,
 			disabled: !isConnected || totalMoves < 2,
 			variant: resignConfirming ? "dangerr" : undefined,
+			title: "Forfeit the game. Your opponent wins immediately.",
 		},
 		{
 			label: "Abort",
 			icon: CircleX,
 			onClick: handleOtherAction(onAbort),
 			disabled: !isConnected || totalMoves >= 2,
+			title: "Cancel the game without penalty. Only available before you make your first move.",
 		},
 	];
 
 	return (
 		<div className="flex flex-col items-start justify-center gap-1 w-fit mt-2">
-			{gameActions.map(({ label, icon: Icon, onClick, disabled, variant, badge }) => (
+			{gameActions.map(({ label, icon: Icon, onClick, disabled, variant, badge, title }) => (
 				<Button
 					key={label}
 					variant={variant || "ghost"}
 					onClick={onClick}
 					disabled={disabled}
 					aria-label={label}
-					title={label}
+					title={title ?? label}
 					className="flex-1 whitespace-nowrap relative"
 				>
 					<Icon className="h-5 w-5" aria-hidden />

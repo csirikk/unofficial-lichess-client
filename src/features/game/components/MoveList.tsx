@@ -115,10 +115,7 @@ export function MoveList({
 	const canGoForward = totalMoves > 0 && !atLive;
 
 	return (
-		<aside
-			data-history-target="true"
-			className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]"
-		>
+		<aside className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]">
 			<SectionLabel
 				hint={
 					isViewingHistory ? (
