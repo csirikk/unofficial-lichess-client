@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
+import { SectionLabel } from "../../../components/SectionLabel";
 
 export type MoveRow = {
 	moveNumber: number;
@@ -118,16 +119,19 @@ export function MoveList({
 			data-history-target="true"
 			className="flex h-full w-full shrink-0 flex-col border border-[rgb(var(--color-surface-border)/0.8)] bg-[rgb(var(--color-surface-base))] px-3 py-3 text-sm text-[rgb(var(--color-fg-secondary))]"
 		>
-			<div className="mb-2 flex items-center justify-between">
-				<div
+			<SectionLabel
+				hint={
+					isViewingHistory ? (
+						<span className="text-sm text-[rgb(var(--color-primary-500))]">Viewing history</span>
+					) : undefined
+				}
+			>
+				<span
 					className={`cursor-default text-xl font-semibold uppercase tracking-[0.25em] ${isViewingHistory ? "text-[rgb(var(--color-primary-500))] opacity-80" : "text-[rgb(var(--color-fg-secondary))]"}`}
 				>
 					Moves
-				</div>
-				{isViewingHistory && (
-					<span className="text-sm text-[rgb(var(--color-primary-500))]">Viewing history</span>
-				)}
-			</div>
+				</span>
+			</SectionLabel>
 			<div
 				ref={scrollContainerRef}
 				className="relative flex-1 overflow-y-auto 

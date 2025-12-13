@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../IconButton";
+import { SectionLabel } from "../SectionLabel";
 import {
 	playSound,
 	isSoundEnabled,
@@ -133,9 +134,7 @@ export function SettingsDropdown() {
 				<div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-[rgb(var(--color-surface-border))] bg-[rgb(var(--color-surface-base))] shadow-lg z-50">
 					<div className="p-2">
 						{/* Header */}
-						<div className="px-3 py-2 text-xs font-semibold text-[rgb(var(--color-fg-secondary))] uppercase tracking-wide">
-							Settings
-						</div>
+						<SectionLabel className="px-2 py-1">Settings</SectionLabel>
 
 						{/* Sound Toggle */}
 						<button

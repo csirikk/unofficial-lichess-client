@@ -1,7 +1,7 @@
 /**
  * SetupTabs.tsx
  *
- * Tabs and panels for creating local, bot or online game setups.
+ * Tabs and Cards for creating local, bot or online game setups.
  */
 
 import { useId } from "react";
@@ -18,6 +18,7 @@ import {
 	type TimePreset,
 } from "../model/setup";
 import { Button } from "../../../components/Button";
+import { Card } from "../../../components/Card";
 import { IconButton } from "../../../components/IconButton";
 import { SectionLabel } from "../../../components/SectionLabel";
 import { SegmentedControl, type SegmentedOption } from "../../../components/SegmentedControl";
@@ -45,36 +46,6 @@ type TabProps = {
 
 export function Tab({ children, className }: TabProps) {
 	return <div className={className}>{children}</div>;
-}
-
-const panelBase = "rounded-2xl  px-2 py-4";
-const panelHeader = "mb-4 flex items-start justify-between gap-3";
-const panelTitle = "text-lg font-semibold text-[rgb(var(--color-fg-primary))]";
-const panelSubtitle = "mt-0.5 text-sm text-[rgb(var(--color-fg-secondary))]";
-
-type PanelProps = {
-	title?: string;
-	subtitle?: string;
-	actions?: React.ReactNode;
-	children: React.ReactNode;
-	className?: string;
-};
-
-function Panel({ title, subtitle, actions, children, className = "" }: PanelProps) {
-	return (
-		<section className={`${panelBase} ${className}`}>
-			{(title || subtitle || actions) && (
-				<header className={panelHeader}>
-					<div>
-						{title && <h2 className={panelTitle}>{title}</h2>}
-						{subtitle && <p className={panelSubtitle}>{subtitle}</p>}
-					</div>
-					{actions && <div className="shrink-0">{actions}</div>}
-				</header>
-			)}
-			<div>{children}</div>
-		</section>
-	);
 }
 
 type TimeControlItem = {
@@ -278,10 +249,10 @@ export function BotTab({
 	};
 
 	return (
-		<Panel
+		<Card
 			title="Play against Bot"
 			subtitle="Choose difficulty, time control and the color you want to play."
-			className="rounded-b-md rounded-t-none"
+			className="rounded-b-md rounded-t-none bg-transparent border-transparent"
 		>
 			<div className="space-y-2">
 				{error && (
@@ -398,7 +369,7 @@ export function BotTab({
 					)}
 				</div>
 			</div>
-		</Panel>
+		</Card>
 	);
 }
 
@@ -434,10 +405,10 @@ function OnlineTab({
 	const buttonVariant = waitingForGame ? "outline" : "primary";
 
 	return (
-		<Panel
+		<Card
 			title={`Play ${rated ? "Rated" : "Unrated"} Online`}
 			subtitle="Play against a random opponent with similar rating."
-			className={`rounded-b-md rounded-t-none`}
+			className={"rounded-b-md rounded-t-none bg-transparent border-transparent"}
 		>
 			<div className="space-y-2">
 				{error && (
@@ -496,7 +467,7 @@ function OnlineTab({
 					)}
 				</div>
 			</div>
-		</Panel>
+		</Card>
 	);
 }
 
