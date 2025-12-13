@@ -38,6 +38,7 @@ import { useBoardPreferences } from "./useBoardPreferences";
 import { useBoardTheme } from "./useBoardTheme";
 
 import { deriveGameState } from "../model/game-info-helpers";
+import { gamePgn } from "../../../generated/client/games";
 import type { GameModel } from "../model/types";
 
 export function useGameSession(gameId: string | null, setGameId: (id: string | null) => void) {
@@ -239,6 +240,41 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			setModalDismissed(false);
 		}
 	}, [isGameEnded]);
+
+	useEffect(() => {
+		if (!gameId || !isGameEnded || finishedGameJson?.id === gameId) return;
+
+		let isActive = true;
+
+		const recoverMetadata = async () => {
+			try {
+				const response = await gamePgn(
+					gameId,
+					{
+						pgnInJson: true,
+						opening: true,
+						tags: true,
+						clocks: false,
+						moves: false,
+						evals: false,
+					},
+					{ headers: { Accept: "application/json" } },
+				);
+
+				if (isActive && response.status === 200 && "data" in response) {
+					setFinishedGameJson(response.data as GameJson);
+				}
+			} catch (error) {
+				console.warn("Metadata recovery failed:", error);
+			}
+		};
+
+		recoverMetadata();
+
+		return () => {
+			isActive = false;
+		};
+	}, [gameId, isGameEnded, finishedGameJson]);
 
 	const clockState = useGameClock({
 		gameFull,
@@ -548,6 +584,16 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	}, [gameState, myColor]);
 
 	const gameModel = useMemo<GameModel | null>(() => {
+		// Prefer live `ratingDelta`; fall back to recovered `finishedGameJson` ratings when present
+		const effectiveRatingDelta =
+			ratingDelta ??
+			(finishedGameJson
+				? {
+						white: finishedGameJson.players?.white?.ratingDiff ?? null,
+						black: finishedGameJson.players?.black?.ratingDiff ?? null,
+					}
+				: null);
+
 		return deriveGameState(
 			gameFull,
 			gameState,
@@ -557,10 +603,12 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				blackMs: clockState.blackMs,
 				activeColor: clockState.activeColor ? gameColorToChessColor(clockState.activeColor) : null,
 			},
-			ratingDelta
+			effectiveRatingDelta
 				? {
-						white: myColor === Color.white ? ratingDelta.white : ratingDelta.black,
-						black: myColor === Color.black ? ratingDelta.white : ratingDelta.black,
+						white:
+							myColor === Color.white ? effectiveRatingDelta.white : effectiveRatingDelta.black,
+						black:
+							myColor === Color.black ? effectiveRatingDelta.white : effectiveRatingDelta.black,
 					}
 				: null,
 			{
@@ -584,13 +632,13 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		clockState.blackMs,
 		clockState.activeColor,
 		ratingDelta,
+		finishedGameJson,
 		drawOfferedByMe,
 		drawOfferedByOpponent,
 		takebackOfferedByMe,
 		takebackOfferedByOpponent,
 		rematchPending,
 		pendingChallengeId,
-		finishedGameJson,
 	]);
 
 	return {

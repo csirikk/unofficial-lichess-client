@@ -25,7 +25,7 @@ export function GameStatus({ status, info, network, className = "" }: GameStatus
 		{
 			icon: ChessPawn,
 			label: openingLabel ?? "",
-			hidden: !openingLabel || status.isOver,
+			hidden: !openingLabel,
 		},
 	];
 
@@ -45,7 +45,6 @@ export function GameStatus({ status, info, network, className = "" }: GameStatus
 				{status.isOver ? (
 					<div className="flex items-center gap-2 text-[rgb(var(--color-fg-secondary))]">
 						<span>{status.statusText}</span>
-						{openingLabel && <span className="text-xs opacity-80"> - {openingLabel}</span>}
 					</div>
 				) : (
 					<ConnectionStatus network={network} />
