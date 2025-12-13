@@ -47,14 +47,6 @@ export function useHistoryKeyboard({
 					event.preventDefault();
 					goToLive();
 					break;
-				case "home":
-					event.preventDefault();
-					goToStart();
-					break;
-				case "end":
-					event.preventDefault();
-					goToLive();
-					break;
 			}
 		};
 
