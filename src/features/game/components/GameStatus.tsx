@@ -7,6 +7,7 @@
 import { Clock, ChessPawn, ChessKing } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
 import type { GameStatusModel, GameInfoModel, NetworkModel } from "../model/types";
+import { formatOpening } from "../model/game-info-helpers";
 
 export type GameStatusProps = {
 	status: GameStatusModel;
@@ -16,13 +17,15 @@ export type GameStatusProps = {
 };
 
 export function GameStatus({ status, info, network, className = "" }: GameStatusProps) {
+	const openingLabel = formatOpening(info.opening);
+
 	const gameInfoItems = [
 		{ icon: ChessKing, label: info.gameModeLabel, hidden: !info.gameModeLabel },
 		{ icon: Clock, label: info.timeControlLabel, hidden: !info.timeControlLabel },
 		{
 			icon: ChessPawn,
-			label: info.opening?.name ?? "",
-			hidden: !info.opening?.name,
+			label: openingLabel ?? "",
+			hidden: !openingLabel || status.isOver,
 		},
 	];
 
@@ -40,7 +43,10 @@ export function GameStatus({ status, info, network, className = "" }: GameStatus
 
 			<div className="text-sm font-medium">
 				{status.isOver ? (
-					<span className="text-[rgb(var(--color-fg-secondary))]">{status.statusText}</span>
+					<div className="flex items-center gap-2 text-[rgb(var(--color-fg-secondary))]">
+						<span>{status.statusText}</span>
+						{openingLabel && <span className="text-xs opacity-80"> - {openingLabel}</span>}
+					</div>
 				) : (
 					<ConnectionStatus network={network} />
 				)}

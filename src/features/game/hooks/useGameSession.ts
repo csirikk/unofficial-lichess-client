@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameColor as Color } from "../../../generated/types/gameColor";
 import { gameColorToChessColor } from "../model/chess";
 import type { GameFinishEvent } from "../../../generated/types/gameFinishEvent";
+import type { GameJson } from "../../../generated/types/gameJson";
 import type { GameStartEvent } from "../../../generated/types/gameStartEvent";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
@@ -53,6 +54,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 
 	const [pendingDrawOffer, setPendingDrawOffer] = useState(false);
 	const [pendingTakebackOffer, setPendingTakebackOffer] = useState(false);
+	const [finishedGameJson, setFinishedGameJson] = useState<GameJson | null>(null);
 	const lastMoveCountRef = useRef<number>(0);
 
 	const [modalDismissed, setModalDismissed] = useState(false);
@@ -85,6 +87,14 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			cancelSeek();
 		};
 	}, [cancelSeek]);
+
+	// Clear stored finished GameJson when its different gameId
+	useEffect(() => {
+		if (!finishedGameJson) return;
+		if (finishedGameJson.id !== gameId) {
+			setFinishedGameJson(null);
+		}
+	}, [gameId, finishedGameJson]);
 
 	const onGameStartHandler = useCallback(
 		(event: GameStartEvent) => {
@@ -129,10 +139,15 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	);
 
 	const onGameFinishHandler = useCallback(
-		(event: GameFinishEvent, delta: { white: number | null; black: number | null }) => {
+		(
+			event: GameFinishEvent,
+			delta: { white: number | null; black: number | null },
+			gameJson?: GameJson | null,
+		) => {
 			const eventGameId = event.game?.gameId || event.game?.id;
 			if (eventGameId === gameId) {
 				setRatingDelta(delta);
+				setFinishedGameJson(gameJson ?? null);
 			}
 		},
 		[gameId],
@@ -558,7 +573,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 				rematchPending,
 				pendingChallengeId,
 			},
-			null,
+			finishedGameJson,
 			true,
 		);
 	}, [
@@ -575,6 +590,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 		takebackOfferedByOpponent,
 		rematchPending,
 		pendingChallengeId,
+		finishedGameJson,
 	]);
 
 	return {

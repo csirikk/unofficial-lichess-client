@@ -259,9 +259,13 @@ export function formatTimeControl(
 	return `${minutes}+${increment}`;
 }
 
-export function formatOpening(opening: GameOpening | undefined): string | null {
-	if (!opening?.name) return null;
-	return opening.eco ? `${opening.eco}: ${opening.name}` : opening.name;
+export function formatOpening(
+	opening: GameOpening | { eco?: string; name?: string } | undefined,
+): string | null {
+	const name = opening?.name;
+	if (!name) return null;
+	const eco = (opening as { eco?: string }).eco;
+	return eco ? `${eco}: ${name}` : name;
 }
 
 export function getGameModeDescription(
