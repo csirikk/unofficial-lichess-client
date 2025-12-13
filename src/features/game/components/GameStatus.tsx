@@ -53,7 +53,7 @@ export function GameStatus({ status, info, network, className = "" }: GameStatus
 
 			{/* Game Info Tags */}
 			{gameInfoItems.length > 0 && (
-				<div className="mt-3 grid gap-2">
+				<div className="mt-3 grid gap-2 max-w-[35ch]">
 					{gameInfoItems.map((item, index) => (
 						<div
 							key={`${item.label}-${index}`}
