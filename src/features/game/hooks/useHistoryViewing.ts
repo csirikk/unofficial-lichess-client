@@ -1,8 +1,9 @@
 /**
- * useHistoryViewing Hook
+ * useHistoryViewing.ts
  *
- * Manages history viewing state for reviewing past positions during a game.
+ * Hook managing history viewing state and navigation for live/not live game review.
  */
+
 import { Chess, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { pieceMapFromChess, pieceMapToChessboard } from "../model/chess";
@@ -14,7 +15,8 @@ export type HistoryViewingConfig = {
 };
 
 export type HistoryViewingReturn = {
-	viewingMoveIndex: number | null; // null = live, -1 = starting position
+	// State: null=live game, -1=start position, 0..N=move index (inclusive)
+	viewingMoveIndex: number | null;
 	isViewingHistory: boolean;
 	displayPosition: Record<string, { pieceType: string }>;
 	viewedLastMove: { from: Square | null; to: Square | null };

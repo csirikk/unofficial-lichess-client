@@ -1,3 +1,9 @@
+/**
+ * IconButton.tsx
+ *
+ * Circular icon-only button used for compact actions.
+ */
+
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type IconButtonSize = "sm" | "md" | "lg";

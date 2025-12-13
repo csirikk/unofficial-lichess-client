@@ -1,12 +1,9 @@
 /**
- * useBoardInteraction Hook
+ * useBoardInteraction.ts
  *
- * Handles interaction with the board:
- * - Clicks and drags
- * - Square selection
- * - Right-clicks for highlights
- * - Promotion modal
+ * Hook managing board interaction logic (clicks, drags, selection, promotions).
  */
+
 import { Chess, type Move as ChessMove, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -106,13 +103,14 @@ export function useBoardInteraction({
 				}
 
 				// Handle castling by dragging king onto rook or rook onto king
+				// (converts the visual drag target to the actual castling square)
 				try {
 					let origFrom = from;
 					let origTo = to;
 					const movingPiece = chess.get(from);
 					const targetPiece = chess.get(to);
 
-					// king dragged onto rook
+					// King dragged onto rook: convert to king's final castling square
 					if (
 						movingPiece &&
 						movingPiece.type === "k" &&
@@ -126,7 +124,7 @@ export function useBoardInteraction({
 						origTo = String.fromCharCode(castleFile) + from[1];
 					}
 
-					// rook dragged onto king
+					// Rook dragged onto king: swap pieces and compute king's final square
 					if (
 						movingPiece &&
 						movingPiece.type === "r" &&

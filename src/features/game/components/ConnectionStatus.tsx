@@ -1,3 +1,9 @@
+/**
+ * ConnectionStatus.tsx
+ *
+ * Small status indicator for network connection state in the game view.
+ */
+
 import type { NetworkModel } from "../model/types";
 
 export function ConnectionStatus({

@@ -1,3 +1,9 @@
+/**
+ * useGameHistory.ts
+ *
+ * Hook fetching the user's ongoing games and recent game history.
+ */
+
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { apiAccountPlaying, apiGamesUser } from "../../../generated/client/games";

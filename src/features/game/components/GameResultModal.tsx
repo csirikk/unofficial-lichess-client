@@ -1,3 +1,9 @@
+/**
+ * GameResultModal.tsx
+ *
+ * Modal dialog showing game result, ratings and rematch/new game actions.
+ */
+
 import { Play, RotateCcw, Trophy, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "../../../components/Button";

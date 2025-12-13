@@ -1,8 +1,9 @@
 /**
- * useAuth Hook
+ * useAuth.ts
  *
- * Custom hook to access authentication context.
+ * Hook to consume the `AuthContext` and provide authentication state to components.
  */
+
 import { useContext } from "react";
 import type { UserExtended } from "../../../generated/types/userExtended";
 import { AuthContext } from "../AuthProvider";

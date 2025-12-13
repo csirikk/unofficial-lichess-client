@@ -1,8 +1,9 @@
 /**
- * AuthCallback Component
+ * AuthCallback.tsx
  *
- * Handles the OAuth callback from Lichess.
+ * OAuth callback handler component that completes the PKCE flow and stores tokens.
  */
+
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Layout from "../../../components/layout/Layout";
@@ -16,7 +17,7 @@ export default function AuthCallback() {
 	const hasRun = useRef(false);
 
 	useEffect(() => {
-		// Prevent double run
+		// Prevent double run in React Strict Mode (dev double-mount)
 		if (hasRun.current) return;
 		hasRun.current = true;
 
@@ -42,7 +43,7 @@ export default function AuthCallback() {
 				return;
 			}
 
-			// Prevent reuse of codes
+			// Prevent reuse of codes (OAuth codes are single-use, guard against double-fire)
 			const marker = `oauth_code_used:${code}`;
 			if (sessionStorage.getItem(marker)) {
 				navigate("/", { replace: true });

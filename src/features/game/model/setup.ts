@@ -1,8 +1,15 @@
+/**
+ * setup.ts
+ *
+ * Model helpers for constructing and validating game setup configurations.
+ */
+
 import type { SpeedBucket } from "./types";
 import type { ChallengeColor } from "../../../generated/types/challengeColor";
 
 export type TimeCategory = SpeedBucket;
 
+// Lichess API validation rules (mirrored locally for client-side checks)
 export const MIN_RATED_MINUTES = 15;
 export const MIN_UNRATED_MINUTES = 10;
 export const MIN_BOT_MINUTES = 3;

@@ -1,3 +1,9 @@
+/**
+ * main.tsx
+ *
+ * App bootstrap entry that mounts React and sets up routing.
+ */
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";

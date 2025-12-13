@@ -1,6 +1,9 @@
 /**
- * useHistoryMouse Hook
- **/
+ * useHistoryMouse.ts
+ *
+ * Hook adding mouse controls for history navigation.
+ */
+
 import { useEffect, useRef } from "react";
 
 export type HistoryMouseConfig = {

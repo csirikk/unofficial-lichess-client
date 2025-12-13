@@ -1,3 +1,9 @@
+/**
+ * GameStatus.tsx
+ *
+ * Display of current game status, mode, time control and connection state.
+ */
+
 import { Clock, ChessPawn, ChessKing } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
 import type { GameStatusModel, GameInfoModel, NetworkModel } from "../model/types";

@@ -1,3 +1,9 @@
+/**
+ * Button.tsx
+ *
+ * Reusable button component with variants and sizes used throughout the app.
+ */
+
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type ButtonVariant =

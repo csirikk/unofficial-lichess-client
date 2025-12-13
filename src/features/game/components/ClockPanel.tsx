@@ -1,3 +1,9 @@
+/**
+ * ClockPanel.tsx
+ *
+ * Player clock components and the combined clock panel used in the game view.
+ */
+
 import type { PieceSymbol } from "chess.js";
 import { Infinity as LucideInfinity } from "lucide-react";
 import { PIECES_UNICODE, formatClockTime } from "../model/chess";

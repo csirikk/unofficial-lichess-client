@@ -1,3 +1,10 @@
+/**
+ * HomePage.tsx
+ *
+ * Main application page rendering GameView when authenticated.
+ * Shows loading state or placeholder when not authenticated. Used as the "/" route.
+ */
+
 import { useAuth } from "../features/auth/hooks/useAuth";
 import GameView from "../features/game/views/GameView";
 import Layout from "../components/layout/Layout";

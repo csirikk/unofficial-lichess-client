@@ -1,3 +1,9 @@
+/**
+ * useEventStream.ts
+ *
+ * Connects to the global event stream and dispatches game and challenge events.
+ */
+
 import { useEffect, useRef } from "react";
 import { apiStreamEvent } from "../../../generated/client/board";
 import { gamePgn } from "../../../generated/client/games";
@@ -24,7 +30,14 @@ type UseEventStreamConfig = {
 	onChallengeCanceled?: (event: ChallengeCanceledEvent) => void;
 };
 
-export function useEventStream({ enabled, onGameStart, onGameFinish, onChallenge, onChallengeDeclined, onChallengeCanceled }: UseEventStreamConfig) {
+export function useEventStream({
+	enabled,
+	onGameStart,
+	onGameFinish,
+	onChallenge,
+	onChallengeDeclined,
+	onChallengeCanceled,
+}: UseEventStreamConfig) {
 	const streamRef = useRef<StreamControl | null>(null);
 
 	const onGameStartRef = useRef(onGameStart);
@@ -67,6 +80,7 @@ export function useEventStream({ enabled, onGameStart, onGameFinish, onChallenge
 					return;
 				}
 
+				// Two-stream handshake: event stream broadcasts game lifecycle, game stream handles moves
 				const control = readNdjsonStream<ApiStreamEvent200>(
 					"event-stream",
 					response.stream,
@@ -82,6 +96,7 @@ export function useEventStream({ enabled, onGameStart, onGameFinish, onChallenge
 						} else if (event.type === "gameFinish") {
 							const gameId = event.game?.gameId || event.game?.id;
 							if (gameId) {
+								// Fetch full game data to get rating changes (not included in the gameFinish event)
 								void (async () => {
 									try {
 										// API: GET https://lichess.org/game/export/{gameId} - Export game in JSON format

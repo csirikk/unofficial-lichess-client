@@ -1,3 +1,9 @@
+/**
+ * PromotionMenu.tsx
+ *
+ * UI menu shown when a pawn is promoted to choose the piece.
+ */
+
 import { defaultPieces, type PieceRenderObject } from "react-chessboard";
 import type { GameColor } from "../../../generated/types/gameColor";
 import type { PromotionPieceModel } from "../model/chess";

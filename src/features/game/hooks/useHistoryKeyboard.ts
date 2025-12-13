@@ -1,8 +1,9 @@
 /**
- * useHistoryKeyboard Hook
+ * useHistoryKeyboard.ts
  *
- * Adds keyboard navigation in history.
+ * Hook adding keyboard navigation for history viewing.
  */
+
 import { useEffect } from "react";
 
 export type HistoryKeyboardConfig = {

@@ -1,6 +1,9 @@
 /**
- * useBoardPreferences Hook
+ * useBoardPreferences.ts
+ *
+ * Hook exposing board preferences and change notifications.
  */
+
 import { useEffect, useState } from "react";
 import { getBoardTheme, isCoordinatesEnabled, type BoardTheme } from "../model/preferences";
 

@@ -1,3 +1,9 @@
+/**
+ * game-actions.ts
+ *
+ * Model commands to start/abort/resign games and manage offers and seeks.
+ */
+
 import {
 	boardGameAbort,
 	boardGameDraw,
@@ -114,7 +120,7 @@ export async function handleRematch(
 		throw new Error("Failed to create AI rematch");
 	}
 
-	// Rematch against human
+	// Rematch against human (challenge API requires keepAliveStream for NDJSON)
 	const form = new URLSearchParams();
 	form.append("rated", String(gameFull.rated));
 	form.append("color", "random");

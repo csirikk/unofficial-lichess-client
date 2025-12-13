@@ -1,3 +1,9 @@
+/**
+ * useAuthSession.ts
+ *
+ * Manages OAuth session: login, callback handling, profile loading and logout.
+ */
+
 import { useEffect, useState } from "react";
 import { accountMe } from "../../../generated/client/account";
 import { apiToken, apiTokenDelete } from "../../../generated/client/oauth";

@@ -1,3 +1,9 @@
+/**
+ * GameView.tsx
+ *
+ * Main game view component, orchestrating board, clocks, move list, and controls.
+ */
+
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSession } from "../hooks/useGameSession";

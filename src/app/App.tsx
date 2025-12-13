@@ -1,3 +1,9 @@
+/**
+ * App.tsx
+ *
+ * Application route definitions and top-level app container.
+ */
+
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthCallback from "../features/auth/components/AuthCallback";
@@ -7,6 +13,7 @@ import GamesPage from "../pages/GamesPage";
 
 export default function App() {
 	useEffect(() => {
+		// Dynamically load Preline after React
 		import("preline").then(({ HSStaticMethods }) => HSStaticMethods.autoInit());
 	}, []);
 

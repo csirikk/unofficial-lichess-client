@@ -1,3 +1,9 @@
+/**
+ * Layout.tsx
+ *
+ * App layout component providing header and main content area.
+ */
+
 import type { ReactNode } from "react";
 import Navbar from "./Navbar";
 

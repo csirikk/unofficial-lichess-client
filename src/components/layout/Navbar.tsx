@@ -1,3 +1,9 @@
+/**
+ * Navbar.tsx
+ *
+ * Top navigation bar with links, auth status, and settings access.
+ */
+
 import { Link } from "react-router-dom";
 import { Button } from "../Button";
 import { useAuth } from "../../features/auth/hooks/useAuth";

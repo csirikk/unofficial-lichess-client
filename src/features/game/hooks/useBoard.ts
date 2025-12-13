@@ -1,3 +1,9 @@
+/**
+ * useBoard.ts
+ *
+ * ViewModel hook providing the board display state and UI handlers.
+ */
+
 import { useMemo } from "react";
 import type { Move as ChessMove, Square } from "chess.js";
 import type {

@@ -1,3 +1,9 @@
+/**
+ * PlayerInfo.tsx
+ *
+ * Displays player name, rating and rating delta for a game participant.
+ */
+
 import { formatRatingDelta, getRatingDeltaClass } from "../model/game-info-helpers";
 import type { PlayerModel } from "../model/types";
 

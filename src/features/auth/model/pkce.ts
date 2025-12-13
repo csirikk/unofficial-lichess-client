@@ -1,7 +1,9 @@
 /**
- * OAuth2.0 authorisation + PKCE (S256) helpers.
+ * pkce.ts
  *
- * Inspired by the Lichess client-side demo (no code copied).
+ * PKCE helper functions for building authorization URLs, storing/verifying state and tokens.
+ *
+ * Inspired by the Lichess client-side demo.
  * https://lichess.org/api and https://github.com/lichess-org/api-demo
  */
 
@@ -29,7 +31,7 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 	const data = encoder.encode(verifier);
 	const hash = await crypto.subtle.digest("SHA-256", data);
 	const base64 = btoa(String.fromCharCode(...new Uint8Array(hash)));
-	// Convert to base64url
+	// Convert to base64url (RFC 7636 URL-safe base64 without padding)
 	return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 

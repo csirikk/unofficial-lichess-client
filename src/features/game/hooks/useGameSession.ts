@@ -1,3 +1,9 @@
+/**
+ * useGameSession.ts
+ *
+ * Hook managing game session lifecycle, seeks, and related event handling.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameColor as Color } from "../../../generated/types/gameColor";
 import { gameColorToChessColor } from "../model/chess";
@@ -54,6 +60,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 	const seekAbortControllerRef = useRef<AbortController | null>(null);
 	const seekStreamRef = useRef<{ close: () => void } | null>(null);
 	const expectedSourceRef = useRef<"lobby" | "ai" | "friend" | null>(null);
+	// Prevents race: gameStart events for old games arriving after new seek begins
 	const ignoredGameIdsRef = useRef<Set<string>>(new Set());
 
 	const preferences = useBoardPreferences();
@@ -96,6 +103,7 @@ export function useGameSession(gameId: string | null, setGameId: (id: string | n
 			if (eventGameId === gameId) return;
 
 			if (waitingForGame || rematchPending) {
+				// Ignore AI games started in background while actively seeking human opponent
 				if (expectedSourceRef.current === "lobby" && source === "ai") {
 					console.log("Ignoring background AI game while seeking lobby game:", eventGameId);
 					return;

@@ -1,3 +1,9 @@
+/**
+ * useGameSetup.ts
+ *
+ * Hooks for configuring and starting bot or online games.
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import {
 	createDefaultBotGameSetup,
@@ -21,6 +27,7 @@ export function useBotSetup(
 	const modePresets = useMemo(() => getDefaultTimePresetsForMode("bot"), []);
 
 	const selectedPreset = modePresets.find((p) => p.id === setup.timePresetId);
+	// Keep preset and time control synchronized (preset changes update time, custom breaks sync)
 	useEffect(() => {
 		if (selectedPreset && setup.timePresetId !== "custom") {
 			if (

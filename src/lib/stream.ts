@@ -1,3 +1,9 @@
+/**
+ * stream.ts
+ *
+ * Helper functions to read and process NDJSON streams from Fetch API responses.
+ */
+
 export type NdjsonHandler<T = unknown> = (data: T) => void;
 
 export interface StreamControl {
@@ -18,7 +24,7 @@ export function readNdjsonStream<T = unknown>(
 	const stream = body.getReader();
 	const matcher = /\r?\n/;
 	const decoder = new TextDecoder();
-	let buf = "";
+	let buf = ""; // Persists across chunks to handle JSON objects split across network packets
 
 	const process = (json: string) => {
 		const trimmed = json.trim();

@@ -1,3 +1,9 @@
+/**
+ * game-info-helpers.ts
+ *
+ * Model helpers to derive displayable game info and status from raw events.
+ */
+
 import type { Speed } from "../../../generated/types/speed";
 import type { VariantKey } from "../../../generated/types/variantKey";
 import type { GameJsonClock } from "../../../generated/types/gameJsonClock";
@@ -367,6 +373,7 @@ export function deriveGameState(
 	const hasClockConfig = normalizedClock != null && normalizedClock.initial != null;
 	const isUnlimited = !hasClockConfig;
 
+	// Clock config (gameFull) in seconds, but clock state (whiteTime/blackTime) in milliseconds
 	const initial = normalizedClock?.initial ?? 0;
 	const increment = normalizedClock?.increment ?? 0;
 

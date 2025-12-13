@@ -1,3 +1,9 @@
+/**
+ * Board.tsx
+ *
+ * Chess board view, rendering and interaction handlers.
+ */
+
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Square } from "chess.js";
@@ -50,6 +56,7 @@ export function Board({ viewModel }: BoardProps) {
 	const [boardWidth, setBoardWidth] = useState(0);
 	const boardResizeCleanupRef = useRef<(() => void) | null>(null);
 
+	// Manual board physics: measure container width to position promotion menu and calculate square sizes
 	const boardContainerRef = useCallback((node: HTMLDivElement | null) => {
 		boardResizeCleanupRef.current?.();
 		boardResizeCleanupRef.current = null;

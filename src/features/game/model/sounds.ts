@@ -1,3 +1,9 @@
+/**
+ * sounds.ts
+ *
+ * Model helpers for playing game sound effects and managing audio state.
+ */
+
 export type SoundType =
 	| "move-self"
 	| "capture"
@@ -48,6 +54,7 @@ soundTypes.forEach((type) => {
 	audioCache.set(type, audio);
 });
 
+// Browsers can block audio until user interaction, unlock on first gesture
 if (typeof window !== "undefined") {
 	const unlockAudio = () => {
 		if (isUnlocked) return;

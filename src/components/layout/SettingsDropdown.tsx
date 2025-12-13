@@ -1,3 +1,10 @@
+/**
+ * SettingsDropdown.tsx
+ *
+ * Settings dropdown menu managing game preferences (sound, premoves, coordinates, auto-queen, board theme).
+ * Interacts with preferences and sounds models. Used in Navbar.
+ */
+
 import {
 	Settings,
 	Volume2,

@@ -1,3 +1,9 @@
+/**
+ * SectionLabel.tsx
+ *
+ * Small uppercase section label with optional hint text.
+ */
+
 import type { ReactNode } from "react";
 
 type SectionLabelProps = {

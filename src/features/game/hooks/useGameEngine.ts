@@ -1,12 +1,9 @@
 /**
- * useGameEngine Hook
+ * useGameEngine.ts
  *
- * Manages the truth of the game:
- * - Chess.js instance
- * - Server synchronization
- * - Optimistic updates
- * - Move execution (including premoves)
+ * Hook managing the chess engine state, optimistic moves, and server synchronization.
  */
+
 import { Chess, type Square, type Piece } from "chess.js";
 import {
 	useCallback,
@@ -145,7 +142,7 @@ export function useGameEngine({
 		[isConnected, isGameEnded, isMyGame, playerColor],
 	);
 
-	// Reset board to last known server state on error
+	// Optimistic rollback: discard pending/premove state, revert to server state
 	const rollbackToServer = useCallback(() => {
 		setPendingUci(null);
 		setPendingIsPremove(false);
@@ -188,7 +185,7 @@ export function useGameEngine({
 	const { boardPosition, ghostPieces } = useMemo(() => {
 		const baseBoard = pieceMapFromChess(chess);
 		let visualBoard: PieceMap;
-		let ghosts: GhostPieceModel[] = [];
+		let ghosts: GhostPieceModel[] = []; // Faded piece at original square
 
 		if (premoveQueue.length > 0) {
 			const result = applyPremoves(baseBoard, premoveQueue);
@@ -292,6 +289,7 @@ export function useGameEngine({
 		}
 	}, [chess]);
 
+	// Process queued premoves when it becomes player's turn
 	const processPremoveQueue = useCallback(() => {
 		if (!gameFull || !isMyGame || !isConnected || isGameEnded) return;
 		if (!premoveQueue.length) return;
@@ -302,6 +300,7 @@ export function useGameEngine({
 		const [next, ...rest] = premoveQueue;
 		const serverBoard = new Chess(serverFen);
 
+		// Validate premove is still legal on the current board state
 		let legal = false;
 		try {
 			const candidate = uciToMove(next.uci);
@@ -311,6 +310,7 @@ export function useGameEngine({
 			legal = false;
 		}
 
+		// Discard entire queue if first premove is illegal
 		if (!legal) {
 			setPremoveQueue([]);
 			if (promotionRequest?.mode === "premove") {

@@ -1,5 +1,7 @@
 /**
- * Type Definitions
+ * types.ts
+ *
+ * Shared TypeScript types for game models and view models.
  */
 
 import type { PieceSymbol, Square } from "chess.js";

@@ -1,3 +1,9 @@
+/**
+ * SetupTabs.tsx
+ *
+ * Tabs and panels for creating local, bot or online game setups.
+ */
+
 import { useId } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useBotSetup, useOnlineSetup } from "../hooks/useGameSetup";

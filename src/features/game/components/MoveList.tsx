@@ -1,3 +1,9 @@
+/**
+ * MoveList.tsx
+ *
+ * Move list display with navigation controls and history viewing.
+ */
+
 import { useEffect, useMemo, useRef } from "react";
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";

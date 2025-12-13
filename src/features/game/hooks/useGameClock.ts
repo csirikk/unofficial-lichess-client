@@ -1,8 +1,9 @@
 /**
- * useGameClock Hook
+ * useGameClock.ts
  *
- * Manages chess clock state with local ticking and server synchronization.
+ * Hook managing local chess clock state and server synchronization.
  */
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameFullEvent, GameStateEvent } from "../../../generated/types";
 import { GameColor as Color } from "../../../generated/types/gameColor";
@@ -41,10 +42,11 @@ export function useGameClock({
 	const [isRunning, setIsRunning] = useState(false);
 	const [now, setNow] = useState(() => Date.now());
 
-	const turnStartedAtRef = useRef<number | null>(null); // when current activeColor turn started
-	const lastTurnRef = useRef<ClockColor | null>(null); // previous turn
-	const hasStartedRef = useRef(false); // has any move been played
-	const lastGameIdRef = useRef<string | null>(null); // to detect new game
+	// Clock state machine refs (persist across renders)
+	const turnStartedAtRef = useRef<number | null>(null); // Timestamp when current turn started
+	const lastTurnRef = useRef<ClockColor | null>(null); // Previous turn color (for detecting turn changes)
+	const hasStartedRef = useRef(false); // Clock active only after both players move once
+	const lastGameIdRef = useRef<string | null>(null); // To detect game changes and reset state
 
 	const lastServerWhiteMsRef = useRef<number | null>(null);
 	const lastServerBlackMsRef = useRef<number | null>(null);
@@ -132,13 +134,13 @@ export function useGameClock({
 			return;
 		}
 
-		// GRACE: until both sides have played, show base times not ticking
+		// GRACE period: Clock doesn't tick until both players have moved
 		if (!hasStartedRef.current) {
 			if (initialTime != null) {
 				setWhiteBaseMs(initialTime);
 				setBlackBaseMs(initialTime);
 			} else {
-				// no explicit initial - fall back to server snapshot if present
+				// No explicit initial time - fall back to server snapshot if present
 				if (wtime != null) setWhiteBaseMs(wtime);
 				if (btime != null) setBlackBaseMs(btime);
 			}

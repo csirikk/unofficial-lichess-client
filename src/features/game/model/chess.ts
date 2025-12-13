@@ -1,6 +1,9 @@
 /**
- * Chess Logic
+ * chess.ts
+ *
+ * Model utilities for chess move parsing, UCI conversion, and board state helpers.
  */
+
 import {
 	Chess,
 	type Color as ChessColor,
@@ -107,6 +110,7 @@ export function gameColorToChessColor(gameColor: Color): ChessColor {
 
 /**
  * Builds a game from a list of moves string to build a rich history.
+ * * O(N) - replays entire game from start each time (simple but not optimized).
  */
 export function buildGameHistory(
 	movesStr: string,
@@ -270,6 +274,7 @@ export function applyPremoves(
 
 /**
  * Check if a piece can feasibly make a premove. Ignores blocking pieces, captures, etc.
+ * Only validates geometric patterns because chess.js cannot validate future board states.
  */
 export function isFeasiblePremove(piece: Piece, from: Square, to: Square): boolean {
 	const fileFrom = from.charCodeAt(0) - "a".charCodeAt(0);

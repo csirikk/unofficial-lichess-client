@@ -1,3 +1,10 @@
+/**
+ * GameSetupView.tsx
+ *
+ * Main setup screen with tabs for creating bot, unrated, and rated games.
+ * Orchestrates BotTab, RatedTab, and UnratedTab components. Used in GameView.
+ */
+
 import { useState } from "react";
 import type { GameSetup, SetupBotLevel, SetupColorChoice } from "../model/setup";
 import { BotTab, RatedTab, UnratedTab } from "../components/SetupTabs";

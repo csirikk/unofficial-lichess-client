@@ -1,7 +1,7 @@
 /**
- * useSoundEffects Hook
+ * useSoundEffects.ts
  *
- * Manages sound playback based on game state changes
+ * Hook playing sound effects based on game state and move events.
  */
 
 import { useCallback, useEffect, useRef } from "react";
@@ -43,6 +43,7 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 		blackTime,
 	} = config;
 
+	// Refs avoid retriggering effects while preventing double-plays
 	const lastViewedIndexRef = useRef<number | null>(null);
 	const gameStartedRef = useRef(false);
 	const gameEndedRef = useRef(false);

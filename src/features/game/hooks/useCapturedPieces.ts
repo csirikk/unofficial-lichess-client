@@ -1,8 +1,9 @@
 /**
- * useCapturedPieces Hook
+ * useCapturedPieces.ts
  *
- * ViewModel layer for captured pieces and material difference calculations.
+ * Hook computing captured pieces and material differences.
  */
+
 import { Chess, type PieceSymbol } from "chess.js";
 import { useMemo } from "react";
 import {
@@ -56,6 +57,7 @@ export function useCapturedPieces({
 			// Live mode - use the current chess instance (includes pending moves)
 			board = pieceMapFromChess(chess);
 
+			// Count captured pieces for optimistic pending move even though its not confirmed
 			if (pendingUci) {
 				try {
 					const lastServerMove = serverHistory[serverHistory.length - 1];

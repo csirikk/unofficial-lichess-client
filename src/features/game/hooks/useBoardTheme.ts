@@ -1,8 +1,9 @@
 /**
- * useBoardTheme Hook
+ * useBoardTheme.ts
  *
- * Provides theme-specific board colors based on the current theme.
+ * Hook providing board color values and arrow preferences for the selected board theme.
  */
+
 import { useMemo } from "react";
 import type { BoardTheme } from "../model/preferences";
 

@@ -1,3 +1,9 @@
+/**
+ * SegmentedControl.tsx
+ *
+ * Small segmented control for selecting between a set of options.
+ */
+
 import type { ReactNode } from "react";
 
 export type SegmentedOption<T extends string> = {

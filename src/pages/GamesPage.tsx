@@ -1,3 +1,9 @@
+/**
+ * GamesPage.tsx
+ *
+ * Page displaying a list of ongoing and recent games.
+ */
+
 import { Link } from "react-router-dom";
 import { useGameHistory } from "../features/game/hooks/useGameHistory";
 import type { ApiAccountPlaying200NowPlayingItem } from "../generated/types/apiAccountPlaying200NowPlayingItem";

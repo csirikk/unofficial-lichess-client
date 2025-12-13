@@ -1,8 +1,9 @@
 /**
- * useGameStream Hook
+ * useGameStream.ts
  *
- * Manages the game stream connection to Lichess Board API.
+ * Hook managing the game stream connection and sending moves to the server.
  */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { GameColor as Color } from "../../../generated/types/gameColor";
@@ -49,6 +50,7 @@ export function useGameStream(gameId: string | null): GameStreamReturn {
 	>("connecting");
 
 	const statusRef = useRef<GameStatusName | null>(null);
+	// Prevents duplicate stream subscriptions in React Strict Mode double-mount
 	const activeGameIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 	const initialFenRef = useRef<string>("start");

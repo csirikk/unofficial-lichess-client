@@ -1,3 +1,9 @@
+/**
+ * GameActions.tsx
+ *
+ * Game action and control buttons (offer draw, resign, takeback, rematch, etc.).
+ */
+
 import { CircleX, Flag, Handshake, RotateCcw, Undo2, Play, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../../../components/Button";

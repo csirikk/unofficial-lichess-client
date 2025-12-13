@@ -1,6 +1,9 @@
 /**
- * API utilities
+ * api.ts
+ *
+ * API helper functions for authenticated requests and streaming.
  */
+
 import { getAccessToken } from "../features/auth/model/pkce";
 
 export const CLIENT_ID = "itu";

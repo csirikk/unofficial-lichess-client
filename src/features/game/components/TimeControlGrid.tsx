@@ -1,3 +1,9 @@
+/**
+ * TimeControlGrid.tsx
+ *
+ * Selectable grid of time control preset cards used in setup UI.
+ */
+
 import type { ReactNode } from "react";
 
 export type SelectableCard<T extends string> = {

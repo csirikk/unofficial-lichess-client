@@ -1,3 +1,9 @@
+/**
+ * Card.tsx
+ *
+ * Simple card container with optional title, subtitle and actions.
+ */
+
 import type { ReactNode } from "react";
 
 type CardProps = {

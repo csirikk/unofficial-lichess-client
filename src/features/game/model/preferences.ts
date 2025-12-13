@@ -1,3 +1,9 @@
+/**
+ * preferences.ts
+ *
+ * Model for board preferences: storage helpers and getters/setters.
+ */
+
 export type BoardTheme = "default" | "classic";
 
 export type BoardPreferences = {
