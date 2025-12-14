@@ -65,30 +65,21 @@ export function MoveList({
 		if (!scrollContainerRef.current) return;
 
 		// Start of game
-		if (viewingMoveIndex === -1) {
+		if (activeMoveIndex === -1) {
 			scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
 			return;
 		}
 
-		// End of game / Live
-		if (viewingMoveIndex === null) {
-			scrollContainerRef.current.scrollTo({
-				top: scrollContainerRef.current.scrollHeight,
-				behavior: "smooth",
-			});
-			return;
-		}
-
-		// Specific move
-		if (moveListBodyRef.current && viewingMoveIndex >= 0) {
-			const rowIndex = Math.floor(viewingMoveIndex / 2);
+		// Specific row
+		if (activeMoveIndex !== null && activeMoveIndex >= 0 && moveListBodyRef.current) {
+			const rowIndex = Math.floor(activeMoveIndex / 2);
 			const rowElement = moveListBodyRef.current.children[rowIndex] as HTMLElement | undefined;
 
 			if (rowElement) {
-				rowElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
+				rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
 			}
 		}
-	}, [viewingMoveIndex]);
+	}, [activeMoveIndex]);
 
 	if (!visible) {
 		return null;
