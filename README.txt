@@ -1,7 +1,7 @@
 # ITU PROJECT 2025/2026 - Chess Site
 
 - Author: Matúš Csirik (xcsirim00)
-- Video showcase: TODO:
+- Video showcase: https://drive.google.com/file/d/15X7qIzHUXmYS1aVq2aMK2EeZfclsOHY3/view?usp=drive_link
 
 
 ## Technologies
