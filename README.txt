@@ -7,10 +7,13 @@
 ## Technologies
 
 - Frontend: React 19, TypeScript, Vite, Tailwind CSS 4, React Router
+- Runtime: Bun
 - UI Libraries: Preline, React Chessboard, Lucide React
 - Chess Engine: chess.js
 - API: Lichess API (NDJSON streaming, OAuth PKCE)
-- Runtime: Bun
+- API generation: Orval (OpenAPI to TypeScript clients). The repo includes
+  an `openapi.json` spec and an `orval.config.ts` file. Generated code is
+  produced into `src/generated/ (type definitions). Generate with `bun run generate`.
 
 
 ## Directory structure
@@ -49,13 +52,16 @@ Steps:
 1. Install dependencies:
   $ bun install
 
-2. Start the development server:
+2. (Optional) Regenerate API clients and types from the included OpenAPI spec:
+  $ bun run generate
+
+3. Start the development server:
   $ bun run dev
 
-3. Open your browser and navigate to:
+4. Open your browser and navigate to:
   http://localhost:3000
 
-4. Sign in with your Lichess account
+5. Sign in with your Lichess account
 
 
 ## Licensing and Copyright
