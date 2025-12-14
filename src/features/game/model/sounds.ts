@@ -48,6 +48,7 @@ const soundTypes: SoundType[] = [
 	"silence",
 ];
 
+// Preload all sounds into memory
 soundTypes.forEach((type) => {
 	const audio = new Audio(`/sounds/${type}.webm`);
 	audio.preload = "auto";
@@ -61,7 +62,9 @@ if (typeof window !== "undefined") {
 
 		const silent = audioCache.get("silence");
 		if (!silent) return;
+
 		silent.volume = 0;
+		silent.currentTime = 0;
 
 		silent
 			.play()
@@ -69,7 +72,9 @@ if (typeof window !== "undefined") {
 				isUnlocked = true;
 				cleanup();
 			})
-			.catch(() => {});
+			.catch((error) => {
+				console.debug("Audio unlock failed (expected until interaction)", error);
+			});
 	};
 
 	const cleanup = () => {
@@ -92,7 +97,7 @@ export function setSoundEnabled(enabled: boolean): void {
 	saveEnabledState(enabled);
 }
 
-export function playSound(type: SoundType): void {
+function tryPlay(type: SoundType): void {
 	if (!isEnabled) return;
 
 	const audio = audioCache.get(type);
@@ -114,4 +119,8 @@ export function playSound(type: SoundType): void {
 				console.warn(`Sound error: ${type}`, error);
 			}
 		});
+}
+
+export function playSound(type: SoundType): void {
+	tryPlay(type);
 }

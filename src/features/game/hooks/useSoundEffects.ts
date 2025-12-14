@@ -29,6 +29,11 @@ function detectMoveSound(move: MoveModel): SoundType {
 	return "move-self";
 }
 
+// Helper to identify a move uniquely within the context of a single turn
+function getMoveSignature(move: MoveModel): string {
+	return `${move.from}-${move.to}-${move.promotion || ""}`;
+}
+
 export function useSoundEffects(config: SoundEffectsConfig): {
 	playMoveSound: (move: MoveModel) => void;
 } {
@@ -43,15 +48,15 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 		blackTime,
 	} = config;
 
-	// Refs avoid retriggering effects while preventing double-plays
 	const lastViewedIndexRef = useRef<number | null>(null);
 	const gameStartedRef = useRef(false);
 	const gameEndedRef = useRef(false);
+
 	const lastLiveMovesCountRef = useRef(0);
 	const isInitialLoadRef = useRef(true);
-
 	const lastGameIdRef = useRef<string | null>(null);
-	const playedMovesRef = useRef<Set<string>>(new Set());
+
+	const lastOptimisticMoveRef = useRef<string | null>(null);
 
 	const tenSecondsPlayedRef = useRef<{
 		white: { played: boolean; lastTime: number | null };
@@ -81,12 +86,12 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 	const playMoveSound = useCallback(
 		(move: MoveModel) => {
 			if (isViewingHistory) return;
+
 			const soundType = detectMoveSound(move);
 			playSound(soundType);
 
-			// Mark this move as played
-			const moveKey = `${move.from}${move.to}${move.promotion || ""}`;
-			playedMovesRef.current.add(moveKey);
+			// Record this move as having been played locally
+			lastOptimisticMoveRef.current = getMoveSignature(move);
 		},
 		[isViewingHistory],
 	);
@@ -99,12 +104,10 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 		}
 
 		const lastIndex = lastViewedIndexRef.current ?? -1;
-		// Only play sound when moving forward
-		if (viewingMoveIndex > lastIndex) {
+		if (viewingMoveIndex === lastIndex + 1) {
 			if (viewingMoveIndex >= 0 && viewingMoveIndex < moveHistory.length) {
 				const move = moveHistory[viewingMoveIndex];
-				const soundType = detectMoveSound(move);
-				playSound(soundType);
+				playSound(detectMoveSound(move));
 			}
 		}
 		lastViewedIndexRef.current = viewingMoveIndex;
@@ -117,38 +120,37 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 
 		const currentMoveCount = moveHistory.length;
 
+		// Reset state if game ID changes
 		if (gameId !== lastGameIdRef.current) {
 			lastGameIdRef.current = gameId;
 			isInitialLoadRef.current = true;
-			lastLiveMovesCountRef.current = 0;
-			playedMovesRef.current.clear();
+			lastLiveMovesCountRef.current = currentMoveCount;
+			lastOptimisticMoveRef.current = null;
 			gameStartedRef.current = false;
 			gameEndedRef.current = false;
 			tenSecondsPlayedRef.current = {
 				white: { played: false, lastTime: null },
 				black: { played: false, lastTime: null },
 			};
+			return;
 		}
 
-		// If first load, skip playing sounds
 		if (isInitialLoadRef.current) {
 			isInitialLoadRef.current = false;
 			lastLiveMovesCountRef.current = currentMoveCount;
 			return;
 		}
 
-		// Play sounds for any moves added since last render
 		if (currentMoveCount > lastLiveMovesCountRef.current) {
 			for (let i = lastLiveMovesCountRef.current; i < currentMoveCount; i++) {
 				const move = moveHistory[i];
-				const moveKey = `${move.from}${move.to}${move.promotion || ""}`;
+				const signature = getMoveSignature(move);
 
-				// Only play if we havent already played this
-				if (!playedMovesRef.current.has(moveKey)) {
-					const soundType = detectMoveSound(move);
-					playSound(soundType);
-					playedMovesRef.current.add(moveKey);
+				if (lastOptimisticMoveRef.current === signature) {
+					lastOptimisticMoveRef.current = null;
+					continue;
 				}
+				playSound(detectMoveSound(move));
 			}
 		}
 
@@ -160,7 +162,7 @@ export function useSoundEffects(config: SoundEffectsConfig): {
 		if (isViewingHistory || !isGameStarted || isGameEnded) return;
 
 		const TEN_SECONDS_MS = 10000;
-		const RESET_THRESHOLD_MS = 15000;
+		const RESET_THRESHOLD_MS = 12000;
 
 		const checkTime = (time: number, color: "white" | "black") => {
 			const state = tenSecondsPlayedRef.current[color];
