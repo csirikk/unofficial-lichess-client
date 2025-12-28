@@ -44,7 +44,7 @@
 		"@eslint/compat": "^2.0.0",
 		"@eslint/eslintrc": "^3.3.3",
 		"@eslint/js": "^9.39.2",
-		"@redocly/cli": "^2.14.0",
+		"@redocly/cli": "^2.14.1",
 		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^5.1.2",
@@ -58,12 +58,12 @@
 		"globals": "^16.5.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
-		"orval": "^7.17.0",
+		"orval": "^7.17.2",
 		"prettier": "^3.7.4",
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"terser": "^5.44.1",
 		"typescript": "~5.9.3",
-		"typescript-eslint": "^8.50.0",
+		"typescript-eslint": "^8.50.1",
 		"vite": "^7.3.0"
 	},
 	"overrides": {
