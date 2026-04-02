@@ -99,12 +99,10 @@ Live game and event feeds come in as **NDJSON streams** over long-lived HTTP con
 
 ### Tooling
 
-![ESLint](https://img.shields.io/badge/ESLint_9-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)
-![Prettier](https://img.shields.io/badge/Prettier_3-F7B93E?style=for-the-badge&logo=prettier&logoColor=black)
 ![Biome](https://img.shields.io/badge/Biome_2-60A5FA?style=for-the-badge&logo=biome&logoColor=white)
 ![Husky](https://img.shields.io/badge/Husky_9-CB3837?style=for-the-badge)
 
-**Husky** + **lint-staged** run ESLint and Prettier on every staged file before commit. **Biome** is used on the generated API output. **Redocly CLI** validates the OpenAPI spec as part of the generation step.
+**Biome** handles all linting and formatting. **Husky** + **lint-staged** run `biome check --write` on every staged file before commit. **Redocly CLI** validates the OpenAPI spec as part of the generation step.
 
 ## Highlights
 
@@ -135,7 +133,6 @@ The main idea is to keep what the server sends and what the user is doing locall
 
 - [Bun](https://bun.sh) 1+
 - a Lichess account
-- a Lichess OAuth application with `http://localhost:3000/auth/callback` as the redirect URI
 
 ### Run
 
@@ -149,11 +146,7 @@ bun dev
 
 Open `http://localhost:3000`.
 
-No env file needed. The app uses a default OAuth client ID and figures out the redirect URI from the current origin. To use your own Lichess app:
-
-```bash
-VITE_LICHESS_CLIENT_ID=your_client_id bun dev
-```
+No env file needed, the default OAuth client ID works out of the box for `localhost:3000`.
 
 ## Scripts
 
@@ -161,5 +154,6 @@ VITE_LICHESS_CLIENT_ID=your_client_id bun dev
 - `bun build`: production build
 - `bun preview`: serve the production build locally
 - `bun generate`: regenerate the API client from `openapi.json`
-- `bun lint`: run ESLint
+- `bun lint`: lint with Biome
+- `bun run fix-all`: lint and format all source files
 - `bun type-check`: typecheck without emitting files
