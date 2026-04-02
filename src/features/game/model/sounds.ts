@@ -32,7 +32,7 @@ function loadEnabledState(): boolean {
 function saveEnabledState(enabled: boolean): void {
 	try {
 		localStorage.setItem("chess-sounds-enabled", String(enabled));
-	} catch {}
+	} catch { }
 }
 
 const soundTypes: SoundType[] = [
@@ -48,9 +48,15 @@ const soundTypes: SoundType[] = [
 	"silence",
 ];
 
+const SOUND_FILE_EXTENSION = "mp3";
+
+function getSoundPath(type: SoundType): string {
+	return `/sounds/${type}.${SOUND_FILE_EXTENSION}`;
+}
+
 // Preload all sounds into memory
 soundTypes.forEach((type) => {
-	const audio = new Audio(`/sounds/${type}.webm`);
+	const audio = new Audio(getSoundPath(type));
 	audio.preload = "auto";
 	audioCache.set(type, audio);
 });
