@@ -1,10 +1,36 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.3.4/schema.json",
-	"formatter": { "enabled": true, "lineWidth": 100 },
-	"linter": { "enabled": true },
+	"$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+	"formatter": {
+		"enabled": true,
+		"lineWidth": 100,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedVariables": "error",
+				"noUnusedImports": "error"
+			},
+			"suspicious": {
+				"noConsole": "warn"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"trailingCommas": "es5",
+			"arrowParentheses": "asNeeded"
+		}
+	},
 	"css": {
 		"parser": {
 			"tailwindDirectives": true
 		}
+	},
+	"files": {
+		"includes": ["**", "!node_modules", "!dist", "!src/generated"]
 	}
 }

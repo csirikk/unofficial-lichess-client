@@ -1,9 +1,0 @@
-node_modules/
-src/generated/
-dist/
-build/
-coverage/
-.cache/
-public/
-package-lock.json
-yarn.lock
